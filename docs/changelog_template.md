@@ -1,47 +1,49 @@
-# Changelog - [Name]
-
-Persönliches Changelog für [Name], Rolle: [Rollenbezeichnung]
+# Changelog - Buerobedarf
 
 ---
 
-## [v0.1] - 2025-01-20
+## [v0.1] - 2026-02-20
 
 ### Implementiert
-- [Feature/Fix 1]
-- [Feature/Fix 2]
-- [Feature/Fix 3]
+
+- Docker
+- Gradio
+- MongoDB
 
 ### Tests geschrieben
-- test_[name 1]
-- test_[name 2]
+
+- test_gadio
+- test_mongodb
 
 ### Commits
-```
-- abc1234 Feat: [Beschreibung]
-- def5678 Test: [Beschreibung]
-- ghi9012 Docs: [Beschreibung]
-```
+
+- PHinterbauer Feat: added docker, mongodb and gradio
 
 ### Mergekonflikt(e)
-- [Datei]: [Kurzbeschreibung und Lösung]
+
+- noch keine
 
 ---
 
 ## [v0.2] - [Datum]
 
 ### Implementiert
+
 - [Feature/Fix 1]
 - [Feature/Fix 2]
 
 ### Tests geschrieben
+
 - test_[name 1]
 
 ### Commits
+
 ```
 - jkl3456 Feat: [Beschreibung]
 ```
 
 ### Mergekonflikt(e)
+
 - Keine
 
 ---
@@ -49,17 +51,21 @@ Persönliches Changelog für [Name], Rolle: [Rollenbezeichnung]
 ## [v0.3] - [Datum]
 
 ### Implementiert
+
 - [Feature/Fix 1]
 
 ### Tests geschrieben
+
 - [Tests]
 
 ### Commits
+
 ```
 - [Commits]
 ```
 
 ### Mergekonflikt(e)
+
 - [Konflikte, falls vorhanden]
 
 ---
@@ -67,17 +73,21 @@ Persönliches Changelog für [Name], Rolle: [Rollenbezeichnung]
 ## [v0.4] - [Datum]
 
 ### Implementiert
+
 - [Feature/Fix]
 
 ### Tests geschrieben
+
 - [Tests]
 
 ### Commits
+
 ```
 - [Commits]
 ```
 
 ### Mergekonflikt(e)
+
 - [Konflikte]
 
 ---
@@ -85,17 +95,21 @@ Persönliches Changelog für [Name], Rolle: [Rollenbezeichnung]
 ## [v0.5] - [Datum]
 
 ### Implementiert
+
 - [Feature/Fix]
 
 ### Tests geschrieben
+
 - [Tests]
 
 ### Commits
+
 ```
 - [Commits]
 ```
 
 ### Mergekonflikt(e)
+
 - [Konflikte]
 
 ---
@@ -103,30 +117,33 @@ Persönliches Changelog für [Name], Rolle: [Rollenbezeichnung]
 ## [v1.0] - [Datum]
 
 ### Implementiert
+
 - [Feature/Fix]
 
 ### Tests geschrieben
+
 - [Tests]
 
 ### Commits
+
 ```
 - [Commits]
 ```
 
 ### Mergekonflikt(e)
+
 - [Konflikte]
 
 ---
 
 ## Zusammenfassung
 
-**Gesamt implementierte Features:** [Anzahl]  
-**Gesamt geschriebene Tests:** [Anzahl]  
-**Gesamt Commits:** [Anzahl]  
-**Größte Herausforderung:** [Beschreibung]  
+**Gesamt implementierte Features:** [Anzahl]
+**Gesamt geschriebene Tests:** [Anzahl]
+**Gesamt Commits:** [Anzahl]
+**Größte Herausforderung:** [Beschreibung]
 **Schönste Code-Zeile:** [Code-Snippet]
 
 ---
 
-**Changelog erstellt von:** [Name]  
-**Letzte Aktualisierung:** [Datum]
+**Letzte Aktualisierung:** 2026-02-20
