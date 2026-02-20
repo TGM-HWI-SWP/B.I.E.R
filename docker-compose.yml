@@ -1,0 +1,60 @@
+services:
+  # ─── MongoDB ───────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    container_name: lagerverwaltung-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: lagerverwaltung
+      # Zugangsdaten nur für lokale Entwicklung – in Produktion Secrets nutzen!
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Mongo Express (Web-UI) ───────────────────────────────
+  mongo-express:
+    image: mongo-express:1
+    container_name: lagerverwaltung-mongoexpress
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://admin:secret@mongodb:27017/
+      ME_CONFIG_BASICAUTH: "false"
+    ports:
+      - "8081:8081"
+
+  # ─── Gradio-App ────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lagerverwaltung-app
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      MONGO_DB: lagerverwaltung
+      MONGO_USER: admin
+      MONGO_PASSWORD: secret
+      GRADIO_SERVER_NAME: 0.0.0.0
+      GRADIO_SERVER_PORT: 7860
+    ports:
+      - "7860:7860"
+    volumes:
+      # Live-Reload des Source-Codes während der Entwicklung
+      - ./src:/app/src:ro
+
+volumes:
+  mongo_data:
+    driver: local

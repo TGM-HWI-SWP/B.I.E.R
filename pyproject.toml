@@ -9,8 +9,8 @@ description = "Verwaltungssoftware für Lagerverwaltung/Produktmanagement"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "PyQt6>=6.6.0",
-    "tinydb>=4.8.0",
+    "gradio>=4.0.0",
+    "pymongo>=4.6.0",
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
 ]

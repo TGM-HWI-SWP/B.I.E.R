@@ -1,0 +1,56 @@
+# ── Version Control ──────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+
+# ── Python-Artefakte ─────────────────────────────────────────
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.whl
+*.egg
+
+# ── Virtuelle Umgebungen ─────────────────────────────────────
+.venv/
+venv/
+env/
+.env/
+
+# ── Test & CI ────────────────────────────────────────────────
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.lcov
+
+# ── Linter / Formatter ──────────────────────────────────────
+.mypy_cache/
+.ruff_cache/
+.flake8
+
+# ── IDE / Editor ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Doku & Markdown ──────────────────────────────────────────
+docs/
+*.md
+!README.md
+
+# ── Sonstiges ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.bak
+docker-compose*.yml
+Dockerfile*
