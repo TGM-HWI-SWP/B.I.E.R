@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir gradio pymongo
 
 EXPOSE 7860
 
-CMD ["python", "-m", "src.ui.gui"]
+CMD ["python", "-m", "src.lagerverwaltung.frontend.gradio.gui"]
