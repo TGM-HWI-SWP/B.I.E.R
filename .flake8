@@ -1,21 +1,12 @@
-[python]
-target-version = "3.10"
-line-length = 100
-
-[tool.black]
-line-length = 100
-target-version = ["py310"]
-
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
+[flake8]
+max-line-length = 100
+exclude =
+    .git,
+    .hg,
+    .mypy_cache,
+    .tox,
+    .venv,
+    _build,
+    buck-out,
+    build,
+    dist
