@@ -5,8 +5,8 @@ WORKDIR /app
 COPY pyproject.toml .
 COPY src/ src/
 
-RUN pip install --no-cache-dir gradio pymongo
+RUN pip install --no-cache-dir flask pymongo
 
-EXPOSE 7860
+EXPOSE 5000
 
-CMD ["python", "-m", "src.lagerverwaltung.frontend.gradio.gui"]
+CMD ["python", "-m", "src.lagerverwaltung.frontend.flask.gui"]

@@ -33,12 +33,12 @@ services:
     ports:
       - "8081:8081"
 
-  # ─── Gradio-App ────────────────────────────────────────────
+  # ─── Flask-App ─────────────────────────────────────────────
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: lagerverwaltung-gradio
+    container_name: lagerverwaltung-flask
     restart: unless-stopped
     depends_on:
       mongodb:
@@ -49,10 +49,11 @@ services:
       MONGO_DB: lagerverwaltung
       MONGO_USER: admin
       MONGO_PASSWORD: secret
-      GRADIO_SERVER_NAME: 0.0.0.0
-      GRADIO_SERVER_PORT: 7860
+      FLASK_HOST: 0.0.0.0
+      FLASK_PORT: 5000
+      FLASK_DEBUG: "false"
     ports:
-      - "7860:7860"
+      - "5000:5000"
     volumes:
       # Live-Reload des Source-Codes während der Entwicklung
       - ./src:/app/src:ro
