@@ -9,4 +9,4 @@ RUN pip install --no-cache-dir flask pymongo
 
 EXPOSE 5000
 
-CMD ["python", "-m", "src.lagerverwaltung.frontend.flask.gui"]
+CMD ["python", "-m", "src.bierapp.frontend.flask.gui"]

@@ -27,7 +27,7 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["src.lagerverwaltung", "src.lagerverwaltung.backend", "src.lagerverwaltung.db", "src.lagerverwaltung.frontend", "src.lagerverwaltung.frontend.flask"]
+packages = ["src.bierapp", "src.bierapp.backend", "src.bierapp.db", "src.bierapp.frontend", "src.bierapp.frontend.flask"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

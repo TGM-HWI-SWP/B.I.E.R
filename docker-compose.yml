@@ -2,10 +2,10 @@ services:
   # ─── MongoDB ───────────────────────────────────────────────
   mongodb:
     image: mongo:7
-    container_name: lagerverwaltung-mongodb
+    container_name: bierapp-mongodb
     restart: unless-stopped
     environment:
-      MONGO_INITDB_DATABASE: lagerverwaltung
+      MONGO_INITDB_DATABASE: bierapp
       # Zugangsdaten nur für lokale Entwicklung – in Produktion Secrets nutzen!
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: secret
@@ -22,7 +22,7 @@ services:
   # ─── Mongo Express (Web-UI) ───────────────────────────────
   mongo-express:
     image: mongo-express:1
-    container_name: lagerverwaltung-mongoexpress
+    container_name: bierapp-mongoexpress
     restart: unless-stopped
     depends_on:
       mongodb:
@@ -38,7 +38,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: lagerverwaltung-flask
+    container_name: bierapp-flask
     restart: unless-stopped
     depends_on:
       mongodb:
@@ -46,7 +46,7 @@ services:
     environment:
       MONGO_HOST: mongodb
       MONGO_PORT: 27017
-      MONGO_DB: lagerverwaltung
+      MONGO_DB: bierapp
       MONGO_USER: admin
       MONGO_PASSWORD: secret
       FLASK_HOST: 0.0.0.0
