@@ -10,10 +10,20 @@ app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
 @app.route("/favicon.ico")
 def favicon():
+    """Serve the application favicon.
+
+    Returns:
+        Response: PNG image response for the browser favicon.
+    """
     return send_from_directory(RESOURCES_DIR, "BIER_ICON_COMPRESSED.png", mimetype="image/png")
 
 @app.route("/")
 def index():
+    """Render the main application page.
+
+    Returns:
+        str: Rendered HTML of ``index.html``.
+    """
     return render_template("index.html")
 
 if __name__ == "__main__":
