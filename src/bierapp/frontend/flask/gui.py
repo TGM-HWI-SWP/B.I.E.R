@@ -9,8 +9,10 @@ from bierapp.backend.services import InventoryService, ProductService, Warehouse
 from bierapp.db.mongodb import MongoDBAdapter
 
 _HERE = path.dirname(__file__)
-RESOURCES_DIR = path.abspath(path.join(_HERE, "..", "..", "..", "resources", "pictures"))
-TEMPLATES_DIR = path.abspath(path.join(_HERE, "..", "..", "..", "resources", "templates"))
+_DEFAULT_RESOURCES = path.abspath(path.join(_HERE, "..", "..", "..", "resources"))
+_RESOURCES_BASE = environ.get("RESOURCES_DIR", _DEFAULT_RESOURCES)
+RESOURCES_DIR = path.join(_RESOURCES_BASE, "pictures")
+TEMPLATES_DIR = path.join(_RESOURCES_BASE, "templates")
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
 app.secret_key = environ.get("FLASK_SECRET", "bier-dev-secret")
@@ -338,7 +340,111 @@ def inventar_remove(lager_id: str, produkt_id: str):
     return redirect(url_for("inventar_detail", lager_id=lager_id))
 
 
+@app.route("/statistik")
+def statistik():
+    """Render the statistics page with aggregated chart data.
+
+    Returns:
+        str: Rendered HTML of statistik.html with all chart datasets.
+    """
+    from collections import defaultdict
+    from bierapp.db.mongodb import COLLECTION_INVENTAR, COLLECTION_LAGER, COLLECTION_PRODUKTE
+
+    db = get_db()
+    produkte   = db.find_all(COLLECTION_PRODUKTE)
+    lager_list = db.find_all(COLLECTION_LAGER)
+    inventar   = db.find_all(COLLECTION_INVENTAR)
+
+    # --- Bestand je Lager -------------------------------------------------
+    menge_per_lager: dict[str, int]         = defaultdict(int)
+    produkte_per_lager: dict[str, set[str]] = defaultdict(set)
+    for entry in inventar:
+        lid = entry.get("lager_id", "")
+        menge_per_lager[lid]       += entry.get("menge", 0)
+        produkte_per_lager[lid].add(entry.get("produkt_id", ""))
+
+    lager_labels = [l.get("lagername", l["_id"]) for l in lager_list]
+    lager_mengen = [menge_per_lager.get(l["_id"], 0) for l in lager_list]
+
+    lager_stats = []
+    for l in lager_list:
+        lid = l["_id"]
+        lager_stats.append({
+            "lagername":   l.get("lagername", lid),
+            "num_produkte": len(produkte_per_lager.get(lid, set())),
+            "menge":        menge_per_lager.get(lid, 0),
+            "max_plaetze":  l.get("max_plaetze", 1),
+        })
+
+    # --- Auslastung (%) ---------------------------------------------------
+    aus_labels = [r["lagername"] for r in lager_stats]
+    aus_pct    = [
+        round(min(r["menge"] / max(r["max_plaetze"], 1) * 100, 100), 1)
+        for r in lager_stats
+    ]
+
+    # --- Kategorieverteilung ----------------------------------------------
+    kat_counts_map: dict[str, int] = defaultdict(int)
+    for p in produkte:
+        kat = p.get("kategorie") or "Sonstige"
+        kat_counts_map[kat] += 1
+    kat_labels = list(kat_counts_map.keys())
+    kat_counts  = list(kat_counts_map.values())
+
+    # --- Top 10 Produkte nach Gesamtbestand --------------------------------
+    produkt_name  = {p["_id"]: p.get("name", p["_id"]) for p in produkte}
+    menge_per_p: dict[str, int] = defaultdict(int)
+    for entry in inventar:
+        menge_per_p[entry.get("produkt_id", "")] += entry.get("menge", 0)
+    top10 = sorted(menge_per_p.items(), key=lambda x: x[1], reverse=True)[:10]
+    top10_labels = [produkt_name.get(pid, pid) for pid, _ in top10]
+    top10_values = [v for _, v in top10]
+
+    # --- Gewichtsverteilung (Histogramm) ----------------------------------
+    bins = [
+        (0,   0.5,  "0–0.5"),
+        (0.5, 1,    "0.5–1"),
+        (1,   2,    "1–2"),
+        (2,   5,    "2–5"),
+        (5,   10,   "5–10"),
+        (10,  20,   "10–20"),
+        (20,  50,   "20–50"),
+        (50,  1e9,  ">50"),
+    ]
+    gewicht_bins   = [b[2] for b in bins]
+    gewicht_counts = [0] * len(bins)
+    for p in produkte:
+        w = float(p.get("gewicht", 0))
+        for i, (lo, hi, _) in enumerate(bins):
+            if lo <= w < hi:
+                gewicht_counts[i] += 1
+                break
+
+    total_menge = sum(menge_per_lager.values())
+
+    return render_template(
+        "statistik.html",
+        num_produkte=len(produkte),
+        num_lager=len(lager_list),
+        total_menge=total_menge,
+        num_inventar=len(inventar),
+        lager_stats=lager_stats,
+        lager_labels=lager_labels,
+        lager_mengen=lager_mengen,
+        kat_labels=kat_labels,
+        kat_counts=kat_counts,
+        top10_labels=top10_labels,
+        top10_values=top10_values,
+        gewicht_bins=gewicht_bins,
+        gewicht_counts=gewicht_counts,
+        aus_labels=aus_labels,
+        aus_pct=aus_pct,
+    )
+
+
 if __name__ == "__main__":
+    from bierapp.db.init.seed import seed_database
+    seed_database()
     host = environ.get("FLASK_HOST", "0.0.0.0")
     port = int(environ.get("FLASK_PORT", 5000))
     app.run(host=host, port=port, debug=False)
