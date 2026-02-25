@@ -1,0 +1,143 @@
+{% extends "layout.html" %}
+
+{% block title %}Lager – B.I.E.R{% endblock %}
+{% block page_title %}Lager{% endblock %}
+{% block page_subtitle %}Verwaltung aller Lagerstandorte{% endblock %}
+
+{% block content %}
+<!-- Toolbar -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <span class="text-muted">{{ lager|length }} Lager gefunden</span>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNeu">
+    <i class="bi bi-plus-lg me-1"></i>Neues Lager
+  </button>
+</div>
+
+<!-- Table -->
+<div class="card section-card">
+  <div class="card-header"><i class="bi bi-building me-2"></i>Lagerliste</div>
+  <div class="card-body p-0">
+    {% if lager %}
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Name</th>
+          <th>Adresse</th>
+          <th>Max. Plätze</th>
+          <th class="text-end">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in lager %}
+        <tr>
+          <td class="fw-semibold">{{ l.lagername }}</td>
+          <td class="text-muted">{{ l.adresse }}</td>
+          <td>{{ l.max_plaetze }}</td>
+          <td class="text-end">
+            <a href="/inventar/{{ l._id }}" class="btn btn-sm btn-outline-secondary me-1" title="Inventar">
+              <i class="bi bi-clipboard-data"></i>
+            </a>
+            <button class="btn btn-sm btn-outline-primary me-1"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalEdit-{{ l._id }}"
+                    title="Bearbeiten">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalDel-{{ l._id }}"
+                    title="Löschen">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+
+        <!-- Edit Modal -->
+        <div class="modal fade" id="modalEdit-{{ l._id }}" tabindex="-1">
+          <div class="modal-dialog">
+            <form method="POST" action="/lager/{{ l._id }}/bearbeiten" class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Lager bearbeiten</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Lagername</label>
+                  <input type="text" name="lagername" class="form-control" value="{{ l.lagername }}" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Adresse</label>
+                  <input type="text" name="adresse" class="form-control" value="{{ l.adresse }}">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Max. Plätze</label>
+                  <input type="number" name="max_plaetze" class="form-control" value="{{ l.max_plaetze }}" min="1">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="modalDel-{{ l._id }}" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Lager löschen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                Lager <strong>{{ l.lagername }}</strong> wirklich unwiderruflich löschen?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form method="POST" action="/lager/{{ l._id }}/loeschen">
+                  <button type="submit" class="btn btn-danger">Löschen</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="p-4 text-muted text-center">Noch keine Lager vorhanden.</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- New Warehouse Modal -->
+<div class="modal fade" id="modalNeu" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="/lager/neu" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Neues Lager anlegen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Lagername <span class="text-danger">*</span></label>
+          <input type="text" name="lagername" class="form-control" placeholder="z.B. Hauptlager Wien" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Adresse</label>
+          <input type="text" name="adresse" class="form-control" placeholder="Straße, PLZ Ort">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Max. Lagerplätze</label>
+          <input type="number" name="max_plaetze" class="form-control" value="100" min="1">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Anlegen</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

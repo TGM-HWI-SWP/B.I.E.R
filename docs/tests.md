@@ -2,89 +2,159 @@
 
 ## Übersicht
 
-Dieses Dokument beschreibt die Test-Strategie und Test-Struktur des Projekts.
+Dieses Dokument beschreibt die Test-Strategie und Test-Struktur des B.I.E.R-Projekts.
 
-## Test-Anatomie
+**Test-Framework:** pytest 9+  
+**Test-Ergebnis (Stand 2026-02-25):** 49 passed, 2 skipped (1.74 s)
 
-### Unit Tests
+---
 
-**Ziel:** Einzelne Komponenten isoliert testen (ohne externe Abhängigkeiten)
+## Test-Strategie
 
-**Speicherort:** `tests/unit/test_domain.py`
+Das Projekt verwendet drei Teststufen:
 
-#### TestProduct
-Testet die `Product`-Domänenklasse:
+| Stufe | Datei | Zweck |
+|---|---|---|
+| Unit | `tests/unit/test_domain.py` | Services isoliert, ohne Datenbankverbindung |
+| Integration (Services) | `tests/integration/test_integration.py` | Mehrere Services zusammen |
+| Integration (Flask) | `tests/integration/test_flask.py` | HTTP-Routen via Flask-Test-Client |
+| Live (Docker) | `tests/integration/test_mongodb.py` | Echter Ping gegen MongoDB (auto-skip) |
 
-- `test_product_creation()` - Grundlegende Erstellung
-- `test_product_validation_negative_price()` - Validierung negativ Preis
-- `test_update_quantity()` - Bestandsänderung
-- `test_update_quantity_insufficient()` - Fehlerfall: zu wenig Bestand
-- `test_get_total_value()` - Wertberechnung
+Die MongoDB-Abhängigkeit wird in allen nicht-Live-Tests durch ein `MagicMock` ersetzt.
 
-#### TestWarehouseService
-Testet den `WarehouseService` mit Mock-Repository:
+---
 
-- `test_create_product()` - Produkt erstellen
-- `test_add_to_stock()` - Bestand erhöhen
-- `test_remove_from_stock()` - Bestand verringern
-- `test_remove_from_stock_insufficient()` - Fehlerfall
-- `test_get_all_products()` - Alle Produkte abrufen
-- `test_get_total_inventory_value()` - Gesamtwert
-- `test_get_movements()` - Lagerbewegungen abrufen
-
-### Integration Tests
-
-**Ziel:** Mehrere Komponenten zusammen testen
-
-**Speicherort:** `tests/integration/test_integration.py`
-
-#### TestIntegration
-- `test_full_workflow()` - Kompletter Workflow (erstellen → ändern → berechnen)
-- `test_report_generation()` - Berichte generieren
-
-## Test-Fixtures
+## Shared Fixtures (`tests/conftest.py`)
 
 ```python
-@pytest.fixture
-def service():
-    """Fixture für WarehouseService mit In-Memory Repository"""
-    repository = InMemoryRepository()
-    return WarehouseService(repository)
+mock_db           # MagicMock, mimics MongoDBAdapter
+product_service   # ProductService(mock_db)
+warehouse_service # WarehouseService(mock_db)
+inventory_service # InventoryService(mock_db)
+flask_client      # app.test_client() mit monkeypatched _db
 ```
+
+Der `flask_client`-Fixture monkeypatcht `bierapp.frontend.flask.gui._db` auf das `mock_db`-Objekt, sodass keine echte MongoDB-Verbindung aufgebaut wird.
+
+---
+
+## Unit Tests – `tests/unit/test_domain.py`
+
+### TestProductService (10 Tests)
+
+| Test | Prüft |
+|---|---|
+| `test_create_product_returns_doc_with_id` | Gibt Dokument mit `_id` zurück, ruft `insert` auf |
+| `test_create_product_strips_whitespace` | Trimmt führende/nachfolgende Leerzeichen |
+| `test_create_product_empty_name_raises` | `ValueError` bei leerem Namen |
+| `test_create_product_negative_weight_raises` | `ValueError` bei negativem Gewicht |
+| `test_get_product_delegates_to_db` | Delegiert an `find_by_id` |
+| `test_list_products_delegates_to_db` | Gibt `find_all`-Ergebnis zurück |
+| `test_update_product_raises_for_missing` | `KeyError` bei fehlendem Dokument |
+| `test_update_product_calls_db_update` | Ruft `db.update` auf |
+| `test_delete_product_calls_db_delete` | Ruft `db.delete` auf |
+| `test_delete_product_raises_for_missing` | `KeyError` bei fehlendem Dokument |
+
+### TestWarehouseService (6 Tests)
+
+| Test | Prüft |
+|---|---|
+| `test_create_warehouse_returns_doc` | Gibt Dokument zurück, persistiert |
+| `test_create_warehouse_empty_name_raises` | `ValueError` bei leerem Lagernamen |
+| `test_create_warehouse_zero_plaetze_raises` | `ValueError` bei `max_plaetze=0` |
+| `test_create_warehouse_negative_plaetze_raises` | `ValueError` bei negativem Wert |
+| `test_update_warehouse_raises_for_missing` | `KeyError` wenn Lager nicht gefunden |
+| `test_delete_warehouse_raises_for_missing` | `KeyError` wenn Lager nicht gefunden |
+
+### TestInventoryService (10 Tests)
+
+| Test | Prüft |
+|---|---|
+| `test_add_product_inserts_new_entry` | Erstellt neuen Inventar-Eintrag |
+| `test_add_product_merges_existing` | Addiert Menge zu vorhandenem Eintrag |
+| `test_add_product_negative_menge_raises` | `ValueError` bei negativer Menge |
+| `test_update_quantity_raises_for_missing_entry` | `KeyError` bei fehlendem Eintrag |
+| `test_update_quantity_negative_raises` | `ValueError` bei negativer Menge |
+| `test_remove_product_calls_delete` | Ruft `db.delete` auf |
+| `test_remove_product_raises_for_missing` | `KeyError` bei fehlendem Eintrag |
+| `test_list_inventory_raises_for_missing_lager` | `KeyError` wenn Lager nicht existiert |
+| `test_list_inventory_enriches_entries` | Ergänzt Einträge mit Produktname |
+
+---
+
+## Service-Integrationstests – `tests/integration/test_integration.py`
+
+| Test | Prüft |
+|---|---|
+| `test_create_product_then_add_to_warehouse` | Produkt erstellen + Lager erstellen + einbuchen (3x insert) |
+| `test_add_product_merge_increases_total` | Zweites Einbuchen addiert Menge korrekt |
+| `test_update_then_remove_lifecycle` | Menge ändern + ausbuchen (update + delete) |
+| `test_list_inventory_includes_product_details` | Anreicherung mit Produktdaten |
+| `test_update_preserves_unspecified_fields` | Update überschreibt alle Pflichtfelder |
+
+---
+
+## Flask-Integrationstests – `tests/integration/test_flask.py`
+
+### TestStaticAndDashboard (2 Tests)
+- `test_index_returns_200` – GET `/` gibt HTTP 200 zurück
+- `test_index_contains_stat_cards` – Response enthält Schlüsselwort "Produkte"
+
+### TestProdukte (6 Tests)
+- `test_list_returns_200` – GET `/produkte` gibt 200 zurück
+- `test_create_valid_redirects` – POST mit gültigen Daten → 302, `insert` wird aufgerufen
+- `test_create_empty_name_redirects_with_flash` – Leerer Name → 302, kein `insert`
+- `test_create_negative_weight_redirects_with_flash` – Negatives Gewicht → 302, kein `insert`
+- `test_update_missing_redirects` – Update bei fehlendem Dokument → 302 (kein Crash)
+- `test_delete_missing_redirects` – Löschen bei fehlendem Dokument → 302
+
+### TestLager (4 Tests)
+- `test_list_returns_200` – GET `/lager` gibt 200 zurück
+- `test_create_valid_redirects` – Gültiges POST → 302, `insert` aufgerufen
+- `test_create_empty_name_redirects_without_insert` – Leerer Name → kein `insert`
+- `test_create_zero_plaetze_redirects_without_insert` – `max_plaetze=0` → kein `insert`
+
+### TestInventar (7 Tests)
+- `test_inventar_empty_lager_returns_200` – Keine Lager → Leer-Zustand 200
+- `test_inventar_redirects_to_first_lager` – Lager vorhanden → Redirect zu erstem Lager
+- `test_inventar_detail_returns_200` – GET `/inventar/<id>` gibt 200 zurück
+- `test_inventar_detail_unknown_lager_redirects` – Unbekannte ID → 302
+- `test_inventar_add_valid_redirects` – Einbuchen → 302
+- `test_inventar_update_quantity_redirects` – Menge ändern → 302, `update` aufgerufen
+- `test_inventar_remove_redirects` – Ausbuchen → 302, `delete` aufgerufen
+
+---
+
+## Live-Tests – `tests/integration/test_mongodb.py`
+
+**Werden automatisch übersprungen**, wenn kein MongoDB-Server auf `localhost:27017` erreichbar ist.
+
+```
+pytest -m live   # Nur Live-Tests ausführen (nach docker compose up)
+```
+
+---
 
 ## Test-Ausführung
 
-### Alle Tests
 ```bash
+# Alle Tests
 pytest tests/ -v
-```
 
-### Nur Unit Tests
-```bash
+# Nur Unit-Tests
 pytest tests/unit/ -v
-```
 
-### Nur Integration Tests
-```bash
-pytest tests/integration/ -v
-```
+# Nur Integrationstests (ohne Live)
+pytest tests/integration/test_flask.py tests/integration/test_integration.py -v
 
-### Mit Coverage
-```bash
+# Mit Coverage-Report
 pytest --cov=src tests/ --cov-report=html
+
+# Einzelnen Test ausführen
+pytest tests/unit/test_domain.py::TestProductService::test_create_product_returns_doc_with_id -v
 ```
 
-### Einzelnen Test ausführen
-```bash
-pytest tests/unit/test_domain.py::TestProduct::test_product_creation -v
-```
-
-## Coverage-Ziele
-
-- **Domain Layer:** 100% Abdeckung
-- **Services:** 95%+ Abdeckung
-- **Adapters:** 90%+ Abdeckung
-- **UI:** Manuelle Tests (GUI-Tests optional)
+---
 
 ## Test-Naming-Konvention
 
@@ -92,121 +162,12 @@ pytest tests/unit/test_domain.py::TestProduct::test_product_creation -v
 test_<component>_<action>_<expected_result>
 
 Beispiele:
-- test_product_creation()                        ✓
-- test_product_validation_negative_price()       ✓
-- test_warehouse_service_add_to_stock()          ✓
-- test_full_workflow()                           ✓
+  test_create_product_empty_name_raises        ✓
+  test_inventar_redirects_to_first_lager       ✓
+  test_add_product_merge_increases_total       ✓
+  test_list_inventory_enriches_entries         ✓
 ```
-
-## Fehler-Test-Patterns
-
-### Exception-Tests
-```python
-def test_update_quantity_insufficient(self):
-    product = Product(..., quantity=5)
-    with pytest.raises(ValueError):
-        product.update_quantity(-10)
-```
-
-### Assertion-Patterns
-```python
-def test_add_to_stock(self, service):
-    service.add_to_stock("P001", 3)
-    product = service.get_product("P001")
-    assert product.quantity == 8
-```
-
-## Test-Daten
-
-### Dummy-Produkte
-```python
-service.create_product(
-    product_id="P001",
-    name="Test Laptop",
-    description="High-End Laptop",
-    price=1200.0,
-    category="Elektronik",
-    initial_quantity=5
-)
-```
-
-### Bewegungen
-Werden automatisch erstellt bei:
-- `add_to_stock()` → Movement mit Typ "IN"
-- `remove_from_stock()` → Movement mit Typ "OUT"
-
-## CI/CD-Integration (Optional)
-
-Zukünftig können Tests automatisiert werden:
-
-```yaml
-# .github/workflows/tests.yml (Beispiel für GitHub Actions)
-name: Tests
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.10
-      - run: pip install -e . && pip install -e ".[dev]"
-      - run: pytest --cov=src
-```
-
-## Mockings & Stubs
-
-### In-Memory Repository als Test-Adapter
-```python
-repository = InMemoryRepository()  # Statt echte Datenbank
-service = WarehouseService(repository)
-```
-
-### Zukünftig: Mock-Objects
-```python
-from unittest.mock import Mock
-mock_repository = Mock(spec=RepositoryPort)
-mock_repository.load_product.return_value = test_product
-service = WarehouseService(mock_repository)
-```
-
-## Test-Wartung
-
-### Hinzufügen neuer Tests
-1. Feature implementieren
-2. Test schreiben (Test-First oder nach)
-3. Test ausführen und bestätigen
-4. In Git committen
-
-```bash
-git commit -m "Test: Add test_product_validation_empty_name"
-git commit -m "Feat: Implement empty name validation"
-```
-
-### Test-Refactoring
-- Tests sollten wartbar sein
-- DRY-Prinzip auch bei Tests
-- Fixtures verwenden für Wiederverwendung
-
-## Known Issues & TODOs
-
-- [ ] GUI-Tests implementieren (optional, manuell möglich)
-- [ ] Performance-Tests für große Datenmengen
-- [ ] Stress-Tests für Concurrent Access
-
-## Test-Metriken
-
-Ziel pro Milestone:
-
-| Milestone | Unit-Tests | Integration | Coverage |
-|-----------|-----------|-------------|----------|
-| v0.2      | 5+        | 1           | 80%+     |
-| v0.3      | 10+       | 3           | 85%+     |
-| v0.5      | 15+       | 5           | 90%+     |
-| v1.0      | 20+       | 8           | 95%+     |
 
 ---
 
-**Letzte Aktualisierung:** 2025-01-20
-**Version:** 0.1
+**Letzte Aktualisierung:** 2026-02-25

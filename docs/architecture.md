@@ -1,292 +1,230 @@
 # Architektur-Dokumentation
 
-## Architektur-Übersicht
+## Übersicht
 
-Das Projekt folgt der **Port-Adapter-Architektur** (Hexagonal Architecture) für maximale Testbarkeit und Wartbarkeit.
+B.I.E.R folgt der **Hexagonalen Architektur** (Ports & Adapters). Jede Schicht kommuniziert ausschließlich über abstrakte Schnittstellen (`contracts.py`), was Testbarkeit, Austauschbarkeit und klare Verantwortlichkeiten garantiert.
+
+---
 
 ## Schichten-Modell
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    UI-Layer (PyQt6)                     │
-│              WarehouseMainWindow, Dialoge               │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────┐
-│                  Service-Layer                          │
-│              WarehouseService, BusinessLogic            │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────┐
-│                  Domain-Layer                           │
-│          Product, Movement, Warehouse (Entities)        │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-        ┌──────────────┴──────────────┐
-        │                             │
-┌───────▼────────┐          ┌────────▼──────────┐
-│  Ports         │          │   Adapters       │
-│  (Abstract)    │          │ (Implementations)│
-│                │          │                   │
-│RepositoryPort │◄────────►│InMemoryRepository│
-│ ReportPort     │          │(sqlite, json, ...|
-└────────────────┘          └───────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                  Frontend (Flask / Jinja2)                   │
+│   gui.py  ·  layout.html  ·  produkte / lager / inventar    │
+└─────────────────────────┬────────────────────────────────────┘
+                          │  ruft auf
+┌─────────────────────────▼────────────────────────────────────┐
+│                  Backend (Service-Layer)                      │
+│      ProductService  ·  WarehouseService  ·  InventoryService│
+└─────────────────────────┬────────────────────────────────────┘
+                          │  nutzt Port
+┌─────────────────────────▼────────────────────────────────────┐
+│               Contracts (Abstrakte Ports)                    │
+│  DatabasePort  ·  ProductServicePort  ·  WarehouseServicePort│
+│  InventoryServicePort                                        │
+└─────────────────────────┬────────────────────────────────────┘
+                          │  implementiert
+┌─────────────────────────▼────────────────────────────────────┐
+│               DB-Adapter (MongoDB)                           │
+│  MongoDBAdapter  ·  db/init/setup.py                         │
+└──────────────────────────────────────────────────────────────┘
+                          │
+                 ┌────────▼───────┐
+                 │   MongoDB      │
+                 │ (Docker / lokal│
+                 └────────────────┘
 ```
-
-## Komponenten
-
-### 1. Domain Layer (`src/domain/`)
-
-**Verantwortung:** Reine Geschäftslogik, unabhängig von technischen Details
-
-#### `product.py`
-- **Klasse:** `Product`
-- **Attribute:** id, name, description, price, quantity, sku, category, created_at, updated_at, notes
-- **Methoden:**
-  - `update_quantity(amount)` - Bestand aktualisieren mit Validierung
-  - `get_total_value()` - Lagerwert berechnen
-- **Validierung:** Negative Preise/Bestände nicht erlaubt
-
-#### `warehouse.py`
-- **Klasse:** `Warehouse`
-  - **Attribute:** name, products (Dict), movements (List)
-  - **Methoden:**
-    - `add_product(product)` - Produkt hinzufügen
-    - `get_product(id)` - Produkt abrufen
-    - `record_movement(movement)` - Bewegung protokollieren
-    - `get_total_inventory_value()` - Gesamtwert
-    - `get_inventory_report()` - Report-Daten
-
-- **Klasse:** `Movement`
-  - **Attribute:** id, product_id, product_name, quantity_change, movement_type, reason, timestamp, performed_by
-  - **Beschreibung:** Immutable Bewegungslog
-
-### 2. Ports (`src/ports/`)
-
-**Verantwortung:** Schnittstellen-Definitionen (Abstraktion)
-
-#### `RepositoryPort`
-```python
-class RepositoryPort(ABC):
-    @abstractmethod
-    def save_product(self, product: Product) -> None: ...
-    
-    @abstractmethod
-    def load_product(self, product_id: str) -> Optional[Product]: ...
-    
-    @abstractmethod
-    def load_all_products(self) -> Dict[str, Product]: ...
-    
-    @abstractmethod
-    def delete_product(self, product_id: str) -> None: ...
-    
-    @abstractmethod
-    def save_movement(self, movement: Movement) -> None: ...
-    
-    @abstractmethod
-    def load_movements(self) -> List[Movement]: ...
-```
-
-#### `ReportPort`
-```python
-class ReportPort(ABC):
-    @abstractmethod
-    def generate_inventory_report(self) -> str: ...
-    
-    @abstractmethod
-    def generate_movement_report(self) -> str: ...
-```
-
-### 3. Adapters (`src/adapters/`)
-
-**Verantwortung:** Konkrete Implementierungen der Ports
-
-#### `repository.py`
-
-**InMemoryRepository**
-- **Ziel:** Schnell, für Tests und Prototyping
-- **Speicher:** In RAM (Dict, List)
-- **Performance:** O(1) für Zugriff
-- **Persistenz:** Nein
-
-**RepositoryFactory**
-- **Pattern:** Factory Pattern
-- **Methode:** `create_repository(type: str) -> RepositoryPort`
-- **Typen:** "memory" (weitere später)
-
-#### `report.py`
-
-**ConsoleReportAdapter**
-- **Ziel:** Text-basierte Report-Generierung
-- **Ausgabe:** Formatierte Strings
-- **Verwendung:** Console, Logging, Dateiexport
-
-### 4. Services (`src/services/`)
-
-**Verantwortung:** Business-Use-Cases, Orchestrierung
-
-#### `WarehouseService`
-- **Dependency Injection:** Repository über Constructor
-- **Methoden:**
-  - `create_product(...)` - Neues Produkt
-  - `add_to_stock(product_id, quantity, reason, user)` - Bestand erhöhen
-  - `remove_from_stock(product_id, quantity, reason, user)` - Bestand verringern
-  - `get_product(product_id)` - Produkt abrufen
-  - `get_all_products()` - Alle Produkte
-  - `get_movements()` - Alle Bewegungen
-  - `get_total_inventory_value()` - Gesamtwert
-
-### 5. UI Layer (`src/ui/`)
-
-**Verantwortung:** Benutzeroberfläche (PyQt6)
-
-#### `WarehouseMainWindow`
-- **Framework:** PyQt6
-- **Layout:** Tab-basiert
-  - Tab 1: Produktverwaltung (Tabelle, Buttons)
-  - Tab 2: Lagerbewegungen (Protokoll)
-  - Tab 3: Berichte (Report-Generierung)
-
-#### `ProductDialogWindow`
-- **Typ:** Modal Dialog
-- **Felder:** ID, Name, Beschreibung, Preis, Menge, Kategorie
-
-### 6. Tests (`tests/`)
-
-#### Unit Tests (`tests/unit/`)
-```
-test_domain.py
-  - TestProduct
-    - test_product_creation
-    - test_product_validation_*
-    - test_update_quantity*
-    - test_get_total_value
-  
-  - TestWarehouseService
-    - test_create_product
-    - test_add_to_stock
-    - test_remove_from_stock*
-    - test_get_all_products
-    - test_get_total_inventory_value
-    - test_get_movements
-```
-
-#### Integration Tests (`tests/integration/`)
-```
-test_integration.py
-  - TestIntegration
-    - test_full_workflow
-    - test_report_generation
-```
-
-## Dependency Injection
-
-```python
-# Beispiel:
-repository = RepositoryFactory.create_repository("memory")
-service = WarehouseService(repository)
-ui = WarehouseMainWindow()
-```
-
-**Vorteile:**
-- Lose Kopplung
-- Einfaches Testen (Mock-Repositories)
-- Austauschbare Implementierungen
-
-## Datenflusss
-
-```
-UI-Ereignis
-    ↓
-Service-Methode (WarehouseService)
-    ↓
-Domain-Validierung (Product.update_quantity)
-    ↓
-Repository-Operation (save_product, save_movement)
-    ↓
-Speicherung (InMemory, später SQLite, JSON, etc.)
-    ↓
-Rückmeldung an UI
-```
-
-## Erweiterungen (Roadmap)
-
-### SQLite-Adapter
-```python
-class SQLiteRepository(RepositoryPort):
-    def __init__(self, db_path: str):
-        self.conn = sqlite3.connect(db_path)
-        self._create_tables()
-    
-    def save_product(self, product: Product) -> None:
-        # SQL-INSERT oder UPDATE
-        pass
-```
-
-### JSON-Adapter
-```python
-class JSONRepository(RepositoryPort):
-    def __init__(self, file_path: str):
-        self.file_path = file_path
-    
-    def save_product(self, product: Product) -> None:
-        # JSON-Serialisierung
-        pass
-```
-
-### Grafik-Reports
-```python
-class MatplotlibReportAdapter(ReportPort):
-    def generate_inventory_report(self) -> str:
-        # Matplotlib-Diagramme
-        pass
-```
-
-## Testing-Strategie
-
-### Unit Tests
-- Domäne isoliert testen
-- Mock-Repository verwenden
-- Fokus auf Geschäftslogik
-
-### Integration Tests
-- Komponenten zusammen testen
-- Real Service + Real Repository
-- Komplette Workflows
-
-### Datengenerierung
-Dummy-Daten für Tests:
-```python
-service.create_product("TEST-001", "Test Product", "Test", 100.0, initial_quantity=50)
-```
-
-## Performance-Überlegungen
-
-### Aktuell (In-Memory)
-- Alle Operationen: O(1) bis O(n)
-- Speicher: Begrenzt durch RAM
-- Ideal für: Prototyping, Tests
-
-### Zukünftig (Datenbank)
-- Indizes für häufige Abfragen
-- Pagginierung für große Datenmengen
-- Connection Pooling
-
-## Sicherheit (Roadmap)
-
-- Benutzer-Authentifizierung
-- Audit-Logging für Änderungen
-- Validierung aller Eingaben
-- SQL-Injection-Schutz (bei DBs)
-
-## Dokumentation
-
-- Schnittstellen: `docs/contracts.md`
-- Architektur: `docs/architecture.md`
-- Tests: `docs/tests.md`
-- Changelog: `docs/changelog_<name>.md`
 
 ---
 
-**Letzte Aktualisierung:** 2025-01-20
-**Version:** 0.1
+## Paketstruktur
+
+```
+src/bierapp/
+├── contracts.py              # Abstrakte Ports (ABC-Klassen)
+├── backend/
+│   └── services.py           # ProductService, WarehouseService, InventoryService
+├── db/
+│   ├── mongodb.py            # MongoDBAdapter (implementiert DatabasePort)
+│   └── init/
+│       └── setup.py          # Idempotentes DB-Setup-Script
+└── frontend/
+    └── flask/
+        └── gui.py            # Flask-App, Routen, Template-Rendering
+
+src/resources/
+├── pictures/                 # Statische Bilddateien
+└── templates/
+    ├── layout.html           # Bootstrap-5-Basis-Template
+    ├── index.html            # Dashboard
+    ├── produkte.html         # Produktverwaltung (CRUD)
+    ├── lager.html            # Lagerverwaltung (CRUD)
+    └── inventar.html         # Bestandsverwaltung
+
+tests/
+├── conftest.py               # Shared Fixtures (mock_db, Services, Flask-Client)
+├── unit/
+│   └── test_domain.py        # Unit-Tests für alle Services (26 Tests)
+└── integration/
+    ├── test_flask.py         # Flask-Routen via Test-Client (19 Tests)
+    ├── test_integration.py   # Service-Interaktionstests (5 Tests)
+    └── test_mongodb.py       # Live-Connectivity (überspringt ohne Docker)
+```
+
+---
+
+## Komponenten im Detail
+
+### 1. Contracts (`src/bierapp/contracts.py`)
+
+Definiert vier abstrakte Ports (ABCs):
+
+| Port | Zweck |
+|---|---|
+| `DatabasePort` | MongoDB-Operationen (CRUD + Suche) |
+| `ProductServicePort` | Produkt-Geschäftslogik |
+| `WarehouseServicePort` | Lager-Geschäftslogik |
+| `InventoryServicePort` | Bestandsverwaltungs-Logik |
+
+Alle anderen Schichten importieren nur diese Interfaces — nie konkrete Klassen.
+
+### 2. DB-Adapter (`src/bierapp/db/`)
+
+**`MongoDBAdapter`** implementiert `DatabasePort`:
+- Verbindungsaufbau über Umgebungsvariablen (`MONGO_HOST`, `MONGO_PORT`, `MONGO_USER`, `MONGO_PASS`, `MONGO_DB`)
+- Collections: `produkte`, `lager`, `inventar`
+- Spezialabfragen: `find_inventar_by_lager()`, `find_inventar_entry()`
+- Kontext-Manager-Support (`__enter__` / `__exit__`)
+- `_serialize()` konvertiert BSON `ObjectId` → `str`
+
+**`db/init/setup.py`** – idempotentes Setup-Script:
+- Erstellt Collections und Indizes beim ersten Start
+- `produkte`: Index auf `name`
+- `lager`: Unique Index auf `lagername`
+- `inventar`: Compound Unique Index auf `(lager_id, produkt_id)`
+- Ausführbar als `python -m bierapp.db.init.setup`
+
+### 3. Service-Layer (`src/bierapp/backend/services.py`)
+
+**`ProductService`** implementiert `ProductServicePort`:
+- `create_product(name, beschreibung, gewicht)` – Validiert: nicht-leerer Name, Gewicht ≥ 0
+- `get_product(id)` – per `find_by_id`
+- `list_products()` – per `find_all`
+- `update_product(id, felder)` – `KeyError` wenn nicht vorhanden
+- `delete_product(id)` – `KeyError` wenn nicht vorhanden
+
+**`WarehouseService`** implementiert `WarehouseServicePort`:
+- `create_warehouse(lagername, adresse, max_plaetze)` – Validiert: nicht-leer, max_plaetze > 0
+- `get_warehouse(id)` / `list_warehouses()` / `update_warehouse(id, felder)` / `delete_warehouse(id)`
+
+**`InventoryService`** implementiert `InventoryServicePort`:
+- `add_product(lager_id, produkt_id, menge)` – Bei vorhandenem Eintrag wird Menge addiert
+- `update_quantity(lager_id, produkt_id, menge)` – `ValueError` bei negativer Menge
+- `remove_product(lager_id, produkt_id)` – `KeyError` wenn kein Eintrag
+- `list_inventory(lager_id)` – Reichert jeden Eintrag mit Produktname + Beschreibung an
+
+### 4. Frontend (`src/bierapp/frontend/flask/gui.py`)
+
+Flask-Anwendung mit Lazy-Singleton-Pattern für DB und Services:
+
+```python
+_db: Optional[MongoDBAdapter] = None
+
+def get_db() -> MongoDBAdapter:      # erstellt Verbindung bei Bedarf
+def get_product_service() -> ProductService:
+def get_warehouse_service() -> WarehouseService:
+def get_inventory_service() -> InventoryService:
+```
+
+**Routen-Übersicht:**
+
+| Methode | Route | Beschreibung |
+|---|---|---|
+| GET | `/` | Dashboard (Statistik-Karten, Lagerliste) |
+| GET | `/produkte` | Produktliste |
+| POST | `/produkte/neu` | Produkt erstellen |
+| POST | `/produkte/<id>/bearbeiten` | Produkt aktualisieren |
+| POST | `/produkte/<id>/loeschen` | Produkt löschen |
+| GET | `/lager` | Lagerliste |
+| POST | `/lager/neu` | Lager erstellen |
+| POST | `/lager/<id>/bearbeiten` | Lager aktualisieren |
+| POST | `/lager/<id>/loeschen` | Lager löschen |
+| GET | `/inventar` | Redirect zum ersten Lager |
+| GET | `/inventar/<lager_id>` | Bestand eines Lagers |
+| POST | `/inventar/<lager_id>/hinzufuegen` | Produkt einbuchen |
+| POST | `/inventar/<lager_id>/<produkt_id>/aktualisieren` | Menge ändern |
+| POST | `/inventar/<lager_id>/<produkt_id>/entfernen` | Produkt ausbuchen |
+
+### 5. Templates (`src/resources/templates/`)
+
+Alle Templates erben von `layout.html` (Bootstrap 5.3, Bootstrap Icons 1.11, Amber/Dark Theme).
+
+| Template | Inhalt |
+|---|---|
+| `layout.html` | Navbar, Flash-Messages, Block-Struktur |
+| `index.html` | Stat-Karten (Produkte, Lager, Gesamtmenge), Lagertabelle |
+| `produkte.html` | Produkttabelle + Bootstrap-Modal (Erstellen / Bearbeiten / Löschen) |
+| `lager.html` | Lagertabelle + Bootstrap-Modal |
+| `inventar.html` | Sidebar (Lagerliste) + Bestandstabelle + Produkt-Hinzufügen-Modal |
+
+---
+
+## Datenfluss (Beispiel: Produkt erstellen)
+
+```
+1. Nutzer füllt Formular auf /produkte aus und klickt "Speichern"
+2. Browser sendet POST /produkte/neu
+3. gui.py: produkte_create() liest request.form
+4. get_product_service() gibt ProductService(get_db()) zurück
+5. ProductService.create_product() validiert Eingaben
+6. MongoDBAdapter.insert("produkte", doc) schreibt in MongoDB
+7. Redirect auf GET /produkte → Flash-Message "Erfolgreich"
+```
+
+---
+
+## Dependency Injection
+
+Services erhalten den DB-Adapter über den Konstruktor:
+
+```python
+# Produktion
+service = ProductService(MongoDBAdapter())
+
+# Test (Mocking)
+mock_db = MagicMock()
+service = ProductService(mock_db)
+```
+
+Dadurch sind alle Services ohne echte Datenbankverbindung vollständig testbar.
+
+---
+
+## Infrastruktur & Docker
+
+`docker-compose.yml` startet drei Services:
+
+| Service | Port | Beschreibung |
+|---|---|---|
+| `mongodb` | 27017 | MongoDB 7 mit Auth |
+| `mongo-express` | 8081 | Web-UI für MongoDB |
+| `app` | 5000 | Flask-Anwendung |
+
+Umgebungsvariablen (konfigurierbar über `.env` oder Docker Compose):
+
+| Variable | Standard |
+|---|---|
+| `MONGO_HOST` | `mongodb` |
+| `MONGO_PORT` | `27017` |
+| `MONGO_DB` | `bierapp` |
+| `MONGO_USER` | `admin` |
+| `MONGO_PASS` | `secret` |
+| `FLASK_HOST` | `0.0.0.0` |
+| `FLASK_PORT` | `5000` |
+| `FLASK_SECRET` | `bier-dev-secret` |
+
+---
+
+**Letzte Aktualisierung:** 2026-02-25
+**Version:** 1.0

@@ -27,7 +27,8 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["src.bierapp", "src.bierapp.backend", "src.bierapp.db", "src.bierapp.frontend", "src.bierapp.frontend.flask"]
+package-dir = {"" = "src"}
+packages = ["bierapp", "bierapp.backend", "bierapp.db", "bierapp.db.init", "bierapp.frontend", "bierapp.frontend.flask"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

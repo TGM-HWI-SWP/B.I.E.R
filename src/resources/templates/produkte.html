@@ -1,0 +1,142 @@
+{% extends "layout.html" %}
+
+{% block title %}Produkte – B.I.E.R{% endblock %}
+{% block page_title %}Produkte{% endblock %}
+{% block page_subtitle %}Gesamtkatalog aller registrierten Produkte{% endblock %}
+
+{% block content %}
+<!-- Toolbar -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <span class="text-muted">{{ produkte|length }} Produkt(e) gefunden</span>
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNeu">
+    <i class="bi bi-plus-lg me-1"></i>Neues Produkt
+  </button>
+</div>
+
+<!-- Table -->
+<div class="card section-card">
+  <div class="card-header"><i class="bi bi-box-seam me-2"></i>Produktliste</div>
+  <div class="card-body p-0">
+    {% if produkte %}
+    <table class="table table-hover mb-0 align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Name</th>
+          <th>Beschreibung</th>
+          <th>Gewicht&nbsp;(kg)</th>
+          <th class="text-end">Aktionen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in produkte %}
+        <tr>
+          <td class="fw-semibold">{{ p.name }}</td>
+          <td class="text-muted">{{ p.beschreibung }}</td>
+          <td>{{ p.gewicht }}</td>
+          <td class="text-end">
+            <!-- Edit button -->
+            <button class="btn btn-sm btn-outline-primary me-1"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalEdit-{{ p._id }}"
+                    title="Bearbeiten">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <!-- Delete button -->
+            <button class="btn btn-sm btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#modalDel-{{ p._id }}"
+                    title="Löschen">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+
+        <!-- Edit Modal -->
+        <div class="modal fade" id="modalEdit-{{ p._id }}" tabindex="-1">
+          <div class="modal-dialog">
+            <form method="POST" action="/produkte/{{ p._id }}/bearbeiten" class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Produkt bearbeiten</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Name</label>
+                  <input type="text" name="name" class="form-control" value="{{ p.name }}" required>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Beschreibung</label>
+                  <textarea name="beschreibung" class="form-control" rows="2">{{ p.beschreibung }}</textarea>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Gewicht (kg)</label>
+                  <input type="number" name="gewicht" class="form-control" value="{{ p.gewicht }}" step="0.01" min="0">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Delete Modal -->
+        <div class="modal fade" id="modalDel-{{ p._id }}" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Produkt löschen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                Produkt <strong>{{ p.name }}</strong> wirklich unwiderruflich löschen?
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+                <form method="POST" action="/produkte/{{ p._id }}/loeschen">
+                  <button type="submit" class="btn btn-danger">Löschen</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="p-4 text-muted text-center">Noch keine Produkte vorhanden.</div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- New Product Modal -->
+<div class="modal fade" id="modalNeu" tabindex="-1">
+  <div class="modal-dialog">
+    <form method="POST" action="/produkte/neu" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Neues Produkt anlegen</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="form-control" placeholder="Produktname" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Beschreibung</label>
+          <textarea name="beschreibung" class="form-control" rows="2" placeholder="Kurzbeschreibung …"></textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Gewicht (kg)</label>
+          <input type="number" name="gewicht" class="form-control" value="0" step="0.01" min="0">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Abbrechen</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Anlegen</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,207 +1,137 @@
-# Retrospektive
+# Retrospektive – B.I.E.R
 
 ## Projektübersicht
 
-**Projekttitel:** Lagerverwaltungssystem  
-**Projektdauer:** 8 Wochen  
-**Gruppengröße:** 4 Personen  
-**Projektverantwortung:** [Name Rolle 1]
+**Projekttitel:** B.I.E.R – Büro-Inventar- und Einkaufs-Register  
+**Zeitraum:** Februar 2026  
+**Schule:** TGM Wien – Die Schule der Technik (SWP 4BHWII)  
+**Gruppenmitglieder:** Paul Hinterbauer, Mateja Gvozdenac, Dragoljub Mitrovic, Emir Keser
 
 ---
 
 ## Versionsmilestones
 
-### v0.1 - Projektstart & Grundarchitektur
-**Abschluss:** [Datum]
+### v0.1 – Projektstart & Grundarchitektur
+**Abschluss:** 2026-02-20
 
 #### Was lief gut?
-- [ ] Klare Rollenverteilung
-- [ ] Erste Architektur aufgebaut
-- [ ] Team-Kommunikation etabliert
-- [ ] [Weiteres...]
+- Hexagonale Architektur von Beginn an klar definiert
+- `contracts.py` als Single Source of Truth für alle Schnittstellen etabliert
+- Docker Compose Stack auf Anhieb funktionsfähig
+- Git-Workflow und Branching-Strategie früh festgelegt
 
 #### Was konnte verbessert werden?
-- [ ] [Punkt 1]
-- [ ] [Punkt 2]
-- [ ] [Punkt 3]
+- `pyproject.toml` hatte falschen Package-Pfad (`src.bierapp` statt `bierapp`) → fiel erst bei Tests auf
+- Anfangs keine klare Aufgabenteilung für Templates
 
 #### Learnings
-- [Gelernte Lessons]
+- Architektur-Entscheidungen (Ports & Adapters) zahlen sich spät aus – Testen wird deutlich einfacher
+- `package-dir` in `pyproject.toml` korrekt setzen, bevor Code geschrieben wird
 
 ---
 
-### v0.2 - Walking Skeleton
-**Abschluss:** [Datum]
+### v0.2 – MongoDB-Adapter & DB-Initialisierung
+**Abschluss:** 2026-02-21
 
 #### Was lief gut?
-- [ ] Schnittstellen dokumentiert
-- [ ] Basis-Tests geschrieben
-- [ ] Git-Workflow etabliert
-- [ ] [Weiteres...]
+- `MongoDBAdapter` sauber als `DatabasePort`-Implementierung strukturiert
+- Idempotentes Setup-Script (`db/init/setup.py`) funktioniert zuverlässig
+- Unique Indexes auf Collections frühzeitig gesetzt
 
 #### Was konnte verbessert werden?
-- [ ] [Punkt 1]
-- [ ] [Punkt 2]
+- Kein Retry-Mechanismus bei fehlender Datenbankverbindung
+- `import os` anstatt `from os import environ` – Style-Guide-Konflikt erst später bemerkt
 
 #### Learnings
-- [Gelernte Lessons]
+- Umgebungsvariablen konsequent über `from os import environ` beziehen
+- BSON `ObjectId` muss immer zu `str` serialisiert werden bevor JSON-Ausgabe
 
 ---
 
-### v0.3 - Kernlogik & GUI
-**Abschluss:** [Datum]
+### v0.3 – Flask-GUI & Business-Logik
+**Abschluss:** 2026-02-22
 
 #### Was lief gut?
-- [ ] Businesslogik stabil
-- [ ] GUI-Skeleton funktioniert
-- [ ] Services-Layer gut strukturiert
-- [ ] [Weiteres...]
+- Bootstrap 5 + Bootstrap Icons ermöglichten schnelles, ansprechendes UI
+- Lazy-Singleton-Pattern für DB und Services hält `gui.py` übersichtlich
+- Alle CRUD-Workflows in einem Sprint implementiert
+- Flash-Messages geben dem Nutzer direktes Feedback
 
 #### Was konnte verbessert werden?
-- [ ] [Punkt 1]
-- [ ] [Punkt 2]
+- Inline-Import innerhalb einer Route-Funktion → Style-Guide-Verstoß, später korrigiert
+- Kein CSRF-Schutz in POST-Formularen
 
 #### Learnings
-- [Gelernte Lessons]
+- Flash-Messages + Redirect-After-Post-Pattern konsequent verwenden
+- Templates von Beginn an mit einer `layout.html`-Basis aufbauen
 
 ---
 
-### v0.4 - Reports
-**Abschluss:** [Datum]
+### v1.0 – Tests, Style & Dokumentation
+**Abschluss:** 2026-02-25
 
 #### Was lief gut?
-- [ ] Report A implementiert
-- [ ] Report B implementiert
-- [ ] Tests geschrieben
-- [ ] [Weiteres...]
+- 49 Tests in unter 2 Sekunden, vollständig ohne Datenbankverbindung
+- `MagicMock` für `MongoDBAdapter` deckt alle Use-Cases ab
+- `monkeypatch` für Flask-Test-Client funktioniert elegant ohne Umstrukturierung
+- Style-Guide konsequent auf alle Python-Dateien angewendet
 
 #### Was konnte verbessert werden?
-- [ ] [Punkt 1]
-- [ ] [Punkt 2]
+- Tests hätten früher geschrieben werden sollen (Test-First hätte Bugs verhindert)
+- `test_mongodb.py` hätte von Anfang an das `skipif`-Pattern verwenden sollen
 
 #### Learnings
-- [Gelernte Lessons]
-
----
-
-### v0.5 - Tests & Stabilisierung
-**Abschluss:** [Datum]
-
-#### Was lief gut?
-- [ ] Test-Coverage erhöht
-- [ ] Bugs gefunden und gefixt
-- [ ] Code optimiert
-- [ ] [Weiteres...]
-
-#### Was konnte verbessert werden?
-- [ ] [Punkt 1]
-- [ ] [Punkt 2]
-
-#### Learnings
-- [Gelernte Lessons]
-
----
-
-### v1.0 - Finale & Präsentation
-**Abschluss:** [Datum]
-
-#### Was lief gut?
-- [ ] Alle Features fertig
-- [ ] Dokumentation vollständig
-- [ ] Präsentation gut gelaufen
-- [ ] [Weiteres...]
-
-#### Was konnte verbessert werden?
-- [ ] [Punkt 1]
-- [ ] [Punkt 2]
-
-#### Learnings
-- [Gelernte Lessons]
+- Fixture-Design in `conftest.py` ist der Schlüssel zu wartbaren Tests
+- `replace_string_in_file` bei Unicode-Zeichen in `oldString` sorgfältig prüfen
 
 ---
 
 ## Überblick: Stärken & Schwächen
 
 ### Team-Stärken
-- [ ] Kommunikation
-- [ ] Code-Qualität
-- [ ] Zusammenarbeit
-- [ ] Problem-Solving
-- [ ] Dokumentation
+- Klare Architektur-Entscheidung am Anfang, konsequent durchgezogen
+- Hexagonale Architektur ermöglichte paralleles Entwickeln (DB / Services / GUI)
+- Code-Qualität durch Style-Guide und Docstrings einheitlich hoch
 
 ### Verbesserungspotenzial
-- [ ] [Bereich 1]
-- [ ] [Bereich 2]
-- [ ] [Bereich 3]
-
-### Einzelne Learnings pro Rolle
-
-#### Rolle 1 (Contract Owner)
-- Gelernt: [...]
-- Verbessern: [...]
-
-#### Rolle 2 (Businesslogik & Report A)
-- Gelernt: [...]
-- Verbessern: [...]
-
-#### Rolle 3 (Report B & Tests)
-- Gelernt: [...]
-- Verbessern: [...]
-
-#### Rolle 4 (GUI & Interaktion)
-- Gelernt: [...]
-- Verbessern: [...]
+- Tests früher im Entwicklungszyklus schreiben (TDD)
+- CSRF-Schutz und Authentifizierung einplanen
+- CI/CD-Pipeline für automatisches Testen bei jedem Push
 
 ---
 
 ## Technische Erkenntnisse
 
 ### Was funktioniert gut?
-- Port-Adapter-Architektur: [Feedback]
-- Testing-Ansatz: [Feedback]
-- Git-Workflow: [Feedback]
-- [Weiteres...]
+- **Port-Adapter-Architektur:** Services ohne DB testbar. `MagicMock` reicht für 49 Tests.
+- **Docker Compose:** Ein Befehl startet gesamten Stack (MongoDB + Mongo Express + Flask)
+- **Bootstrap 5 CDN:** Kein Build-Tool nötig, trotzdem professionelles UI
 
 ### Technische Schulden
-- [ ] [Punkt 1]
-- [ ] [Punkt 2]
-- [ ] [Punkt 3]
+- Keine Pagination für große Collections
+- Kein Authentifizierungs-Layer
+- Kein CSRF-Schutz auf POST-Routen
+- Keine Benutzerrollen
 
 ### Empfehlungen für Folge-Projekte
-1. [Empfehlung 1]
-2. [Empfehlung 2]
-3. [Empfehlung 3]
-
----
-
-## Mergekonflikte & Lösungen
-
-| Datei | Konflikt-Typ | Lösung | Gelerntes |
-|-------|-------------|--------|----------|
-| [Datei] | [Typ] | [Lösung] | [Lesson] |
-| | | | |
+1. `pyproject.toml` mit `package-dir` korrekt konfigurieren, bevor der erste Import geschrieben wird
+2. `conftest.py` gleich am Projektbeginn mit Mock-Fixtures anlegen
+3. Style-Guide von Anfang an als Linter-Regel einbinden (`flake8` / `pylint` in pre-commit)
 
 ---
 
 ## Abschließende Bewertung
 
-### Projektqualität (1-10)
-- Code-Qualität: [ ]
-- Dokumentation: [ ]
-- Tests: [ ]
-- Zusammenarbeit: [ ]
-- **Durchschnitt:** [ ]
-
-### Was würde ich anders machen?
-1. [Punkt 1]
-2. [Punkt 2]
-3. [Punkt 3]
-
-### Feedback an die Lehrperson
-- [Feedback 1]
-- [Feedback 2]
+| Kriterium | Bewertung (1–10) |
+|---|---|
+| Code-Qualität | 8 |
+| Dokumentation | 9 |
+| Tests | 8 |
+| Architektur | 9 |
+| **Durchschnitt** | **8.5** |
 
 ---
 
-**Retrospektive erstellt:** [Datum]  
-**Geschrieben von:** [Name + Rolle]
+**Retrospektive erstellt:** 2026-02-25  
+**Geschrieben von:** Paul Hinterbauer
+
