@@ -10,7 +10,7 @@ A warehouse management web application built with Python, Flask, MongoDB, and Do
 
 ## About
 
-This project was developed as part of the Software Project (SWP) course at TGM - Die Schule der Technik, Vienna, Austria (2026).
+This project was developed as part of the Software Development and Project Management (SWP) course at TGM - Die Schule der Technik, Vienna, Austria (2026).
 
 **Project Team:**
 
