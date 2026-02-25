@@ -6,7 +6,7 @@ In general, we try to follow the [PEP8 Style Guide](https://peps.python.org/pep-
 
 ## Doc-Strings
 
-All doc strings are written in **Sphinx Style**.
+All doc strings are written in a slightly modified **Google Style**.
 
 ### Explanation
 
@@ -17,10 +17,12 @@ Write a short explanation of the function itself.
 Display all defined arguments used in the function, as well as the use case of the argument.
 
 **How to display:**
+
 1. Name with datatype in round brackets
 2. Explanation of the argument
 
 **Example:**
+
 ```
 message_id (int): The ID of the message to be translated.
 ```
@@ -30,10 +32,12 @@ message_id (int): The ID of the message to be translated.
 Display the return/returns of the function. Firstly, write the datatype, then a short explanation.
 
 **How to display:**
+
 1. Datatype
 2. Explanation of the return
 
 **Example:**
+
 ```
 str: The translated message
 ```
@@ -61,11 +65,11 @@ Write them after skipping a line under all the core libraries, also using `from`
 
 ## Variable Naming
 
-| Type | Convention | Example |
-|------|-----------|---------|
+| Type     | Convention     | Example         |
+| -------- | -------------- | --------------- |
 | Variable | `snake_case` | `hello_world` |
-| Class | `CapWords` | `MyClass` |
-| Constant | `ALL_CAPS` | `MYCONSTANT` |
+| Class    | `CapWords`   | `MyClass`     |
+| Constant | `ALL_CAPS`   | `MYCONSTANT`  |
 
 ---
 

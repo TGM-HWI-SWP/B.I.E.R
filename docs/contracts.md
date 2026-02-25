@@ -2,228 +2,369 @@
 
 ## Übersicht
 
-Diese Datei dokumentiert alle externen Schnittstellen des Projekts. Sie wird von Rolle 1 (Contract Owner) gepflegt und aktualisiert bei jeder Änderung.
+Diese Datei dokumentiert alle abstrakten Ports des Projekts (`src/bierapp/contracts.py`).
+Sie wird von Rolle 1 (Contract Owner) gepflegt und bei jeder Änderung aktualisiert.
 
 ---
 
-## 1. RepositoryPort
+## 1. DatabasePort
 
-**Verantwortlich:** Rolle 2 (Businesslogik)
+**Klasse:** `DatabasePort(ABC)`  
+**Schicht:** MongoDB-Adapter-Schicht
 
 ### Beschreibung
-Abstrakte Schnittstelle für Datenpersistenz. Ermöglicht den Austausch zwischen verschiedenen Speicheradaptern (In-Memory, SQLite, JSON, etc.)
+Abstrakte Schnittstelle für alle direkten MongoDB-Operationen. Jeder konkrete Datenbankadapter muss diese Methoden implementieren.
 
 ### Methoden
 
-#### `save_product(product: Product) -> None`
-Speichert ein Produkt.
-
-**Parameter:**
-- `product`: Product-Instanz
+#### `connect() -> None`
+Baut die Verbindung zur MongoDB-Instanz auf.
 
 **Exceptions:**
-- Keine
-
-**Implementierungen:**
-- `InMemoryRepository` (v0.1)
-
-#### `load_product(product_id: str) -> Optional[Product]`
-Lädt ein einzelnes Produkt.
-
-**Parameter:**
-- `product_id`: Eindeutige Produkt-ID
-
-**Return:**
-- `Product` oder `None` falls nicht gefunden
-
-**Implementierungen:**
-- `InMemoryRepository` (v0.1)
-
-#### `load_all_products() -> Dict[str, Product]`
-Lädt alle Produkte.
-
-**Return:**
-- Dictionary mit Product-IDs als Keys
-
-**Implementierungen:**
-- `InMemoryRepository` (v0.1)
-
-#### `delete_product(product_id: str) -> None`
-Löscht ein Produkt.
-
-**Parameter:**
-- `product_id`: Eindeutige Produkt-ID
-
-**Exceptions:**
-- Keine (ignoriert unbekannte IDs)
-
-**Implementierungen:**
-- `InMemoryRepository` (v0.1)
-
-#### `save_movement(movement: Movement) -> None`
-Speichert eine Lagerbewegung.
-
-**Parameter:**
-- `movement`: Movement-Instanz
-
-**Implementierungen:**
-- `InMemoryRepository` (v0.1)
-
-#### `load_movements() -> List[Movement]`
-Lädt alle Lagerbewegungen.
-
-**Return:**
-- Liste von Movement-Objekten
-
-**Implementierungen:**
-- `InMemoryRepository` (v0.1)
+- `ConnectionError`: Wenn die Verbindung nicht hergestellt werden kann.
 
 ---
 
-## 2. ReportPort
+#### `insert(collection: str, data: Dict) -> str`
+Fügt ein Dokument in eine Collection ein.
 
-**Verantwortlich:** Rolle 3 (Reports & Qualität)
+**Parameter:**
+- `collection (str)`: Name der Ziel-Collection.
+- `data (Dict)`: Das einzufügende Dokument.
+
+**Return:**
+- `str`: ID des eingefügten Dokuments.
+
+---
+
+#### `find_by_id(collection: str, document_id: str) -> Optional[Dict]`
+Ruft ein einzelnes Dokument anhand seiner ID ab.
+
+**Parameter:**
+- `collection (str)`: Name der Collection.
+- `document_id (str)`: Eindeutiger Dokumentbezeichner.
+
+**Return:**
+- `Optional[Dict]`: Dokument wenn gefunden, sonst `None`.
+
+---
+
+#### `find_all(collection: str) -> List[Dict]`
+Ruft alle Dokumente einer Collection ab.
+
+**Parameter:**
+- `collection (str)`: Name der Collection.
+
+**Return:**
+- `List[Dict]`: Liste aller Dokumente.
+
+---
+
+#### `update(collection: str, document_id: str, data: Dict) -> bool`
+Aktualisiert ein Dokument in einer Collection.
+
+**Parameter:**
+- `collection (str)`: Name der Collection.
+- `document_id (str)`: Dokumentbezeichner.
+- `data (Dict)`: Zu aktualisierende Felder.
+
+**Return:**
+- `bool`: `True` wenn das Update erfolgreich war.
+
+---
+
+#### `delete(collection: str, document_id: str) -> bool`
+Löscht ein Dokument aus einer Collection.
+
+**Parameter:**
+- `collection (str)`: Name der Collection.
+- `document_id (str)`: Dokumentbezeichner.
+
+**Return:**
+- `bool`: `True` wenn das Löschen erfolgreich war.
+
+---
+
+## 2. ProductServicePort
+
+**Klasse:** `ProductServicePort(ABC)`  
+**Schicht:** Service-Schicht (Businesslogik)
 
 ### Beschreibung
-Abstrakte Schnittstelle für Report-Generierung.
+Abstrakte Schnittstelle für produktbezogene Geschäftslogik.
 
 ### Methoden
 
-#### `generate_inventory_report() -> str`
-Generiert einen Lagerbestandsbericht.
+#### `create_product(name: str, beschreibung: str, gewicht: float) -> Dict`
+Erstellt ein neues Produkt und persistiert es.
+
+**Parameter:**
+- `name (str)`: Lesbarer Produktname.
+- `beschreibung (str)`: Kurzbeschreibung des Produkts.
+- `gewicht (float)`: Gewicht des Produkts in Kilogramm.
 
 **Return:**
-- Formatierter String-Bericht
+- `Dict`: Repräsentation des neu erstellten Produkts.
 
-**Implementierungen:**
-- `ConsoleReportAdapter` (v0.1)
-
-#### `generate_movement_report() -> str`
-Generiert ein Bewegungsprotokoll.
-
-**Return:**
-- Formatierter String-Bericht
-
-**Implementierungen:**
-- `ConsoleReportAdapter` (v0.1)
+**Exceptions:**
+- `ValueError`: Wenn ein Argument die Domänenvalidierung nicht besteht.
 
 ---
 
-## 3. WarehouseService
+#### `get_product(produkt_id: str) -> Optional[Dict]`
+Ruft ein einzelnes Produkt anhand seiner ID ab.
 
-**Verantwortlich:** Rolle 2 (Businesslogik)
+**Parameter:**
+- `produkt_id (str)`: Eindeutiger Produktbezeichner.
+
+**Return:**
+- `Optional[Dict]`: Produktdaten wenn gefunden, sonst `None`.
+
+---
+
+#### `list_products() -> List[Dict]`
+Gibt alle bekannten Produkte zurück.
+
+**Return:**
+- `List[Dict]`: Liste aller Produktrepräsentationen.
+
+---
+
+#### `update_product(produkt_id: str, data: Dict) -> Dict`
+Aktualisiert Felder eines bestehenden Produkts.
+
+**Parameter:**
+- `produkt_id (str)`: Eindeutiger Produktbezeichner.
+- `data (Dict)`: Dictionary der zu aktualisierenden Felder.
+
+**Return:**
+- `Dict`: Aktualisierte Produktrepräsentation.
+
+**Exceptions:**
+- `KeyError`: Wenn kein Produkt mit der angegebenen ID existiert.
+- `ValueError`: Wenn ein aktualisiertes Feld die Domänenvalidierung nicht besteht.
+
+---
+
+#### `delete_product(produkt_id: str) -> None`
+Löscht ein Produkt dauerhaft.
+
+**Parameter:**
+- `produkt_id (str)`: Eindeutiger Produktbezeichner.
+
+**Exceptions:**
+- `KeyError`: Wenn kein Produkt mit der angegebenen ID existiert.
+
+---
+
+## 3. WarehouseServicePort
+
+**Klasse:** `WarehouseServicePort(ABC)`  
+**Schicht:** Service-Schicht (Businesslogik)
 
 ### Beschreibung
-Service-Klasse für zentrale Lagerverwaltungslogik.
+Abstrakte Schnittstelle für lagerbezogene Geschäftslogik.
 
 ### Methoden
 
-#### `create_product(...) -> Product`
-Erstellt ein neues Produkt.
+#### `create_warehouse(lagername: str, adresse: str, max_plaetze: int) -> Dict`
+Erstellt ein neues Lager und persistiert es.
 
 **Parameter:**
-- `product_id: str` - Eindeutige ID
-- `name: str` - Produktname
-- `description: str` - Beschreibung
-- `price: float` - Preis
-- `category: str` - Kategorie (optional)
-- `initial_quantity: int` - Anfangsbestand
+- `lagername (str)`: Lesbarer Lagername.
+- `adresse (str)`: Physische Adresse des Lagers.
+- `max_plaetze (int)`: Maximale Anzahl an Lagerplätzen.
 
 **Return:**
-- Neue Product-Instanz
+- `Dict`: Repräsentation des neu erstellten Lagers.
 
 **Exceptions:**
-- `ValueError`: Bei ungültigen Eingaben
-
-#### `add_to_stock(product_id: str, quantity: int, reason: str, user: str) -> None`
-Erhöht den Bestand.
-
-**Parameter:**
-- `product_id: str`
-- `quantity: int` - Menge
-- `reason: str` - Grund (optional)
-- `user: str` - Benutzer (default: "system")
-
-**Exceptions:**
-- `ValueError`: Wenn Produkt nicht existiert
-
-#### `remove_from_stock(product_id: str, quantity: int, reason: str, user: str) -> None`
-Verringert den Bestand.
-
-**Parameter:**
-- `product_id: str`
-- `quantity: int` - Menge
-- `reason: str` - Grund (optional)
-- `user: str` - Benutzer (default: "system")
-
-**Exceptions:**
-- `ValueError`: Wenn Bestand unzureichend oder Produkt nicht existiert
-
-#### `get_product(product_id: str) -> Optional[Product]`
-Ruft ein einzelnes Produkt ab.
-
-**Return:**
-- Product oder None
-
-#### `get_all_products() -> Dict[str, Product]`
-Ruft alle Produkte ab.
-
-**Return:**
-- Dictionary mit allen Produkten
-
-#### `get_movements() -> List[Movement]`
-Ruft alle Lagerbewegungen ab.
-
-**Return:**
-- Liste aller Movements
-
-#### `get_total_inventory_value() -> float`
-Berechnet den Gesamtwert des Lagers.
-
-**Return:**
-- Wert in Euro
+- `ValueError`: Wenn `max_plaetze` keine positive ganze Zahl ist.
 
 ---
 
-## 4. Domain Models
+#### `get_warehouse(lager_id: str) -> Optional[Dict]`
+Ruft ein einzelnes Lager anhand seiner ID ab.
 
-### Product
+**Parameter:**
+- `lager_id (str)`: Eindeutiger Lagerbezeichner.
 
-**Attribute:**
-- `id: str` - Eindeutige ID
-- `name: str` - Produktname
-- `description: str` - Beschreibung
-- `price: float` - Preis pro Einheit
-- `quantity: int` - Bestand
-- `sku: str` - Stock Keeping Unit
-- `category: str` - Kategorie
-- `created_at: datetime` - Erstellungsdatum
-- `updated_at: datetime` - Änderungsdatum
-- `notes: str` - Anmerkungen
+**Return:**
+- `Optional[Dict]`: Lagerdaten wenn gefunden, sonst `None`.
 
-**Methoden:**
-- `update_quantity(amount: int) -> None` - Bestand ändern
-- `get_total_value() -> float` - Gesamtwert berechnen
+---
 
-### Movement
+#### `list_warehouses() -> List[Dict]`
+Gibt alle bekannten Lager zurück.
 
-**Attribute:**
-- `id: str` - Eindeutige Bewegungs-ID
-- `product_id: str` - Verweis auf Produkt
-- `product_name: str` - Name des Produkts
-- `quantity_change: int` - Mengenänderung (+/-)
-- `movement_type: str` - "IN", "OUT", "CORRECTION"
-- `reason: str` - Grund (optional)
-- `timestamp: datetime` - Zeitstempel
-- `performed_by: str` - Benutzer
+**Return:**
+- `List[Dict]`: Liste aller Lagerrepräsentationen.
+
+---
+
+#### `update_warehouse(lager_id: str, data: Dict) -> Dict`
+Aktualisiert Felder eines bestehenden Lagers.
+
+**Parameter:**
+- `lager_id (str)`: Eindeutiger Lagerbezeichner.
+- `data (Dict)`: Dictionary der zu aktualisierenden Felder.
+
+**Return:**
+- `Dict`: Aktualisierte Lagerrepräsentation.
+
+**Exceptions:**
+- `KeyError`: Wenn kein Lager mit der angegebenen ID existiert.
+- `ValueError`: Wenn ein aktualisiertes Feld die Domänenvalidierung nicht besteht.
+
+---
+
+#### `delete_warehouse(lager_id: str) -> None`
+Löscht ein Lager dauerhaft.
+
+**Parameter:**
+- `lager_id (str)`: Eindeutiger Lagerbezeichner.
+
+**Exceptions:**
+- `KeyError`: Wenn kein Lager mit der angegebenen ID existiert.
+
+---
+
+## 4. InventoryServicePort
+
+**Klasse:** `InventoryServicePort(ABC)`  
+**Schicht:** Service-Schicht (Businesslogik)
+
+### Beschreibung
+Abstrakte Schnittstelle für die Verwaltung des Lagerbestands (welches Produkt liegt in welchem Lager mit welcher Menge).
+
+### Methoden
+
+#### `add_product(lager_id: str, produkt_id: str, menge: int) -> None`
+Fügt einen Produkteintrag zum Lagerbestand hinzu.
+
+**Parameter:**
+- `lager_id (str)`: Eindeutiger Lagerbezeichner.
+- `produkt_id (str)`: Eindeutiger Produktbezeichner.
+- `menge (int)`: Anfängliche einzulagernde Menge.
+
+**Exceptions:**
+- `KeyError`: Wenn das Lager oder Produkt nicht existiert.
+- `ValueError`: Wenn `menge` keine positive ganze Zahl ist.
+
+---
+
+#### `update_quantity(lager_id: str, produkt_id: str, menge: int) -> None`
+Aktualisiert die gelagerte Menge eines Produkts in einem Lager.
+
+**Parameter:**
+- `lager_id (str)`: Eindeutiger Lagerbezeichner.
+- `produkt_id (str)`: Eindeutiger Produktbezeichner.
+- `menge (int)`: Neuer absoluter Mengenwert.
+
+**Exceptions:**
+- `KeyError`: Wenn das Lager oder der Produkteintrag nicht existiert.
+- `ValueError`: Wenn `menge` negativ ist.
+
+---
+
+#### `remove_product(lager_id: str, produkt_id: str) -> None`
+Entfernt einen Produkteintrag aus dem Lagerbestand.
+
+**Parameter:**
+- `lager_id (str)`: Eindeutiger Lagerbezeichner.
+- `produkt_id (str)`: Eindeutiger Produktbezeichner.
+
+**Exceptions:**
+- `KeyError`: Wenn das Lager oder der Produkteintrag nicht existiert.
+
+---
+
+#### `list_inventory(lager_id: str) -> List[Dict]`
+Listet alle im Lager eingelagerten Produkteinträge auf.
+
+**Parameter:**
+- `lager_id (str)`: Eindeutiger Lagerbezeichner.
+
+**Return:**
+- `List[Dict]`: Liste der Bestandseinträge, jeweils mit `produkt_id` und `menge`.
+
+**Exceptions:**
+- `KeyError`: Wenn kein Lager mit der angegebenen ID existiert.
+
+---
+
+## 5. ReportPort
+
+**Klasse:** `ReportPort(ABC)`  
+**Schicht:** Report-Schicht
+
+### Beschreibung
+Abstrakte Schnittstelle für die Report-Generierung.
+
+### Methoden
+
+#### `inventory_report(lager_id: str) -> List[Dict]`
+Generiert einen Bestandsbericht für ein bestimmtes Lager.
+
+**Parameter:**
+- `lager_id (str)`: Eindeutiger Lagerbezeichner.
+
+**Return:**
+- `List[Dict]`: Geordnete Liste der Bestandseinträge inklusive Produktdetails und aktuellem Bestand.
+
+**Exceptions:**
+- `KeyError`: Wenn kein Lager mit der angegebenen ID existiert.
+
+---
+
+#### `statistics_report() -> Dict`
+Generiert globale Statistiken über alle Lager und Produkte hinweg.
+
+**Return:**
+- `Dict`: Aggregierte Statistiken wie Gesamtprodukte, Gesamtlager, Gesamtlagereinheiten und Gesamtkapazitätsauslastung.
+
+---
+
+## 6. HttpResponsePort
+
+**Klasse:** `HttpResponsePort(ABC)`  
+**Schicht:** Flask-Adapter (Frontend-Grenze)
+
+### Beschreibung
+Abstrakte Schnittstelle für die HTTP-Antwortverarbeitung im Flask-Adapter.
+
+### Methoden
+
+#### `success(data: Dict, status: int = 200) -> tuple[Dict, int]`
+Erstellt eine erfolgreiche HTTP-JSON-Antwort.
+
+**Parameter:**
+- `data (Dict)`: Nutzdaten, die unter dem `data`-Schlüssel eingefügt werden.
+- `status (int)`: HTTP-Statuscode. Standard: `200`.
+
+**Return:**
+- `tuple[Dict, int]`: Tupel aus JSON-serialisierbarem Antwortkörper und HTTP-Statuscode.
+
+---
+
+#### `error(message: str, status: int = 400) -> tuple[Dict, int]`
+Erstellt eine Fehler-HTTP-JSON-Antwort.
+
+**Parameter:**
+- `message (str)`: Menschenlesbare Fehlerbeschreibung.
+- `status (int)`: HTTP-Statuscode. Standard: `400`.
+
+**Return:**
+- `tuple[Dict, int]`: Tupel aus JSON-serialisierbarem Antwortkörper mit Fehlermeldung und HTTP-Statuscode.
 
 ---
 
 ## Versionshistorie der Contracts
 
-### v0.1 (2025-01-20)
-- RepositoryPort: Grundlegende CRUD-Operationen
-- ReportPort: Basis-Report-Generierung
-- WarehouseService: Kern-Use-Cases
-- Product: Basis-Domain-Model
-- Movement: Lagerbewegungen-Protokoll
+### v0.1.1 (2026-02-25)
+- `DatabasePort`: MongoDB CRUD-Operationen (connect, insert, find_by_id, find_all, update, delete)
+- `ProductServicePort`: Produkt-Businesslogik (create, get, list, update, delete)
+- `WarehouseServicePort`: Lager-Businesslogik (create, get, list, update, delete)
+- `InventoryServicePort`: Bestandsverwaltung (add, update_quantity, remove, list)
+- `ReportPort`: Report-Generierung (inventory_report, statistics_report)
+- `HttpResponsePort`: Flask HTTP-Adapter (success, error)
