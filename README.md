@@ -14,37 +14,48 @@ Vollständige Projektvorlage für ein professionelles Softwareentwicklungs- und 
 ## Projektstruktur
 
 ```
-projekt/
-├── src/                          # Quellcode
-│   ├── domain/                   # Domain-Modelle
-│   │   ├── product.py            # Produktklasse
-│   │   └── warehouse.py          # Lagerverwaltung
-│   ├── ports/                    # Schnittstellen (Abstraktion)
-│   │   └── __init__.py          # Repository- und Report-Ports
-│   ├── adapters/                 # Adapter (konkrete Implementierungen)
-│   │   ├── repository.py         # In-Memory und persistente Adapter
-│   │   └── report.py             # Report-Adapter
-│   ├── services/                 # Business Logic
-│   │   └── __init__.py          # WarehouseService
-│   ├── ui/                       # Benutzeroberfläche (PyQt6)
-│   │   └── __init__.py          # GUI-Hauptfenster
-│   └── reports/                  # Report-Generierung
-├── tests/                        # Tests
-│   ├── unit/                     # Unit Tests
-│   │   └── test_domain.py       # Tests für Domain-Modelle
-│   ├── integration/              # Integration Tests
-│   │   └── test_integration.py  # Integrationstest
-│   └── conftest.py              # Pytest-Konfiguration
-├── docs/                         # Dokumentation
-│   ├── contracts.md              # Schnittstellen-Dokumentation
-│   ├── architecture.md           # Architektur-Dokumentation
-│   ├── tests.md                  # Test-Dokumentation
-│   ├── retrospective.md          # Retrospektive
-│   └── changelog_<name>.md      # Persönliche Changelog pro Mitglied
-├── data/                         # Datenspeicherung
-├── pyproject.toml                # Python-Projektdefinition & Dependencies
-└── README.md                     # Projekt-Dokumentation
-
+B.I.E.R/
+├── src/                              # Quellcode
+│   ├── bierapp/                      # Haupt-Package der Anwendung
+│   │   ├── __init__.py
+│   │   ├── backend/                  # Backend-Logik
+│   │   │   └── __init__.py
+│   │   ├── db/                       # Datenbankanbindung (MongoDB)
+│   │   │   └── __init__.py
+│   │   └── frontend/                 # Frontend-Layer
+│   │       ├── __init__.py
+│   │       └── flask/                # Flask Web-UI
+│   │           ├── __init__.py
+│   │           └── gui.py            # Flask-Routen & GUI-Logik
+│   ├── reports/                      # Report-Generierung
+│   │   └── __init__.py
+│   ├── resources/                    # Statische Ressourcen
+│   │   └── pictures/                 # Bilder & Icons
+│   │       ├── BIER_ICON_COMPRESSED.png
+│   │       ├── BIER_LOGO_SCHWARZ_COMPRESSED.png
+│   │       └── BIER_LOGO_WEISS_COMPRESSED.png
+│   └── templates/                    # HTML-Templates (Jinja2)
+│       └── index.html
+├── tests/                            # Tests
+│   ├── conftest.py                   # Pytest-Konfiguration
+│   ├── integration/                  # Integrationstests
+│   │   ├── test_flask.py             # Flask-Tests
+│   │   ├── test_integration.py       # Allgemeine Integrationstests
+│   │   └── test_mongodb.py           # MongoDB-Tests
+│   └── unit/                         # Unit Tests
+│       └── test_domain.py            # Tests für Domain-Modelle
+├── docs/                             # Dokumentation
+│   ├── architecture.md               # Architektur-Dokumentation
+│   ├── changelog.md                  # Changelog
+│   ├── contracts.md                  # Schnittstellen-Dokumentation
+│   ├── known_issues.md               # Bekannte Probleme
+│   ├── retrospective.md              # Retrospektive
+│   ├── style_guide.md                # Code-Style-Vorgaben
+│   └── tests.md                      # Test-Dokumentation
+├── docker-compose.yml                # Docker Compose Konfiguration
+├── Dockerfile                        # Docker Image Definition
+├── pyproject.toml                    # Python-Projektdefinition & Dependencies
+└── README.md                         # Projekt-Dokumentation
 ```
 
 ## Installation & Setup
