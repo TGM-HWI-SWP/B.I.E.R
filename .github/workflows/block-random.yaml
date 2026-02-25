@@ -1,0 +1,17 @@
+name: Block random branch
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  block_random:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if source branch is random
+        run: |
+          if [ "${{ github.head_ref }}" = "random" ]; then
+            echo "Merging from 'random' into main is forbidden."
+            exit 1
+          fi
