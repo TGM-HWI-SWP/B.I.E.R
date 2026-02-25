@@ -26,6 +26,15 @@ def index():
     """
     return render_template("index.html")
 
+@app.route("/page1")
+def page1():
+    """Render the second application page.
+
+    Returns:
+        str: Rendered HTML of ``page1.html``.
+    """
+    return render_template("page1.html")
+
 if __name__ == "__main__":
     host = os.environ.get("FLASK_HOST", "0.0.0.0")
     port = int(os.environ.get("FLASK_PORT", 5000))
