@@ -1,0 +1,624 @@
+Globaler Bestandsreport über alle Lager
+========================================================================
+
+Lager Hauptlager Wien (ID: 69a0c4ec1fd1d28b6c81d9e6)
+------------------------------------------------------------------------
+  Produkt                   | Menge | Beschreibung
+  ------------------------------------------------
+  Bürostuhl Barhocker       |   395 | Bürostuhl der Variante 'Barhocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Bürostuhl Ergonomisch     |   221 | Bürostuhl der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Bürostuhl Executive       |   161 | Bürostuhl der Variante 'Executive'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Bürostuhl Gamer           |   328 | Bürostuhl der Variante 'Gamer'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Bürostuhl Hocker          |   367 | Bürostuhl der Variante 'Hocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Bürostuhl Kinder          |   330 | Bürostuhl der Variante 'Kinder'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Bürostuhl Netz            |   125 | Bürostuhl der Variante 'Netz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Bürostuhl Rollstuhl       |   330 | Bürostuhl der Variante 'Rollstuhl'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Bürostuhl Sattelhocker    |   431 | Bürostuhl der Variante 'Sattelhocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Bürostuhl Standard        |   344 | Bürostuhl der Variante 'Standard'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Classic Ablage #11        |   145 | Universeller Ablage in Qualitätsstufe 'Classic'.
+  Classic Box #37           |   259 | Universeller Box in Qualitätsstufe 'Classic'.
+  Classic Haken #16         |    87 | Universeller Haken in Qualitätsstufe 'Classic'.
+  Classic Halterung #2      |   385 | Universeller Halterung in Qualitätsstufe 'Classic'.
+  Drucker 3D                |   470 | Drucker der Variante '3D'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Drucker Foto              |   368 | Drucker der Variante 'Foto'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Drucker Großformat        |   106 | Drucker der Variante 'Großformat'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Drucker Label             |   374 | Drucker der Variante 'Label'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Drucker Laser             |   270 | Drucker der Variante 'Laser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Drucker Mobil             |   408 | Drucker der Variante 'Mobil'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Drucker Multifunktion     |   103 | Drucker der Variante 'Multifunktion'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Drucker Netzwerk          |   330 | Drucker der Variante 'Netzwerk'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Drucker Thermodruck       |    68 | Drucker der Variante 'Thermodruck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Drucker Tintenstrahl      |   334 | Drucker der Variante 'Tintenstrahl'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Economy Ablage #44        |    73 | Universeller Ablage in Qualitätsstufe 'Economy'.
+  Economy Aufbewahrung #30  |   280 | Universeller Aufbewahrung in Qualitätsstufe 'Economy'.
+  Economy Box #14           |    54 | Universeller Box in Qualitätsstufe 'Economy'.
+  Economy Halterung #29     |   418 | Universeller Halterung in Qualitätsstufe 'Economy'.
+  Economy Organizer #15     |   400 | Universeller Organizer in Qualitätsstufe 'Economy'.
+  Economy Schublade #34     |    33 | Universeller Schublade in Qualitätsstufe 'Economy'.
+  Economy Schublade #9      |   125 | Universeller Schublade in Qualitätsstufe 'Economy'.
+  Heavy-Duty Aufbewahrung # |    75 | Universeller Aufbewahrung in Qualitätsstufe 'Heavy-Duty'.
+  Heavy-Duty Klemme #42     |   320 | Universeller Klemme in Qualitätsstufe 'Heavy-Duty'.
+  Heavy-Duty Tablett #7     |   172 | Universeller Tablett in Qualitätsstufe 'Heavy-Duty'.
+  Kabel Adapter             |   130 | Kabel der Variante 'Adapter'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Kabel DisplayPort         |   210 | Kabel der Variante 'DisplayPort'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Kabel Ethernet            |   402 | Kabel der Variante 'Ethernet'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Kabel Flachkabel          |   448 | Kabel der Variante 'Flachkabel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Kabel Glasfaser           |   112 | Kabel der Variante 'Glasfaser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Kabel HDMI                |   483 | Kabel der Variante 'HDMI'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Kabel Spiralkabel         |   209 | Kabel der Variante 'Spiralkabel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Kabel Thunderbolt         |    97 | Kabel der Variante 'Thunderbolt'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Kabel Verlängerung        |   421 | Kabel der Variante 'Verlängerung'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Kompakt Ablage #36        |   184 | Universeller Ablage in Qualitätsstufe 'Kompakt'.
+  Kompakt Organizer #26     |   420 | Universeller Organizer in Qualitätsstufe 'Kompakt'.
+  Kompakt Organizer #40     |   104 | Universeller Organizer in Qualitätsstufe 'Kompakt'.
+  Kompakt Ständer #49       |   309 | Universeller Ständer in Qualitätsstufe 'Kompakt'.
+  Kompakt Tablett #18       |   382 | Universeller Tablett in Qualitätsstufe 'Kompakt'.
+  Kompakt Tablett #22       |   189 | Universeller Tablett in Qualitätsstufe 'Kompakt'.
+  Lampe Akku                |    97 | Lampe der Variante 'Akku'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Lampe Deckenspot          |    46 | Lampe der Variante 'Deckenspot'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Lampe Klemmleuchte        |   203 | Lampe der Variante 'Klemmleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Lampe LED-Schreibtisch    |   177 | Lampe der Variante 'LED-Schreibtisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Lampe Leseleuchte         |   146 | Lampe der Variante 'Leseleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Lampe Nachtlicht          |   196 | Lampe der Variante 'Nachtlicht'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Lampe Solar               |   326 | Lampe der Variante 'Solar'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Lampe Stehlampe           |   355 | Lampe der Variante 'Stehlampe'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Lampe Tageslicht          |   362 | Lampe der Variante 'Tageslicht'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Light Aufbewahrung #32    |   252 | Universeller Aufbewahrung in Qualitätsstufe 'Light'.
+  Light Halterung #46       |   271 | Universeller Halterung in Qualitätsstufe 'Light'.
+  Light Klemme #13          |   248 | Universeller Klemme in Qualitätsstufe 'Light'.
+  Light Tablett #21         |   295 | Universeller Tablett in Qualitätsstufe 'Light'.
+  Maus Ergonomisch          |   241 | Maus der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Maus Gaming               |     4 | Maus der Variante 'Gaming'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Maus Kabellos             |   176 | Maus der Variante 'Kabellos'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Maus Laser                |   163 | Maus der Variante 'Laser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Maus Optisch              |   228 | Maus der Variante 'Optisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Maus Reise                |   264 | Maus der Variante 'Reise'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Maus Silent               |   122 | Maus der Variante 'Silent'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Maus Trackball            |   452 | Maus der Variante 'Trackball'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Maus Vertikal             |   122 | Maus der Variante 'Vertikal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Monitor 27-Zoll           |   379 | Monitor der Variante '27-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Monitor 32-Zoll           |   411 | Monitor der Variante '32-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Monitor 4K UHD            |    89 | Monitor der Variante '4K UHD'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Monitor Curved            |   202 | Monitor der Variante 'Curved'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Monitor IPS               |   328 | Monitor der Variante 'IPS'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Monitor OLED              |    99 | Monitor der Variante 'OLED'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Monitor Portable          |   232 | Monitor der Variante 'Portable'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Monitor Ultra-Wide        |   161 | Monitor der Variante 'Ultra-Wide'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Premium Ablage #3         |   366 | Universeller Ablage in Qualitätsstufe 'Premium'.
+  Premium Aufbewahrung #19  |   356 | Universeller Aufbewahrung in Qualitätsstufe 'Premium'.
+  Premium Organizer #23     |   375 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Organizer #27     |   364 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Organizer #28     |   119 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Ständer #25       |   141 | Universeller Ständer in Qualitätsstufe 'Premium'.
+  Premium Ständer #33       |   403 | Universeller Ständer in Qualitätsstufe 'Premium'.
+  Profi Klemme #6           |   145 | Universeller Klemme in Qualitätsstufe 'Profi'.
+  Profi Schublade #24       |   280 | Universeller Schublade in Qualitätsstufe 'Profi'.
+  Regal Archiv              |    81 | Regal der Variante 'Archiv'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Regal Glas                |    65 | Regal der Variante 'Glas'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Regal Holz                |   478 | Regal der Variante 'Holz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Regal Hängeregal          |   358 | Regal der Variante 'Hängeregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Regal Lager               |   296 | Regal der Variante 'Lager'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Regal Metall              |   351 | Regal der Variante 'Metall'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Regal Rollregal           |   194 | Regal der Variante 'Rollregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Regal Schwing             |   348 | Regal der Variante 'Schwing'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Regal Winkelregal         |    23 | Regal der Variante 'Winkelregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Regal Würfel              |   133 | Regal der Variante 'Würfel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Schreibtisch Camping      |   416 | Schreibtisch der Variante 'Camping'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Schreibtisch Eck          |   353 | Schreibtisch der Variante 'Eck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Schreibtisch Glas         |   269 | Schreibtisch der Variante 'Glas'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Schreibtisch Höhenverstel |   226 | Schreibtisch der Variante 'Höhenverstellbar'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Schreibtisch Industrie    |   184 | Schreibtisch der Variante 'Industrie'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Schreibtisch Klein        |   474 | Schreibtisch der Variante 'Klein'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Schreibtisch Massivholz   |   121 | Schreibtisch der Variante 'Massivholz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Schreibtisch Winkel       |   167 | Schreibtisch der Variante 'Winkel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Schreibtisch XXL          |   224 | Schreibtisch der Variante 'XXL'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Smart Box #8              |   419 | Universeller Box in Qualitätsstufe 'Smart'.
+  Smart Halterung #50       |   394 | Universeller Halterung in Qualitätsstufe 'Smart'.
+  Smart Schublade #39       |    13 | Universeller Schublade in Qualitätsstufe 'Smart'.
+  Standard Box #48          |   288 | Universeller Box in Qualitätsstufe 'Standard'.
+  Standard Schublade #35    |   309 | Universeller Schublade in Qualitätsstufe 'Standard'.
+  Standard Ständer #17      |   427 | Universeller Ständer in Qualitätsstufe 'Standard'.
+  Tastatur Beleuchtet       |   289 | Tastatur der Variante 'Beleuchtet'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Tastatur Bluetooth        |   138 | Tastatur der Variante 'Bluetooth'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Tastatur Gaming           |   177 | Tastatur der Variante 'Gaming'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Tastatur Kompakt          |   120 | Tastatur der Variante 'Kompakt'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Tastatur Membrane         |   157 | Tastatur der Variante 'Membrane'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Tastatur Slim             |   233 | Tastatur der Variante 'Slim'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Tastatur USB-C            |   237 | Tastatur der Variante 'USB-C'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Tastatur Wireless         |     6 | Tastatur der Variante 'Wireless'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Ultra Aufbewahrung #31    |   164 | Universeller Aufbewahrung in Qualitätsstufe 'Ultra'.
+  Ultra Halterung #4        |   421 | Universeller Halterung in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #10       |   147 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #20       |    87 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #45       |   220 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Verpackung Beutel         |    91 | Verpackung der Variante 'Beutel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Verpackung Etiketten      |   483 | Verpackung der Variante 'Etiketten'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Verpackung Karton A3      |   307 | Verpackung der Variante 'Karton A3'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Verpackung Karton A4      |   435 | Verpackung der Variante 'Karton A4'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Verpackung Klebeband      |   405 | Verpackung der Variante 'Klebeband'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Verpackung Koffer         |   128 | Verpackung der Variante 'Koffer'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Verpackung Palette        |   383 | Verpackung der Variante 'Palette'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Verpackung Stretch        |     7 | Verpackung der Variante 'Stretch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Verpackung Transportbox   |    71 | Verpackung der Variante 'Transportbox'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+
+Lager Nebenlager Graz (ID: 69a0c4ec1fd1d28b6c81d9e7)
+------------------------------------------------------------------------
+  Produkt                   | Menge | Beschreibung
+  ------------------------------------------------
+  Bürostuhl Barhocker       |   490 | Bürostuhl der Variante 'Barhocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Bürostuhl Ergonomisch     |   366 | Bürostuhl der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Bürostuhl Executive       |   133 | Bürostuhl der Variante 'Executive'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Bürostuhl Gamer           |     7 | Bürostuhl der Variante 'Gamer'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Bürostuhl Hocker          |   352 | Bürostuhl der Variante 'Hocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Bürostuhl Kinder          |   202 | Bürostuhl der Variante 'Kinder'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Bürostuhl Netz            |     2 | Bürostuhl der Variante 'Netz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Bürostuhl Rollstuhl       |   239 | Bürostuhl der Variante 'Rollstuhl'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Bürostuhl Sattelhocker    |   184 | Bürostuhl der Variante 'Sattelhocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Bürostuhl Standard        |   277 | Bürostuhl der Variante 'Standard'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Classic Ablage #11        |   171 | Universeller Ablage in Qualitätsstufe 'Classic'.
+  Classic Box #37           |   319 | Universeller Box in Qualitätsstufe 'Classic'.
+  Classic Haken #16         |    15 | Universeller Haken in Qualitätsstufe 'Classic'.
+  Classic Halterung #2      |   294 | Universeller Halterung in Qualitätsstufe 'Classic'.
+  Drucker 3D                |   394 | Drucker der Variante '3D'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Drucker Foto              |    83 | Drucker der Variante 'Foto'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Drucker Großformat        |   173 | Drucker der Variante 'Großformat'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Drucker Label             |   406 | Drucker der Variante 'Label'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Drucker Laser             |   243 | Drucker der Variante 'Laser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Drucker Multifunktion     |   294 | Drucker der Variante 'Multifunktion'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Drucker Netzwerk          |   143 | Drucker der Variante 'Netzwerk'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Drucker Thermodruck       |   112 | Drucker der Variante 'Thermodruck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Drucker Tintenstrahl      |   424 | Drucker der Variante 'Tintenstrahl'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Economy Ablage #44        |   266 | Universeller Ablage in Qualitätsstufe 'Economy'.
+  Economy Aufbewahrung #30  |    97 | Universeller Aufbewahrung in Qualitätsstufe 'Economy'.
+  Economy Aufbewahrung #43  |   458 | Universeller Aufbewahrung in Qualitätsstufe 'Economy'.
+  Economy Box #14           |   286 | Universeller Box in Qualitätsstufe 'Economy'.
+  Economy Halterung #29     |   142 | Universeller Halterung in Qualitätsstufe 'Economy'.
+  Economy Organizer #15     |   214 | Universeller Organizer in Qualitätsstufe 'Economy'.
+  Economy Schublade #34     |   242 | Universeller Schublade in Qualitätsstufe 'Economy'.
+  Economy Schublade #9      |   144 | Universeller Schublade in Qualitätsstufe 'Economy'.
+  Heavy-Duty Aufbewahrung # |   162 | Universeller Aufbewahrung in Qualitätsstufe 'Heavy-Duty'.
+  Heavy-Duty Klemme #42     |   419 | Universeller Klemme in Qualitätsstufe 'Heavy-Duty'.
+  Heavy-Duty Ständer #38    |   287 | Universeller Ständer in Qualitätsstufe 'Heavy-Duty'.
+  Kabel Adapter             |   148 | Kabel der Variante 'Adapter'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Kabel DisplayPort         |   126 | Kabel der Variante 'DisplayPort'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Kabel Ethernet            |   430 | Kabel der Variante 'Ethernet'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Kabel Flachkabel          |   320 | Kabel der Variante 'Flachkabel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Kabel Glasfaser           |   431 | Kabel der Variante 'Glasfaser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Kabel HDMI                |   183 | Kabel der Variante 'HDMI'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Kabel Spiralkabel         |    11 | Kabel der Variante 'Spiralkabel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Kabel Thunderbolt         |   400 | Kabel der Variante 'Thunderbolt'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Kabel USB-C               |   114 | Kabel der Variante 'USB-C'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Kabel Verlängerung        |   373 | Kabel der Variante 'Verlängerung'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Kompakt Ablage #36        |   244 | Universeller Ablage in Qualitätsstufe 'Kompakt'.
+  Kompakt Organizer #26     |    47 | Universeller Organizer in Qualitätsstufe 'Kompakt'.
+  Kompakt Organizer #40     |    42 | Universeller Organizer in Qualitätsstufe 'Kompakt'.
+  Kompakt Ständer #49       |   303 | Universeller Ständer in Qualitätsstufe 'Kompakt'.
+  Kompakt Tablett #18       |     8 | Universeller Tablett in Qualitätsstufe 'Kompakt'.
+  Kompakt Tablett #22       |   365 | Universeller Tablett in Qualitätsstufe 'Kompakt'.
+  Lampe Akku                |   354 | Lampe der Variante 'Akku'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Lampe Deckenspot          |   237 | Lampe der Variante 'Deckenspot'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Lampe Klemmleuchte        |   407 | Lampe der Variante 'Klemmleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Lampe Leseleuchte         |   306 | Lampe der Variante 'Leseleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Lampe Nachtlicht          |   311 | Lampe der Variante 'Nachtlicht'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Lampe Solar               |   299 | Lampe der Variante 'Solar'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Lampe Stehlampe           |   271 | Lampe der Variante 'Stehlampe'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Lampe Tageslicht          |   371 | Lampe der Variante 'Tageslicht'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Lampe UV                  |   387 | Lampe der Variante 'UV'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Light Aufbewahrung #32    |   264 | Universeller Aufbewahrung in Qualitätsstufe 'Light'.
+  Light Halterung #46       |   289 | Universeller Halterung in Qualitätsstufe 'Light'.
+  Light Klemme #13          |   231 | Universeller Klemme in Qualitätsstufe 'Light'.
+  Light Tablett #21         |   355 | Universeller Tablett in Qualitätsstufe 'Light'.
+  Maus Ergonomisch          |   194 | Maus der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Maus Gaming               |    11 | Maus der Variante 'Gaming'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Maus Kabellos             |    22 | Maus der Variante 'Kabellos'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Maus Laser                |   238 | Maus der Variante 'Laser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Maus Optisch              |   476 | Maus der Variante 'Optisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Maus Reise                |    49 | Maus der Variante 'Reise'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Maus Silent               |   279 | Maus der Variante 'Silent'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Maus Trackball            |   116 | Maus der Variante 'Trackball'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Maus Vertikal             |   296 | Maus der Variante 'Vertikal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Maus Wireless             |    35 | Maus der Variante 'Wireless'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Monitor 24-Zoll           |   311 | Monitor der Variante '24-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Monitor 27-Zoll           |   457 | Monitor der Variante '27-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Monitor 32-Zoll           |   249 | Monitor der Variante '32-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Monitor 4K UHD            |   334 | Monitor der Variante '4K UHD'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Monitor IPS               |   449 | Monitor der Variante 'IPS'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Monitor OLED              |   400 | Monitor der Variante 'OLED'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Monitor Portable          |   402 | Monitor der Variante 'Portable'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Monitor TN                |   437 | Monitor der Variante 'TN'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Monitor Ultra-Wide        |    65 | Monitor der Variante 'Ultra-Wide'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Premium Ablage #3         |   104 | Universeller Ablage in Qualitätsstufe 'Premium'.
+  Premium Aufbewahrung #19  |     3 | Universeller Aufbewahrung in Qualitätsstufe 'Premium'.
+  Premium Klemme #41        |   339 | Universeller Klemme in Qualitätsstufe 'Premium'.
+  Premium Organizer #23     |   373 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Organizer #28     |   354 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Ständer #25       |   423 | Universeller Ständer in Qualitätsstufe 'Premium'.
+  Premium Ständer #33       |   420 | Universeller Ständer in Qualitätsstufe 'Premium'.
+  Profi Klemme #6           |   208 | Universeller Klemme in Qualitätsstufe 'Profi'.
+  Profi Schublade #24       |    35 | Universeller Schublade in Qualitätsstufe 'Profi'.
+  Profi Schublade #5        |   440 | Universeller Schublade in Qualitätsstufe 'Profi'.
+  Regal Archiv              |   293 | Regal der Variante 'Archiv'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Regal Glas                |   442 | Regal der Variante 'Glas'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Regal Holz                |   181 | Regal der Variante 'Holz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Regal Hängeregal          |   346 | Regal der Variante 'Hängeregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Regal Lager               |   138 | Regal der Variante 'Lager'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Regal Rollregal           |   298 | Regal der Variante 'Rollregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Regal Schwing             |   445 | Regal der Variante 'Schwing'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Regal Winkelregal         |   105 | Regal der Variante 'Winkelregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Regal Würfel              |   143 | Regal der Variante 'Würfel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Schreibtisch Camping      |   169 | Schreibtisch der Variante 'Camping'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Schreibtisch Eck          |   475 | Schreibtisch der Variante 'Eck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Schreibtisch Glas         |   248 | Schreibtisch der Variante 'Glas'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Schreibtisch Höhenverstel |    54 | Schreibtisch der Variante 'Höhenverstellbar'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Schreibtisch Klein        |    38 | Schreibtisch der Variante 'Klein'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Schreibtisch Massivholz   |   147 | Schreibtisch der Variante 'Massivholz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Schreibtisch Stehpult     |   431 | Schreibtisch der Variante 'Stehpult'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Schreibtisch Winkel       |   114 | Schreibtisch der Variante 'Winkel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Schreibtisch XXL          |   276 | Schreibtisch der Variante 'XXL'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Smart Box #8              |   340 | Universeller Box in Qualitätsstufe 'Smart'.
+  Smart Haken #47           |   133 | Universeller Haken in Qualitätsstufe 'Smart'.
+  Smart Halterung #50       |   258 | Universeller Halterung in Qualitätsstufe 'Smart'.
+  Smart Schublade #39       |   500 | Universeller Schublade in Qualitätsstufe 'Smart'.
+  Standard Box #48          |    17 | Universeller Box in Qualitätsstufe 'Standard'.
+  Standard Schublade #35    |   316 | Universeller Schublade in Qualitätsstufe 'Standard'.
+  Standard Ständer #17      |   155 | Universeller Ständer in Qualitätsstufe 'Standard'.
+  Tastatur Beleuchtet       |   490 | Tastatur der Variante 'Beleuchtet'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Tastatur Bluetooth        |   453 | Tastatur der Variante 'Bluetooth'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Tastatur Gaming           |   146 | Tastatur der Variante 'Gaming'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Tastatur Kompakt          |    69 | Tastatur der Variante 'Kompakt'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Tastatur Mechanisch       |    39 | Tastatur der Variante 'Mechanisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Tastatur Slim             |   146 | Tastatur der Variante 'Slim'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Tastatur USB-C            |   327 | Tastatur der Variante 'USB-C'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Tastatur Wireless         |   297 | Tastatur der Variante 'Wireless'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Ultra Aufbewahrung #31    |   190 | Universeller Aufbewahrung in Qualitätsstufe 'Ultra'.
+  Ultra Halterung #4        |     5 | Universeller Halterung in Qualitätsstufe 'Ultra'.
+  Ultra Organizer #12       |   216 | Universeller Organizer in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #10       |    25 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #20       |    22 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #45       |    14 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Verpackung Beutel         |   341 | Verpackung der Variante 'Beutel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Verpackung Karton A3      |   211 | Verpackung der Variante 'Karton A3'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Verpackung Karton A4      |   232 | Verpackung der Variante 'Karton A4'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Verpackung Koffer         |    45 | Verpackung der Variante 'Koffer'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Verpackung Palette        |   341 | Verpackung der Variante 'Palette'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Verpackung Stretch        |   271 | Verpackung der Variante 'Stretch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Verpackung Transportbox   |    95 | Verpackung der Variante 'Transportbox'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+
+Lager Außenlager Linz (ID: 69a0c4ec1fd1d28b6c81d9e8)
+------------------------------------------------------------------------
+  Produkt                   | Menge | Beschreibung
+  ------------------------------------------------
+  Bürostuhl Barhocker       |    90 | Bürostuhl der Variante 'Barhocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Bürostuhl Hocker          |   150 | Bürostuhl der Variante 'Hocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Bürostuhl Rollstuhl       |   444 | Bürostuhl der Variante 'Rollstuhl'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Bürostuhl Standard        |   182 | Bürostuhl der Variante 'Standard'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Classic Ablage #11        |   118 | Universeller Ablage in Qualitätsstufe 'Classic'.
+  Classic Box #37           |   294 | Universeller Box in Qualitätsstufe 'Classic'.
+  Classic Haken #16         |   253 | Universeller Haken in Qualitätsstufe 'Classic'.
+  Classic Halterung #2      |   473 | Universeller Halterung in Qualitätsstufe 'Classic'.
+  Drucker 3D                |   452 | Drucker der Variante '3D'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Drucker Foto              |   472 | Drucker der Variante 'Foto'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Drucker Großformat        |   108 | Drucker der Variante 'Großformat'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Drucker Mobil             |    46 | Drucker der Variante 'Mobil'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Drucker Multifunktion     |   265 | Drucker der Variante 'Multifunktion'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Drucker Thermodruck       |   175 | Drucker der Variante 'Thermodruck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Drucker Tintenstrahl      |   421 | Drucker der Variante 'Tintenstrahl'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Economy Ablage #44        |   469 | Universeller Ablage in Qualitätsstufe 'Economy'.
+  Economy Box #14           |   235 | Universeller Box in Qualitätsstufe 'Economy'.
+  Economy Organizer #15     |   125 | Universeller Organizer in Qualitätsstufe 'Economy'.
+  Economy Schublade #9      |   123 | Universeller Schublade in Qualitätsstufe 'Economy'.
+  Heavy-Duty Aufbewahrung # |   183 | Universeller Aufbewahrung in Qualitätsstufe 'Heavy-Duty'.
+  Heavy-Duty Ständer #38    |   304 | Universeller Ständer in Qualitätsstufe 'Heavy-Duty'.
+  Kabel Adapter             |   187 | Kabel der Variante 'Adapter'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Kabel DisplayPort         |   279 | Kabel der Variante 'DisplayPort'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Kabel Ethernet            |   379 | Kabel der Variante 'Ethernet'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Kabel Flachkabel          |   348 | Kabel der Variante 'Flachkabel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Kabel Glasfaser           |    71 | Kabel der Variante 'Glasfaser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Kabel HDMI                |   183 | Kabel der Variante 'HDMI'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Kabel Spiralkabel         |   179 | Kabel der Variante 'Spiralkabel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Kabel USB-C               |   366 | Kabel der Variante 'USB-C'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Kompakt Ablage #36        |   310 | Universeller Ablage in Qualitätsstufe 'Kompakt'.
+  Kompakt Organizer #26     |   281 | Universeller Organizer in Qualitätsstufe 'Kompakt'.
+  Kompakt Ständer #49       |   161 | Universeller Ständer in Qualitätsstufe 'Kompakt'.
+  Kompakt Tablett #22       |   492 | Universeller Tablett in Qualitätsstufe 'Kompakt'.
+  Lampe Deckenspot          |   251 | Lampe der Variante 'Deckenspot'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Lampe Klemmleuchte        |   350 | Lampe der Variante 'Klemmleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Lampe LED-Schreibtisch    |   466 | Lampe der Variante 'LED-Schreibtisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Lampe Leseleuchte         |   366 | Lampe der Variante 'Leseleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Lampe Nachtlicht          |    11 | Lampe der Variante 'Nachtlicht'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Lampe Solar               |    25 | Lampe der Variante 'Solar'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Lampe Tageslicht          |   195 | Lampe der Variante 'Tageslicht'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Lampe UV                  |   481 | Lampe der Variante 'UV'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Light Aufbewahrung #32    |    47 | Universeller Aufbewahrung in Qualitätsstufe 'Light'.
+  Light Halterung #46       |   405 | Universeller Halterung in Qualitätsstufe 'Light'.
+  Light Klemme #13          |   215 | Universeller Klemme in Qualitätsstufe 'Light'.
+  Light Tablett #21         |   111 | Universeller Tablett in Qualitätsstufe 'Light'.
+  Maus Ergonomisch          |   203 | Maus der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Maus Gaming               |   157 | Maus der Variante 'Gaming'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Maus Kabellos             |    42 | Maus der Variante 'Kabellos'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Maus Laser                |   290 | Maus der Variante 'Laser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Maus Optisch              |   268 | Maus der Variante 'Optisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Maus Reise                |   140 | Maus der Variante 'Reise'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Maus Trackball            |   356 | Maus der Variante 'Trackball'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Monitor 24-Zoll           |   137 | Monitor der Variante '24-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Monitor 27-Zoll           |   410 | Monitor der Variante '27-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Monitor 4K UHD            |    39 | Monitor der Variante '4K UHD'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Monitor Curved            |   179 | Monitor der Variante 'Curved'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Monitor IPS               |   100 | Monitor der Variante 'IPS'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Monitor OLED              |   372 | Monitor der Variante 'OLED'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Monitor TN                |   247 | Monitor der Variante 'TN'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Monitor Ultra-Wide        |   369 | Monitor der Variante 'Ultra-Wide'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Premium Ablage #3         |   130 | Universeller Ablage in Qualitätsstufe 'Premium'.
+  Premium Aufbewahrung #19  |   161 | Universeller Aufbewahrung in Qualitätsstufe 'Premium'.
+  Premium Organizer #27     |   482 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Organizer #28     |    37 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Ständer #25       |   446 | Universeller Ständer in Qualitätsstufe 'Premium'.
+  Premium Ständer #33       |   214 | Universeller Ständer in Qualitätsstufe 'Premium'.
+  Profi Klemme #6           |   477 | Universeller Klemme in Qualitätsstufe 'Profi'.
+  Profi Schublade #24       |   367 | Universeller Schublade in Qualitätsstufe 'Profi'.
+  Profi Schublade #5        |    81 | Universeller Schublade in Qualitätsstufe 'Profi'.
+  Regal Archiv              |   271 | Regal der Variante 'Archiv'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Regal Glas                |   279 | Regal der Variante 'Glas'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Regal Hängeregal          |    71 | Regal der Variante 'Hängeregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Regal Lager               |   379 | Regal der Variante 'Lager'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Regal Metall              |   152 | Regal der Variante 'Metall'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Regal Rollregal           |   299 | Regal der Variante 'Rollregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Regal Schwing             |   298 | Regal der Variante 'Schwing'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Regal Winkelregal         |   160 | Regal der Variante 'Winkelregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Regal Würfel              |   226 | Regal der Variante 'Würfel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Schreibtisch Camping      |   348 | Schreibtisch der Variante 'Camping'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Schreibtisch Eck          |    71 | Schreibtisch der Variante 'Eck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Schreibtisch Glas         |   447 | Schreibtisch der Variante 'Glas'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Schreibtisch Industrie    |    12 | Schreibtisch der Variante 'Industrie'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Schreibtisch Klein        |   131 | Schreibtisch der Variante 'Klein'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Schreibtisch Stehpult     |   160 | Schreibtisch der Variante 'Stehpult'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Schreibtisch Winkel       |   121 | Schreibtisch der Variante 'Winkel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Schreibtisch XXL          |    24 | Schreibtisch der Variante 'XXL'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Smart Box #8              |   104 | Universeller Box in Qualitätsstufe 'Smart'.
+  Smart Haken #47           |   129 | Universeller Haken in Qualitätsstufe 'Smart'.
+  Smart Halterung #50       |   209 | Universeller Halterung in Qualitätsstufe 'Smart'.
+  Smart Schublade #39       |   230 | Universeller Schublade in Qualitätsstufe 'Smart'.
+  Standard Box #48          |   438 | Universeller Box in Qualitätsstufe 'Standard'.
+  Standard Schublade #35    |   404 | Universeller Schublade in Qualitätsstufe 'Standard'.
+  Standard Ständer #17      |   243 | Universeller Ständer in Qualitätsstufe 'Standard'.
+  Tastatur Bluetooth        |    18 | Tastatur der Variante 'Bluetooth'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Tastatur Ergonomisch      |   427 | Tastatur der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Tastatur Gaming           |    53 | Tastatur der Variante 'Gaming'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Tastatur Mechanisch       |    37 | Tastatur der Variante 'Mechanisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Tastatur Membrane         |   436 | Tastatur der Variante 'Membrane'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Tastatur Slim             |   440 | Tastatur der Variante 'Slim'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Tastatur USB-C            |    55 | Tastatur der Variante 'USB-C'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Tastatur Wireless         |   296 | Tastatur der Variante 'Wireless'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Ultra Aufbewahrung #31    |   415 | Universeller Aufbewahrung in Qualitätsstufe 'Ultra'.
+  Ultra Organizer #12       |   498 | Universeller Organizer in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #10       |    74 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #20       |    66 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #45       |   274 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Verpackung Beutel         |   174 | Verpackung der Variante 'Beutel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Verpackung Karton A3      |   350 | Verpackung der Variante 'Karton A3'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Verpackung Klebeband      |   284 | Verpackung der Variante 'Klebeband'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Verpackung Luftpolster    |   364 | Verpackung der Variante 'Luftpolster'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Verpackung Palette        |   396 | Verpackung der Variante 'Palette'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Verpackung Stretch        |   210 | Verpackung der Variante 'Stretch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+
+Lager Kühlhaus Salzburg (ID: 69a0c4ec1fd1d28b6c81d9e9)
+------------------------------------------------------------------------
+  Produkt                   | Menge | Beschreibung
+  ------------------------------------------------
+  Bürostuhl Barhocker       |   227 | Bürostuhl der Variante 'Barhocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Bürostuhl Ergonomisch     |    66 | Bürostuhl der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Bürostuhl Executive       |   349 | Bürostuhl der Variante 'Executive'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Bürostuhl Gamer           |   485 | Bürostuhl der Variante 'Gamer'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Bürostuhl Hocker          |   122 | Bürostuhl der Variante 'Hocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Bürostuhl Kinder          |    84 | Bürostuhl der Variante 'Kinder'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Bürostuhl Netz            |   268 | Bürostuhl der Variante 'Netz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Bürostuhl Rollstuhl       |   374 | Bürostuhl der Variante 'Rollstuhl'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Classic Ablage #11        |   166 | Universeller Ablage in Qualitätsstufe 'Classic'.
+  Classic Halterung #2      |   359 | Universeller Halterung in Qualitätsstufe 'Classic'.
+  Drucker 3D                |   382 | Drucker der Variante '3D'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Drucker Label             |    89 | Drucker der Variante 'Label'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Drucker Netzwerk          |    42 | Drucker der Variante 'Netzwerk'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Drucker Thermodruck       |   246 | Drucker der Variante 'Thermodruck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Economy Ablage #44        |   176 | Universeller Ablage in Qualitätsstufe 'Economy'.
+  Economy Aufbewahrung #30  |   293 | Universeller Aufbewahrung in Qualitätsstufe 'Economy'.
+  Economy Aufbewahrung #43  |   377 | Universeller Aufbewahrung in Qualitätsstufe 'Economy'.
+  Economy Halterung #29     |   412 | Universeller Halterung in Qualitätsstufe 'Economy'.
+  Economy Organizer #15     |   374 | Universeller Organizer in Qualitätsstufe 'Economy'.
+  Economy Schublade #34     |   251 | Universeller Schublade in Qualitätsstufe 'Economy'.
+  Heavy-Duty Klemme #42     |    80 | Universeller Klemme in Qualitätsstufe 'Heavy-Duty'.
+  Heavy-Duty Ständer #38    |   284 | Universeller Ständer in Qualitätsstufe 'Heavy-Duty'.
+  Heavy-Duty Tablett #7     |    55 | Universeller Tablett in Qualitätsstufe 'Heavy-Duty'.
+  Kabel Adapter             |    19 | Kabel der Variante 'Adapter'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Kabel DisplayPort         |   129 | Kabel der Variante 'DisplayPort'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Kabel Ethernet            |   298 | Kabel der Variante 'Ethernet'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Kabel Glasfaser           |   300 | Kabel der Variante 'Glasfaser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Kabel HDMI                |    86 | Kabel der Variante 'HDMI'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Kabel Spiralkabel         |   104 | Kabel der Variante 'Spiralkabel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Kabel Verlängerung        |   127 | Kabel der Variante 'Verlängerung'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Kompakt Ablage #36        |   311 | Universeller Ablage in Qualitätsstufe 'Kompakt'.
+  Kompakt Organizer #26     |   210 | Universeller Organizer in Qualitätsstufe 'Kompakt'.
+  Kompakt Organizer #40     |   125 | Universeller Organizer in Qualitätsstufe 'Kompakt'.
+  Kompakt Ständer #49       |   147 | Universeller Ständer in Qualitätsstufe 'Kompakt'.
+  Lampe Akku                |   158 | Lampe der Variante 'Akku'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Lampe Deckenspot          |    79 | Lampe der Variante 'Deckenspot'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Lampe Klemmleuchte        |   227 | Lampe der Variante 'Klemmleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Lampe LED-Schreibtisch    |   344 | Lampe der Variante 'LED-Schreibtisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Lampe Leseleuchte         |   365 | Lampe der Variante 'Leseleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Lampe Nachtlicht          |   201 | Lampe der Variante 'Nachtlicht'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Lampe Solar               |   221 | Lampe der Variante 'Solar'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Lampe Stehlampe           |   471 | Lampe der Variante 'Stehlampe'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Lampe Tageslicht          |   472 | Lampe der Variante 'Tageslicht'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Lampe UV                  |   366 | Lampe der Variante 'UV'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Light Aufbewahrung #32    |     9 | Universeller Aufbewahrung in Qualitätsstufe 'Light'.
+  Light Halterung #46       |   372 | Universeller Halterung in Qualitätsstufe 'Light'.
+  Light Klemme #13          |    35 | Universeller Klemme in Qualitätsstufe 'Light'.
+  Maus Ergonomisch          |   243 | Maus der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Maus Gaming               |     5 | Maus der Variante 'Gaming'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Maus Optisch              |    23 | Maus der Variante 'Optisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Maus Silent               |   495 | Maus der Variante 'Silent'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Maus Trackball            |   313 | Maus der Variante 'Trackball'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Maus Vertikal             |   327 | Maus der Variante 'Vertikal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Monitor 24-Zoll           |   372 | Monitor der Variante '24-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Monitor 27-Zoll           |   344 | Monitor der Variante '27-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Monitor 32-Zoll           |    59 | Monitor der Variante '32-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Monitor 4K UHD            |   166 | Monitor der Variante '4K UHD'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Monitor Curved            |   142 | Monitor der Variante 'Curved'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Monitor IPS               |    77 | Monitor der Variante 'IPS'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Monitor OLED              |   232 | Monitor der Variante 'OLED'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Monitor Portable          |   143 | Monitor der Variante 'Portable'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Monitor TN                |   128 | Monitor der Variante 'TN'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Monitor Ultra-Wide        |   249 | Monitor der Variante 'Ultra-Wide'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Premium Aufbewahrung #19  |   138 | Universeller Aufbewahrung in Qualitätsstufe 'Premium'.
+  Premium Organizer #23     |   358 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Organizer #28     |   483 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Ständer #25       |    63 | Universeller Ständer in Qualitätsstufe 'Premium'.
+  Profi Klemme #6           |    25 | Universeller Klemme in Qualitätsstufe 'Profi'.
+  Profi Schublade #24       |   110 | Universeller Schublade in Qualitätsstufe 'Profi'.
+  Profi Schublade #5        |    61 | Universeller Schublade in Qualitätsstufe 'Profi'.
+  Regal Glas                |    59 | Regal der Variante 'Glas'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Regal Holz                |   268 | Regal der Variante 'Holz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Regal Hängeregal          |    13 | Regal der Variante 'Hängeregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Regal Lager               |   147 | Regal der Variante 'Lager'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Regal Rollregal           |   102 | Regal der Variante 'Rollregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Regal Schwing             |   208 | Regal der Variante 'Schwing'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Regal Würfel              |    46 | Regal der Variante 'Würfel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Schreibtisch Camping      |   122 | Schreibtisch der Variante 'Camping'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Schreibtisch Eck          |   410 | Schreibtisch der Variante 'Eck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Schreibtisch Glas         |   433 | Schreibtisch der Variante 'Glas'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Schreibtisch Höhenverstel |    54 | Schreibtisch der Variante 'Höhenverstellbar'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Schreibtisch Industrie    |   237 | Schreibtisch der Variante 'Industrie'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Schreibtisch Klein        |   256 | Schreibtisch der Variante 'Klein'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Schreibtisch Massivholz   |   371 | Schreibtisch der Variante 'Massivholz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Schreibtisch Stehpult     |   267 | Schreibtisch der Variante 'Stehpult'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Schreibtisch Winkel       |   431 | Schreibtisch der Variante 'Winkel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Schreibtisch XXL          |    81 | Schreibtisch der Variante 'XXL'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Smart Box #8              |   448 | Universeller Box in Qualitätsstufe 'Smart'.
+  Smart Haken #47           |   137 | Universeller Haken in Qualitätsstufe 'Smart'.
+  Smart Schublade #39       |   270 | Universeller Schublade in Qualitätsstufe 'Smart'.
+  Standard Schublade #35    |   396 | Universeller Schublade in Qualitätsstufe 'Standard'.
+  Standard Ständer #17      |    72 | Universeller Ständer in Qualitätsstufe 'Standard'.
+  Tastatur Beleuchtet       |   380 | Tastatur der Variante 'Beleuchtet'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Tastatur Bluetooth        |   203 | Tastatur der Variante 'Bluetooth'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Tastatur Ergonomisch      |   291 | Tastatur der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Tastatur Mechanisch       |   139 | Tastatur der Variante 'Mechanisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Tastatur Membrane         |   329 | Tastatur der Variante 'Membrane'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Tastatur Slim             |   109 | Tastatur der Variante 'Slim'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Tastatur USB-C            |   492 | Tastatur der Variante 'USB-C'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Ultra Halterung #4        |   265 | Universeller Halterung in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #10       |   193 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #20       |   391 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #45       |    34 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Verpackung Koffer         |   316 | Verpackung der Variante 'Koffer'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Verpackung Luftpolster    |   360 | Verpackung der Variante 'Luftpolster'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Verpackung Palette        |   356 | Verpackung der Variante 'Palette'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Verpackung Stretch        |   465 | Verpackung der Variante 'Stretch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Verpackung Transportbox   |   209 | Verpackung der Variante 'Transportbox'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+
+Lager Depot Innsbruck (ID: 69a0c4ec1fd1d28b6c81d9ea)
+------------------------------------------------------------------------
+  Produkt                   | Menge | Beschreibung
+  ------------------------------------------------
+  Bürostuhl Barhocker       |   238 | Bürostuhl der Variante 'Barhocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Bürostuhl Executive       |   405 | Bürostuhl der Variante 'Executive'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Bürostuhl Kinder          |   261 | Bürostuhl der Variante 'Kinder'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Bürostuhl Netz            |   269 | Bürostuhl der Variante 'Netz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Bürostuhl Rollstuhl       |    78 | Bürostuhl der Variante 'Rollstuhl'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Bürostuhl Sattelhocker    |   432 | Bürostuhl der Variante 'Sattelhocker'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Bürostuhl Standard        |   441 | Bürostuhl der Variante 'Standard'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Classic Ablage #11        |   228 | Universeller Ablage in Qualitätsstufe 'Classic'.
+  Classic Box #37           |   205 | Universeller Box in Qualitätsstufe 'Classic'.
+  Classic Haken #16         |   307 | Universeller Haken in Qualitätsstufe 'Classic'.
+  Drucker 3D                |   252 | Drucker der Variante '3D'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Drucker Großformat        |   374 | Drucker der Variante 'Großformat'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Drucker Label             |   483 | Drucker der Variante 'Label'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Drucker Multifunktion     |   166 | Drucker der Variante 'Multifunktion'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Drucker Netzwerk          |   365 | Drucker der Variante 'Netzwerk'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Drucker Thermodruck       |   308 | Drucker der Variante 'Thermodruck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Drucker Tintenstrahl      |   406 | Drucker der Variante 'Tintenstrahl'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Economy Ablage #44        |   267 | Universeller Ablage in Qualitätsstufe 'Economy'.
+  Economy Aufbewahrung #43  |   225 | Universeller Aufbewahrung in Qualitätsstufe 'Economy'.
+  Economy Halterung #29     |   267 | Universeller Halterung in Qualitätsstufe 'Economy'.
+  Heavy-Duty Aufbewahrung # |   152 | Universeller Aufbewahrung in Qualitätsstufe 'Heavy-Duty'.
+  Heavy-Duty Klemme #42     |    86 | Universeller Klemme in Qualitätsstufe 'Heavy-Duty'.
+  Heavy-Duty Tablett #7     |   267 | Universeller Tablett in Qualitätsstufe 'Heavy-Duty'.
+  Kabel Adapter             |   115 | Kabel der Variante 'Adapter'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Kabel DisplayPort         |   490 | Kabel der Variante 'DisplayPort'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Kabel Flachkabel          |   316 | Kabel der Variante 'Flachkabel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Kabel HDMI                |   382 | Kabel der Variante 'HDMI'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Kabel Thunderbolt         |   436 | Kabel der Variante 'Thunderbolt'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Kabel USB-C               |   478 | Kabel der Variante 'USB-C'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Kabel Verlängerung        |     7 | Kabel der Variante 'Verlängerung'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Kompakt Ablage #36        |   161 | Universeller Ablage in Qualitätsstufe 'Kompakt'.
+  Kompakt Ständer #49       |   398 | Universeller Ständer in Qualitätsstufe 'Kompakt'.
+  Kompakt Tablett #18       |     7 | Universeller Tablett in Qualitätsstufe 'Kompakt'.
+  Kompakt Tablett #22       |   237 | Universeller Tablett in Qualitätsstufe 'Kompakt'.
+  Lampe Akku                |   474 | Lampe der Variante 'Akku'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Lampe Deckenspot          |   130 | Lampe der Variante 'Deckenspot'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Lampe Klemmleuchte        |     2 | Lampe der Variante 'Klemmleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Lampe Leseleuchte         |    25 | Lampe der Variante 'Leseleuchte'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Lampe Solar               |   348 | Lampe der Variante 'Solar'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Lampe Stehlampe           |    11 | Lampe der Variante 'Stehlampe'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Lampe Tageslicht          |   167 | Lampe der Variante 'Tageslicht'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Lampe UV                  |   366 | Lampe der Variante 'UV'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Light Aufbewahrung #32    |   307 | Universeller Aufbewahrung in Qualitätsstufe 'Light'.
+  Light Halterung #46       |   245 | Universeller Halterung in Qualitätsstufe 'Light'.
+  Light Klemme #13          |   455 | Universeller Klemme in Qualitätsstufe 'Light'.
+  Maus Gaming               |   154 | Maus der Variante 'Gaming'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Maus Kabellos             |    34 | Maus der Variante 'Kabellos'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Maus Laser                |   367 | Maus der Variante 'Laser'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Maus Optisch              |    79 | Maus der Variante 'Optisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Maus Reise                |   157 | Maus der Variante 'Reise'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Maus Vertikal             |   337 | Maus der Variante 'Vertikal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Monitor 24-Zoll           |   350 | Monitor der Variante '24-Zoll'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Monitor 4K UHD            |   496 | Monitor der Variante '4K UHD'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Monitor Curved            |   121 | Monitor der Variante 'Curved'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Monitor IPS               |   260 | Monitor der Variante 'IPS'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Monitor OLED              |   179 | Monitor der Variante 'OLED'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Monitor Portable          |   386 | Monitor der Variante 'Portable'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Monitor TN                |    88 | Monitor der Variante 'TN'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Monitor Ultra-Wide        |   270 | Monitor der Variante 'Ultra-Wide'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Premium Ablage #3         |    42 | Universeller Ablage in Qualitätsstufe 'Premium'.
+  Premium Aufbewahrung #19  |   291 | Universeller Aufbewahrung in Qualitätsstufe 'Premium'.
+  Premium Klemme #41        |     3 | Universeller Klemme in Qualitätsstufe 'Premium'.
+  Premium Organizer #28     |   359 | Universeller Organizer in Qualitätsstufe 'Premium'.
+  Premium Ständer #33       |   367 | Universeller Ständer in Qualitätsstufe 'Premium'.
+  Profi Klemme #6           |   129 | Universeller Klemme in Qualitätsstufe 'Profi'.
+  Profi Schublade #24       |    16 | Universeller Schublade in Qualitätsstufe 'Profi'.
+  Profi Schublade #5        |   108 | Universeller Schublade in Qualitätsstufe 'Profi'.
+  Regal Archiv              |   405 | Regal der Variante 'Archiv'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Regal Holz                |   268 | Regal der Variante 'Holz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Regal Hängeregal          |   163 | Regal der Variante 'Hängeregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Regal Lager               |   287 | Regal der Variante 'Lager'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Regal Metall              |   378 | Regal der Variante 'Metall'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Regal Schwing             |    30 | Regal der Variante 'Schwing'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Regal Winkelregal         |    75 | Regal der Variante 'Winkelregal'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Regal Würfel              |   411 | Regal der Variante 'Würfel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Schreibtisch Eck          |   479 | Schreibtisch der Variante 'Eck'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Schreibtisch Glas         |    36 | Schreibtisch der Variante 'Glas'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Schreibtisch Klein        |   461 | Schreibtisch der Variante 'Klein'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Schreibtisch Massivholz   |   397 | Schreibtisch der Variante 'Massivholz'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Schreibtisch Stehpult     |    26 | Schreibtisch der Variante 'Stehpult'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Schreibtisch Winkel       |   253 | Schreibtisch der Variante 'Winkel'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Schreibtisch XXL          |   243 | Schreibtisch der Variante 'XXL'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Smart Haken #47           |    90 | Universeller Haken in Qualitätsstufe 'Smart'.
+  Smart Schublade #39       |   247 | Universeller Schublade in Qualitätsstufe 'Smart'.
+  Standard Box #48          |    94 | Universeller Box in Qualitätsstufe 'Standard'.
+  Standard Ständer #17      |    61 | Universeller Ständer in Qualitätsstufe 'Standard'.
+  Tastatur Beleuchtet       |    21 | Tastatur der Variante 'Beleuchtet'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Tastatur Bluetooth        |    10 | Tastatur der Variante 'Bluetooth'. Ideal für den professionellen Einsatz. Kategorie-Nr. 09.
+  Tastatur Ergonomisch      |   350 | Tastatur der Variante 'Ergonomisch'. Ideal für den professionellen Einsatz. Kategorie-Nr. 04.
+  Tastatur Gaming           |   142 | Tastatur der Variante 'Gaming'. Ideal für den professionellen Einsatz. Kategorie-Nr. 07.
+  Tastatur Membrane         |   216 | Tastatur der Variante 'Membrane'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Tastatur USB-C            |   184 | Tastatur der Variante 'USB-C'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.
+  Tastatur Wireless         |   390 | Tastatur der Variante 'Wireless'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Ultra Aufbewahrung #31    |    78 | Universeller Aufbewahrung in Qualitätsstufe 'Ultra'.
+  Ultra Halterung #4        |    66 | Universeller Halterung in Qualitätsstufe 'Ultra'.
+  Ultra Organizer #12       |   100 | Universeller Organizer in Qualitätsstufe 'Ultra'.
+  Ultra Schublade #20       |    58 | Universeller Schublade in Qualitätsstufe 'Ultra'.
+  Verpackung Etiketten      |   346 | Verpackung der Variante 'Etiketten'. Ideal für den professionellen Einsatz. Kategorie-Nr. 06.
+  Verpackung Karton A3      |    97 | Verpackung der Variante 'Karton A3'. Ideal für den professionellen Einsatz. Kategorie-Nr. 02.
+  Verpackung Karton A4      |   335 | Verpackung der Variante 'Karton A4'. Ideal für den professionellen Einsatz. Kategorie-Nr. 01.
+  Verpackung Klebeband      |    68 | Verpackung der Variante 'Klebeband'. Ideal für den professionellen Einsatz. Kategorie-Nr. 05.
+  Verpackung Koffer         |   261 | Verpackung der Variante 'Koffer'. Ideal für den professionellen Einsatz. Kategorie-Nr. 08.
+  Verpackung Luftpolster    |   408 | Verpackung der Variante 'Luftpolster'. Ideal für den professionellen Einsatz. Kategorie-Nr. 03.
+  Verpackung Palette        |   277 | Verpackung der Variante 'Palette'. Ideal für den professionellen Einsatz. Kategorie-Nr. 10.

@@ -5,7 +5,7 @@
 Dieses Dokument beschreibt die Test-Strategie und Test-Struktur des B.I.E.R-Projekts.
 
 **Test-Framework:** pytest 9+  
-**Test-Ergebnis (Stand 2026-02-26):** 59 passed, 2 skipped (1.30 s)
+**Test-Ergebnis (Stand 2026-02-26):** 59 passed, 2 skipped (ca. 1.3 s)
 
 ---
 
@@ -124,16 +124,24 @@ Der `flask_client`-Fixture monkeypatcht `bierapp.frontend.flask.gui._db` auf das
 - `test_inventar_update_quantity_redirects` – Menge ändern → 302, `update` aufgerufen
 - `test_inventar_remove_redirects` – Ausbuchen → 302, `delete` aufgerufen
 
-### TestNewUIRoutes (Neue 4-Seiten UI)
+### TestNewUIRoutes (Neue UI mit 5 Seiten)
 
-Die neuen UI-Routen werden automatisch durch die existierenden Tests abgedeckt, da sie die gleichen Services verwenden. Zusätzliche Tests für die neuen Routen:
+Die neuen UI-Routen verwenden die gleichen Services wie die Legacy-UI. Zusätzlich existieren explizite Tests für zentrale Screens und Workflows:
 
 | Test | Prüft |
 |---|---|
-| `test_page1_products_returns_200` | GET `/ui/produkte` gibt 200 zurück |
-| `test_page2_new_product_returns_200` | GET `/ui/produkt/neu` gibt 200 zurück |
-| `test_page3_warehouse_list_returns_200` | GET `/ui/lager` gibt 200 zurück |
-| `test_page4_statistics_returns_200` | GET `/ui/statistik` gibt 200 zurück |
+| `test_page1_products_returns_200` | GET `/ui/produkte` rendert Page 1 (Produktverwaltung) |
+| `test_page2_new_product_returns_200` | GET `/ui/produkt/neu` rendert leeres Produktformular |
+| `test_page2_edit_product_returns_200` | GET `/ui/produkt/<id>/bearbeiten` rendert bestehendes Produkt |
+| `test_page2_create_product_redirects` | POST `/ui/produkt/neu` erstellt Produkt und redirectet |
+| `test_page2_save_product_redirects` | POST `/ui/produkt/<id>/speichern` aktualisiert Produkt und redirectet |
+| `test_page3_warehouse_list_returns_200` | GET `/ui/lager` rendert Lagerliste |
+| `test_page3_create_warehouse_redirects` | POST `/ui/lager/neu` legt Lager an und redirectet |
+| `test_page3_delete_warehouse_redirects` | POST `/ui/lager/<id>/loeschen` löscht Lager und redirectet |
+| `test_page4_statistics_returns_200` | GET `/ui/statistik` rendert Statistik-Dashboard |
+| `test_page4_statistics_contains_charts` | Response enthält alle Chart-Canvas-Elemente (Chart.js) |
+
+Weitere Tests für Multi-Lager-Filter und Historienseite werden nachgezogen, sobald das UI final stabil ist.
 
 ---
 
@@ -187,18 +195,20 @@ Beispiele:
 
 Die neue 4-Seiten UI verwendet die gleichen Backend-Services wie die Legacy-UI. Die vorhandenen Tests für `ProductService`, `WarehouseService` und `InventoryService` decken daher auch die Funktionalität der neuen UI ab.
 
-**Neue UI Routen:**
-- `/ui/produkte` – Page 1: Produktverwaltung
-- `/ui/produkt/neu` – Page 2: Neues Produkt erstellen
-- `/ui/produkt/<id>/bearbeiten` – Page 2: Produkt bearbeiten
+**Neue UI Routen (Kurzüberblick):**
+- `/ui/produkte` – Page 1: Produktverwaltung (inkl. Lager-Filter und Verschieben-Dialog)
+- `/ui/produkt/neu` – Page 2: Neues Produkt erstellen (inkl. initialen Lagerzuordnungen)
+- `/ui/produkt/<id>/bearbeiten` – Page 2: Produkt bearbeiten (inkl. Multi-Lager-Beständen)
 - `/ui/lager` – Page 3: Lagerliste
 - `/ui/statistik` – Page 4: Statistik-Dashboard
+- `/ui/historie` – Page 5: Historie aller Änderungen
 
-**Getestete Funktionalität:**
-- Produkt erstellen, bearbeiten, löschen
+**Getestete Funktionalität (Stand v1.1):**
+- Produkt erstellen, bearbeiten, löschen (Legacy- und neue UI)
 - Lager erstellen, bearbeiten, löschen
 - Inventar-Verwaltung (einbuchen, ausbuchen, Menge ändern)
-- Statistik-Berechnung
+- Statistik-Berechnung (Basis-Szenario, Chart-Rendering)
+- Grundlegendes Rendering aller neuen UI-Seiten
 
 ---
 

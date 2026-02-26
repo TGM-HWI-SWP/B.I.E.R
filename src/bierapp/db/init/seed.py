@@ -39,38 +39,42 @@ _PRODUKTE_DATA: list[dict] = []
 
 def _gen_products() -> list[dict]:
     categories = [
-        # (category_prefix, items, weight_range_kg)
+        # (category_prefix, items, weight_range_kg, price_range_eur)
         ("Bürostuhl",    ["Ergonomisch", "Standard", "Executive", "Netz", "Kinder",
-                          "Rollstuhl", "Hocker", "Barhocker", "Gamer", "Sattelhocker"],            (3.0, 15.0)),
+                          "Rollstuhl", "Hocker", "Barhocker", "Gamer", "Sattelhocker"],            (3.0, 15.0),   (80.0, 400.0)),
         ("Schreibtisch", ["Höhenverstellbar", "Eck", "Klein", "XXL", "Glas",
-                          "Massivholz", "Industrie", "Stehpult", "Winkel", "Camping"],             (10.0, 60.0)),
+                          "Massivholz", "Industrie", "Stehpult", "Winkel", "Camping"],             (10.0, 60.0),  (120.0, 800.0)),
         ("Monitor",      ["24-Zoll", "27-Zoll", "32-Zoll", "4K UHD", "Curved",
-                          "IPS", "TN", "OLED", "Ultra-Wide", "Portable"],                          (2.0, 8.0)),
+                          "IPS", "TN", "OLED", "Ultra-Wide", "Portable"],                          (2.0, 8.0),    (90.0, 600.0)),
         ("Tastatur",     ["Mechanisch", "Membrane", "Wireless", "Ergonomisch", "Kompakt",
-                          "Slim", "Gaming", "Beleuchtet", "Bluetooth", "USB-C"],                   (0.3, 1.5)),
+                          "Slim", "Gaming", "Beleuchtet", "Bluetooth", "USB-C"],                   (0.3, 1.5),    (20.0, 180.0)),
         ("Maus",         ["Optisch", "Laser", "Vertikal", "Gaming", "Trackball",
-                          "Wireless", "Ergonomisch", "Silent", "Kabellos", "Reise"],               (0.05, 0.3)),
+                          "Wireless", "Ergonomisch", "Silent", "Kabellos", "Reise"],               (0.05, 0.3),   (10.0, 120.0)),
         ("Drucker",      ["Laser", "Tintenstrahl", "Multifunktion", "Foto", "Label",
-                          "Thermodruck", "3D", "Großformat", "Netzwerk", "Mobil"],                 (3.0, 25.0)),
+                          "Thermodruck", "3D", "Großformat", "Netzwerk", "Mobil"],                 (3.0, 25.0),   (150.0, 1200.0)),
         ("Kabel",        ["USB-C", "HDMI", "DisplayPort", "Ethernet", "Thunderbolt",
-                          "Verlängerung", "Adapter", "Spiralkabel", "Flachkabel", "Glasfaser"],    (0.05, 0.5)),
+                          "Verlängerung", "Adapter", "Spiralkabel", "Flachkabel", "Glasfaser"],    (0.05, 0.5),   (5.0, 40.0)),
         ("Lampe",        ["LED-Schreibtisch", "Klemmleuchte", "Stehlampe", "Deckenspot",
-                          "Akku", "Solar", "UV", "Tageslicht", "Leseleuchte", "Nachtlicht"],       (0.5, 5.0)),
+                          "Akku", "Solar", "UV", "Tageslicht", "Leseleuchte", "Nachtlicht"],       (0.5, 5.0),    (15.0, 200.0)),
         ("Regal",        ["Metall", "Holz", "Glas", "Winkelregal", "Schwing", "Würfel",
-                          "Archiv", "Lager", "Rollregal", "Hängeregal"],                           (5.0, 40.0)),
+                          "Archiv", "Lager", "Rollregal", "Hängeregal"],                           (5.0, 40.0),   (60.0, 500.0)),
         ("Verpackung",   ["Karton A4", "Karton A3", "Luftpolster", "Stretch", "Klebeband",
-                          "Etiketten", "Beutel", "Koffer", "Transportbox", "Palette"],             (0.1, 20.0)),
+                          "Etiketten", "Beutel", "Koffer", "Transportbox", "Palette"],             (0.1, 20.0),   (2.0, 80.0)),
     ]
     products = []
-    for cat, variants, (wmin, wmax) in categories:
+    for cat, variants, (wmin, wmax), (pmin, pmax) in categories:
         for i, variant in enumerate(variants):
+            gewicht = round(random.uniform(wmin, wmax), 2)
+            preis = round(random.uniform(pmin, pmax), 2)
             products.append({
                 "name": f"{cat} {variant}",
                 "beschreibung": (
                     f"{cat} der Variante '{variant}'. Ideal für den professionellen Einsatz. "
                     f"Kategorie-Nr. {i+1:02d}."
                 ),
-                "gewicht": round(random.uniform(wmin, wmax), 2),
+                "gewicht": gewicht,
+                "preis": preis,
+                "waehrung": "EUR",
                 "kategorie": cat,
             })
     # Add 50 extra filler products
@@ -79,10 +83,13 @@ def _gen_products() -> list[dict]:
     nouns = ["Halterung", "Aufbewahrung", "Ständer", "Ablage", "Organizer",
              "Box", "Schublade", "Haken", "Klemme", "Tablett"]
     for i, (adj, noun) in enumerate([(random.choice(adjectives), random.choice(nouns)) for _ in range(50)]):
+        preis = round(random.uniform(5.0, 120.0), 2)
         products.append({
             "name": f"{adj} {noun} #{i+1}",
             "beschreibung": f"Universeller {noun} in Qualitätsstufe '{adj}'.",
             "gewicht": round(random.uniform(0.1, 10.0), 2),
+            "preis": preis,
+            "waehrung": "EUR",
             "kategorie": "Zubehör",
         })
     return products
@@ -150,7 +157,7 @@ def seed_database(force: bool = False) -> None:
         chosen = random.sample(produkt_ids, subset_size)
         for pid in chosen:
             inventar_docs.append({
-                "lager_id": str(lager_id),
+                "lager_id": str(lager_id),  # wird vom Adapter später wieder zu str(ObjectId) normalisiert
                 "produkt_id": str(pid),
                 "menge": random.randint(1, 500),
             })

@@ -132,6 +132,27 @@
 
 ---
 
-**Retrospektive erstellt:** 2026-02-25  
+---
+
+### v1.1 – Neue UI, Multi-Lager & Historie
+**Abschluss:** 2026-02-26
+
+#### Was lief gut?
+- Moderne 5-Seiten UI (Produkte, Produktbearbeitung, Lager, Statistik, Historie) konsistent umgesetzt
+- Dark-Theme-Design mit guter Lesbarkeit (inkl. Autocomplete im Dark Mode)
+- Multi-Lager-Unterstützung für Produkte direkt in der Produktbearbeitung
+- Seed-Script erzeugt realistische Testdaten (Preise, Gewichte, Lagerverteilung)
+
+#### Was konnte verbessert werden?
+- Zusätzliche Tests für Lager-Filter und Historienseite wurden erst spät ergänzt
+- Statistik- und Event-Datenmodell könnten weiter ausgebaut werden (mehr KPIs)
+
+#### Learnings
+- Multi-Lager-Logik früh in Architektur und Tests berücksichtigen
+- UX-Details (z. B. Kontrast in Autocomplete-Listen) von Anfang an im Dark-Mode prüfen
+
+---
+
+**Retrospektive erstellt:** 2026-02-26  
 **Geschrieben von:** Paul Hinterbauer
 

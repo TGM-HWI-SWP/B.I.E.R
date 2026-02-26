@@ -1,5 +1,6 @@
 """Shared pytest fixtures for the B.I.E.R test suite."""
 
+from os import path
 from unittest.mock import MagicMock
 
 import pytest
@@ -69,6 +70,11 @@ def inventory_service(mock_db):
 def flask_client(mock_db, monkeypatch):
     """Return a Flask test client with all services mocked.
 
+    In addition to monkeypatching the database adapter, this fixture also
+    points the Flask app to the project-local template and static resource
+    directories so that TemplateNotFound errors do not depend on the
+    installed wheel layout during tests.
+
     Args:
         mock_db (MagicMock): Injected mock database adapter.
         monkeypatch: pytest monkeypatch fixture.
@@ -77,7 +83,21 @@ def flask_client(mock_db, monkeypatch):
         FlaskClient: Test client for the B.I.E.R Flask application.
     """
     import bierapp.frontend.flask.gui as gui_module
+
+    # Wire mock DB into the GUI module
     monkeypatch.setattr(gui_module, "_db", mock_db)
+
+    # Point templates/resources to the source-tree paths instead of the
+    # installed package location so Jinja2 can find the HTML files.
+    project_root = path.abspath(path.join(path.dirname(__file__), ".."))
+    resources_dir = path.join(project_root, "src", "resources")
+    pictures_dir = path.join(resources_dir, "pictures")
+    templates_dir = path.join(resources_dir, "templates")
+
+    gui_module.RESOURCES_DIR = pictures_dir
+    gui_module.TEMPLATES_DIR = templates_dir
+    flask_app.template_folder = templates_dir
+
     flask_app.config["TESTING"] = True
     flask_app.config["SECRET_KEY"] = "test-secret"
     with flask_app.test_client() as client:

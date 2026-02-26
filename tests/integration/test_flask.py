@@ -63,7 +63,8 @@ class TestProdukte:
         )
         assert response.status_code == 302
         assert "/produkte" in response.headers["Location"]
-        mock_db.insert.assert_called_once()
+        # Erster Insert muss in die "produkte"-Collection gehen (Produktspeicherung).
+        assert mock_db.insert.call_args_list[0][0][0] == "produkte"
 
     def test_create_empty_name_redirects_with_flash(self, flask_client, mock_db):
         """POST /produkte/neu with an empty name does not insert and redirects.
@@ -145,7 +146,8 @@ class TestLager:
         )
         assert response.status_code == 302
         assert "/lager" in response.headers["Location"]
-        mock_db.insert.assert_called_once()
+        # Erster Insert muss in die "lager"-Collection gehen.
+        assert mock_db.insert.call_args_list[0][0][0] == "lager"
 
     def test_create_empty_name_redirects_without_insert(self, flask_client, mock_db):
         """POST /lager/neu with empty lagername does not insert.
@@ -387,3 +389,11 @@ class TestNewUIRoutes:
         assert "barChart" in body
         assert "ausChart" in body
         assert "katChart" in body
+
+    def test_page5_history_returns_200(self, flask_client, mock_db):
+        """GET /ui/historie renders Page 5 - History list."""
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/historie")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        assert "Historie" in body

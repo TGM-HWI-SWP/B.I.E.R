@@ -115,6 +115,7 @@
     </h3>
     <p id="moveModalInfo" style="color:var(--text-muted);font-size:13px;margin-bottom:16px;"></p>
     <form method="POST" id="moveForm">
+      <input type="hidden" name="source_lager_id" value="">
       <div style="margin-bottom:14px;">
         <label class="form-label">Ziel-Lager *</label>
         <select name="target_lager_id" class="form-select" required>
@@ -210,6 +211,12 @@
 
     info.textContent = `Produkt "${name}" verschieben. Verfügbare Menge: ${available} Stk.`;
     form.action = `/ui/produkt/${id}/verschieben`;
+
+    // Quell-Lager im versteckten Feld speichern (für Mehrlager-Szenario)
+    const sourceField = form.querySelector('input[name="source_lager_id"]');
+    if (sourceField) {
+      sourceField.value = currentLagerId || '';
+    }
 
     // Reset fields
     const select = form.querySelector('select[name="target_lager_id"]');

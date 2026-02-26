@@ -18,8 +18,7 @@ class TestProductService:
             mock_db (MagicMock): Mock adapter (checks insert was called).
         """
         result = product_service.create_product("Tisch", "Bürotisch", 15.5)
-
-        mock_db.insert.assert_called_once()
+        assert mock_db.insert.call_args_list[0][0][0] == "produkte"
         assert result["name"] == "Tisch"
         assert result["beschreibung"] == "Bürotisch"
         assert result["gewicht"] == 15.5
@@ -131,7 +130,8 @@ class TestWarehouseService:
             mock_db (MagicMock): Mock adapter.
         """
         result = warehouse_service.create_warehouse("Lager A", "Wien 1010", 50)
-        mock_db.insert.assert_called_once()
+        # Der erste Insert muss in die "lager"-Collection gehen.
+        assert mock_db.insert.call_args_list[0][0][0] == "lager"
         assert result["lagername"] == "Lager A"
         assert result["max_plaetze"] == 50
 
@@ -198,7 +198,8 @@ class TestInventoryService:
         mock_db.find_by_id.return_value = {"_id": "lid"}
         mock_db.find_inventar_entry.return_value = None
         inventory_service.add_product("lid", "pid", 5)
-        mock_db.insert.assert_called_once()
+        # Es muss mindestens ein Insert in die "inventar"-Collection erfolgt sein.
+        assert any(call[0][0] == "inventar" for call in mock_db.insert.call_args_list)
 
     def test_add_product_merges_existing(self, inventory_service, mock_db):
         """add_product increases menge when an entry already exists.

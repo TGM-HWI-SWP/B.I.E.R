@@ -4,7 +4,7 @@ from collections import defaultdict
 from os import environ, path
 from typing import Optional
 
-from flask import Flask, flash, redirect, render_template, request, send_from_directory, url_for
+from flask import Flask, flash, redirect, render_template, request, send_from_directory, url_for, Response
 
 from bierapp.backend.services import InventoryService, ProductService, WarehouseService
 from bierapp.db.mongodb import (
@@ -476,30 +476,35 @@ def page1_products():
     lager_id = request.args.get("lager_id", "").strip()
     produkte = svc_p.list_products()
 
-    # Map produkt_id -> (lager_id, menge) aus Inventar
+    # Map produkt_id -> {lager_id: menge} aus Inventar
     inventar_all = db.find_all(COLLECTION_INVENTAR)
-    by_product: dict[str, dict] = {}
+    inventar_by_product: dict[str, dict[str, int]] = {}
     for entry in inventar_all:
         pid = entry.get("produkt_id", "")
-        if pid and pid not in by_product:
-            by_product[pid] = {
-                "lager_id": entry.get("lager_id", ""),
-                "menge": entry.get("menge", 0),
-            }
+        lid = entry.get("lager_id", "")
+        if not pid or not lid:
+            continue
+        if pid not in inventar_by_product:
+            inventar_by_product[pid] = {}
+        inventar_by_product[pid][lid] = inventar_by_product[pid].get(lid, 0) + entry.get("menge", 0)
 
     # Enrich products with lager_id/menge for the UI
     enriched: list[dict] = []
     for p in produkte:
         pid = p.get("_id")
-        info = by_product.get(pid, {"lager_id": "", "menge": 0})
+        lager_map = inventar_by_product.get(pid, {})
         p = dict(p)
-        p["lager_id"] = info["lager_id"]
-        p["menge"] = info["menge"]
-        enriched.append(p)
-
-    # Optional Filter nach Lager
-    if lager_id:
-        enriched = [p for p in enriched if p.get("lager_id") == lager_id]
+        if lager_id:
+            # Bei aktivem Lager-Filter: Menge in genau diesem Lager anzeigen
+            p["lager_id"] = lager_id
+            p["menge"] = lager_map.get(lager_id, 0)
+            if lager_id in lager_map:
+                enriched.append(p)
+        else:
+            # Ohne Filter: Gesamtmenge über alle Lager anzeigen
+            p["lager_id"] = ""
+            p["menge"] = sum(lager_map.values()) if lager_map else 0
+            enriched.append(p)
 
     lager = svc_w.list_warehouses()
     active_filter = None
@@ -522,7 +527,16 @@ def page1_products():
 def page2_product_edit():
     """Render Page 2 in create-mode (no existing product)."""
     lager = get_warehouse_service().list_warehouses()
-    return render_template("page2_product_edit.html", produkt=None, lager=lager, active_page=2)
+    # Für neue Produkte gibt es noch keine Lagerzuordnung
+    produkt_menge_by_lager: dict[str, int] = {}
+    return render_template(
+        "page2_product_edit.html",
+        produkt=None,
+        lager=lager,
+        inventar_entries=[],
+        produkt_menge_by_lager=produkt_menge_by_lager,
+        active_page=2,
+    )
 
 
 # PAGE 2 — Product edit (existing)
@@ -535,20 +549,39 @@ def page2_product_edit_existing(produkt_id: str):
     if not produkt:
         flash("Produkt nicht gefunden.", "danger")
         return redirect(url_for("page1_products"))
-    # Attach inventory data (menge, lager_id)
+    # Attach inventory data: all inventar-Einträge dieses Produkts mit Lagername
     db = get_db()
+    lager = svc_w.list_warehouses()
+    lager_by_id = {l["_id"]: l for l in lager}
+    inventar_entries: list[dict] = []
     for entry in db.find_all(COLLECTION_INVENTAR):
         if entry.get("produkt_id") == produkt_id:
-            produkt.setdefault("menge",    entry.get("menge", 0))
-            produkt.setdefault("lager_id", entry.get("lager_id", ""))
-            break
+            lid = entry.get("lager_id", "")
+            lager_doc = lager_by_id.get(lid)
+            inventar_entries.append(
+                {
+                    "lager_id": lid,
+                    "lagername": lager_doc.get("lagername", lid) if lager_doc else lid,
+                    "menge": entry.get("menge", 0),
+                }
+            )
+
+    produkt_menge_by_lager: dict[str, int] = {
+        e["lager_id"]: int(e.get("menge", 0)) for e in inventar_entries if e.get("lager_id")
+    }
+
     # Gather extra attrs (all keys not among the defaults)
-    defaults = {"_id", "name", "beschreibung", "gewicht",
-                "lager_id", "menge", "preis", "waehrung", "lieferant"}
+    defaults = {"_id", "name", "beschreibung", "gewicht", "preis", "waehrung", "lieferant"}
     extra = {k: v for k, v in produkt.items() if k not in defaults}
     produkt["extra_attrs"] = extra
-    lager = svc_w.list_warehouses()
-    return render_template("page2_product_edit.html", produkt=produkt, lager=lager, active_page=2)
+    return render_template(
+        "page2_product_edit.html",
+        produkt=produkt,
+        lager=lager,
+        inventar_entries=inventar_entries,
+        produkt_menge_by_lager=produkt_menge_by_lager,
+        active_page=2,
+    )
 
 
 # PAGE 2 — Save (create)
@@ -591,14 +624,41 @@ def page2_create_product():
         if extra_data:
             svc_p.update_product(produkt_id, extra_data)
 
-        # Inventory entry
-        lager_id = request.form.get("lager_id", "").strip()
-        menge = int(request.form.get("menge", 0) or 0)
-        if lager_id and menge >= 0:
+        # Inventory entries: support multiple Lager mit unterschiedlichen Mengen
+        lager_ids = request.form.getlist("lager_ids[]")
+        mengen_raw = request.form.getlist("mengen[]")
+        stock_entries: list[tuple[str, int]] = []
+
+        for lid, m_raw in zip(lager_ids, mengen_raw):
+            lid = (lid or "").strip()
+            if not lid:
+                continue
             try:
-                svc_inv.add_product(lager_id=lager_id, produkt_id=produkt_id, menge=menge)
+                menge_val = int(m_raw or 0)
+            except ValueError:
+                continue
+            # 0 oder negative Mengen ignorieren (kein Bestand)
+            if menge_val <= 0:
+                continue
+            stock_entries.append((lid, menge_val))
+
+        # Fallback: falls nur ein einzelnes Lager/Menge-Paar gesendet wurde
+        if not stock_entries:
+            single_lager_id = request.form.get("lager_id", "").strip()
+            single_menge_raw = request.form.get("menge", "").strip()
+            try:
+                single_menge = int(single_menge_raw or 0)
+            except ValueError:
+                single_menge = 0
+            if single_lager_id and single_menge > 0:
+                stock_entries.append((single_lager_id, single_menge))
+
+        for lid, menge_val in stock_entries:
+            try:
+                svc_inv.add_product(lager_id=lid, produkt_id=produkt_id, menge=menge_val)
             except (KeyError, ValueError):
-                pass  # lager may not exist; non-fatal
+                # Ungültige Lager-IDs oder Mengen ignorieren wir still
+                pass
 
         flash("Produkt erfolgreich angelegt.", "success")
     except (ValueError, KeyError) as exc:
@@ -640,30 +700,64 @@ def page2_save_product(produkt_id: str):
 
         svc_p.update_product(produkt_id, update_data)
 
-        # Inventory: update or add
-        lager_id = request.form.get("lager_id", "").strip()
-        menge    = int(request.form.get("menge", 0) or 0)
-        if lager_id:
-            db = get_db()
-            existing_entry = None
-            for e in db.find_all(COLLECTION_INVENTAR):
-                if e.get("produkt_id") == produkt_id:
-                    existing_entry = e
-                    break
-            if existing_entry:
+        # Inventory: alle Lager/Mengen dieses Produkts synchronisieren
+        lager_ids = request.form.getlist("lager_ids[]")
+        mengen_raw = request.form.getlist("mengen[]")
+        stock_entries: list[tuple[str, int]] = []
+
+        for lid, m_raw in zip(lager_ids, mengen_raw):
+            lid = (lid or "").strip()
+            if not lid:
+                continue
+            try:
+                menge_val = int(m_raw or 0)
+            except ValueError:
+                continue
+            if menge_val <= 0:
+                continue
+            stock_entries.append((lid, menge_val))
+
+        # Fallback für alte Formate: einzelnes Lager/Menge-Paar
+        if not stock_entries:
+            single_lager_id = request.form.get("lager_id", "").strip()
+            single_menge_raw = request.form.get("menge", "").strip()
+            try:
+                single_menge = int(single_menge_raw or 0)
+            except ValueError:
+                single_menge = 0
+            if single_lager_id and single_menge > 0:
+                stock_entries.append((single_lager_id, single_menge))
+
+        db = get_db()
+        existing_entries = [
+            e for e in db.find_all(COLLECTION_INVENTAR) if e.get("produkt_id") == produkt_id
+        ]
+        existing_by_lager: dict[str, dict] = {
+            e.get("lager_id", ""): e for e in existing_entries if e.get("lager_id")
+        }
+
+        # Ziel-Mengen pro Lager aggregieren (falls Lager mehrfach vorkommt)
+        desired_by_lager: dict[str, int] = {}
+        for lid, menge_val in stock_entries:
+            desired_by_lager[lid] = desired_by_lager.get(lid, 0) + menge_val
+
+        # Updates / Neuanlagen
+        for lid, menge_val in desired_by_lager.items():
+            try:
+                if lid in existing_by_lager:
+                    svc_inv.update_quantity(lager_id=lid, produkt_id=produkt_id, menge=menge_val)
+                else:
+                    svc_inv.add_product(lager_id=lid, produkt_id=produkt_id, menge=menge_val)
+            except (KeyError, ValueError) as exc:
+                flash(f"Fehler beim Aktualisieren des Bestands für Lager {lid}: {exc}", "danger")
+
+        # Entfernen von Lagerzuordnungen, die nicht mehr vorhanden sein sollen
+        for lid in list(existing_by_lager.keys()):
+            if lid not in desired_by_lager:
                 try:
-                    svc_inv.update_quantity(
-                        lager_id=existing_entry["lager_id"],
-                        produkt_id=produkt_id,
-                        menge=menge,
-                    )
-                except (KeyError, ValueError) as exc:
-                    flash(f"Fehler beim Aktualisieren des Bestands: {exc}", "danger")
-            else:
-                try:
-                    svc_inv.add_product(lager_id=lager_id, produkt_id=produkt_id, menge=menge)
-                except (KeyError, ValueError) as exc:
-                    flash(f"Fehler beim Anlegen des Bestands: {exc}", "danger")
+                    svc_inv.remove_product(lager_id=lid, produkt_id=produkt_id)
+                except KeyError:
+                    pass
 
         flash("Produkt gespeichert.", "success")
     except (ValueError, KeyError) as exc:
@@ -681,6 +775,7 @@ def page2_move_product(produkt_id: str):
     svc_inv = get_inventory_service()
     db = get_db()
     target_lager_id = request.form.get("target_lager_id", "").strip()
+    source_lager_id_override = request.form.get("source_lager_id", "").strip()
     menge_raw = request.form.get("menge", "0").strip()
 
     try:
@@ -689,12 +784,15 @@ def page2_move_product(produkt_id: str):
         flash("Menge muss eine ganze Zahl sein.", "danger")
         return redirect(url_for("page1_products"))
 
-    # Finde Quelllager (wir nehmen den ersten Inventareintrag dieses Produkts)
+    # Finde Quelllager: bevorzugt das aus dem Formular, sonst erster Inventareintrag
     source_entry = None
-    for e in db.find_all(COLLECTION_INVENTAR):
-        if e.get("produkt_id") == produkt_id:
-            source_entry = e
-            break
+    if source_lager_id_override:
+        source_entry = db.find_inventar_entry(source_lager_id_override, produkt_id)
+    if not source_entry:
+        for e in db.find_all(COLLECTION_INVENTAR):
+            if e.get("produkt_id") == produkt_id:
+                source_entry = e
+                break
 
     if not source_entry:
         flash("Für dieses Produkt ist kein Lagerbestand vorhanden.", "danger")
@@ -837,6 +935,42 @@ def page5_history():
         ev["display_time"] = display
 
     return render_template("page5_history.html", events=events_sorted, active_page=5)
+
+
+@app.route("/ui/historie/export", methods=["POST"])
+def export_history():
+    """Export the complete history as a TXT download in the browser."""
+
+    db = get_db()
+    events = db.find_all(COLLECTION_EVENTS)
+    events_sorted = sorted(events, key=lambda e: e.get("timestamp", ""))
+
+    lines: list[str] = []
+    lines.append("B.I.E.R – Vollständige Historie")
+    lines.append("=" * 80)
+    if not events_sorted:
+        lines.append("Keine Historie-Einträge vorhanden.")
+    else:
+        for ev in events_sorted:
+            ts = ev.get("timestamp", "")
+            clean = ts.rstrip("Z")
+            try:
+                dt = datetime.fromisoformat(clean)
+                display = dt.strftime("%d.%m.%Y %H:%M:%S")
+            except Exception:
+                display = ts or "?"
+
+            entity_type = ev.get("entity_type", "-")
+            action = ev.get("action", "-")
+            summary = ev.get("summary", "")
+            lines.append(f"[{display}] ({entity_type}/{action}) {summary}")
+
+    content = "\n".join(lines)
+    return Response(
+        content,
+        mimetype="text/plain; charset=utf-8",
+        headers={"Content-Disposition": "attachment; filename=history.txt"},
+    )
 
 
 # PAGE 4 — Statistics  (reuses existing statistik logic)

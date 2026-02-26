@@ -57,10 +57,11 @@ src/resources/
 ├── pictures/                 # Statische Bilddateien (BIER ICONS, Logos)
 └── templates/
     ├── base.html             # Bootstrap-5-Basis-Template mit Dark-Theme
-    ├── page1_products.html   # Produktverwaltung (Liste, Suche)
-    ├── page2_product_edit.html  # Produkt bearbeiten/erstellen
+    ├── page1_products.html   # Produktverwaltung (Liste, Suche, Lager-Filter)
+    ├── page2_product_edit.html  # Produkt bearbeiten/erstellen (Multi-Lager)
     ├── page3_warehouse_list.html # Lagerliste
-    └── page4_statistics.html # Statistik-Dashboard
+    ├── page4_statistics.html # Statistik-Dashboard
+    └── page5_history.html    # Änderungen-/Historienseite
 
 tests/
 ├── conftest.py               # Shared Fixtures (mock_db, Services, Flask-Client)
@@ -93,7 +94,7 @@ Alle anderen Schichten importieren nur diese Interfaces — nie konkrete Klassen
 
 **`MongoDBAdapter`** implementiert `DatabasePort`:
 - Verbindungsaufbau über Umgebungsvariablen (`MONGO_HOST`, `MONGO_PORT`, `MONGO_USER`, `MONGO_PASS`, `MONGO_DB`)
-- Collections: `produkte`, `lager`, `inventar`
+- Collections: `produkte`, `lager`, `inventar`, `events`
 - Spezialabfragen: `find_inventar_by_lager()`, `find_inventar_entry()`
 - Kontext-Manager-Support (`__enter__` / `__exit__`)
 - `_serialize()` konvertiert BSON `ObjectId` → `str`
@@ -103,6 +104,12 @@ Alle anderen Schichten importieren nur diese Interfaces — nie konkrete Klassen
 - `produkte`: Index auf `name`
 - `lager`: Unique Index auf `lagername`
 - `inventar`: Compound Unique Index auf `(lager_id, produkt_id)`
+- `events`: Index auf `timestamp` (für sortierte Historie)
+
+**`db/init/seed.py`** – Seed-Script für Testdaten:
+- Legt 5 Beispiel-Lager an (u. a. „Depot Innsbruck“)
+- Erzeugt ~150 Produkte mit realistischen Gewichten und Preisen (`preis` + `waehrung="EUR"`)
+- Befüllt jedes Lager mit einem zufälligen Teil der Produkte und zufälligen Mengen
 - Ausführbar als `python -m bierapp.db.init.setup`
 
 ### 3. Service-Layer (`src/bierapp/backend/services.py`)
@@ -161,20 +168,23 @@ verwenden, aber nach außen kompatibel zu den bestehenden Tests bleiben.
 | POST | `/inventar/<lager_id>/<produkt_id>/entfernen` | Produkt ausbuchen |
 | GET | `/statistik` | Statistik (Legacy) |
 
-**Routen-Übersicht (Neue 4-Seiten UI):**
+**Routen-Übersicht (Neue UI – 4+1 Seiten):**
 
 | Methode | Route | Beschreibung |
 |---|---|---|
-| GET | `/ui/produkte` | **Page 1** – Produktverwaltung |
+| GET | `/ui/produkte` | **Page 1** – Produktverwaltung (inkl. Lager-Filter) |
 | GET | `/ui/produkt/neu` | **Page 2** – Neues Produkt erstellen |
-| POST | `/ui/produkt/neu` | Produkt speichern (neu) |
+| POST | `/ui/produkt/neu` | Produkt speichern (neu) inkl. Lagerzuordnungen |
 | GET | `/ui/produkt/<id>/bearbeiten` | **Page 2** – Produkt bearbeiten |
-| POST | `/ui/produkt/<id>/speichern` | Produkt speichern (update) |
+| POST | `/ui/produkt/<id>/speichern` | Produkt speichern (Update; synchronisiert alle Lagerbestände) |
+| POST | `/ui/produkt/<id>/verschieben` | Produktbestand von einem Lager in ein anderes verschieben |
+| POST | `/ui/produkt/<id>/loeschen` | Produkt und zugehörige Bestände löschen |
 | GET | `/ui/lager` | **Page 3** – Lagerliste |
 | POST | `/ui/lager/neu` | Lager erstellen |
 | POST | `/ui/lager/<id>/bearbeiten` | Lager aktualisieren |
-| POST | `/ui/lager/<id>/loeschen` | Lager löschen |
+| POST | `/ui/lager/<id>/loeschen` | Lager löschen (inkl. dazugehörigem Inventar) |
 | GET | `/ui/statistik` | **Page 4** – Statistik-Dashboard |
+| GET | `/ui/historie` | **Page 5** – Historie aller Änderungen (Events) |
 
 ### 5. Templates (`src/resources/templates/`)
 
@@ -191,23 +201,28 @@ Alle Templates erben von `base.html` und verwenden Bootstrap 5.3, Bootstrap Icon
 | Template | Seite | Inhalt |
 |---|---|---|
 | `base.html` | — | Navigation, Flash-Messages, Modals, Block-Struktur |
-| `page1_products.html` | 1 | Produktverwaltung: Liste, Suche mit Autocomplete, "+ Neues Produkt" Button |
-| `page2_product_edit.html` | 2 | Produkt bearbeiten/erstellen: Default-Attribute + benutzerdefinierte Attribute, Sticky Action Bar |
+| `page1_products.html` | 1 | Produktverwaltung: Liste, Suche mit Autocomplete, Lager-Filter, "Produkt verschieben"-Dialog, "+ Neues Produkt" Button |
+| `page2_product_edit.html` | 2 | Produkt bearbeiten/erstellen: Pflichtfelder (Name, Preis, Gewicht), Bestände pro Lager (Multi-Lager), Default-Attribute + benutzerdefinierte Attribute, Sticky Action Bar, Delete-Modal |
 | `page3_warehouse_list.html` | 3 | Lagerliste: Tabelle mit Inline-Bearbeitung, Kapazitätsbalken, Create/Delete Modals |
 | `page4_statistics.html` | 4 | Statistik: KPI-Karten, Donut-Charts, Bar-Charts, Top-Produkte Liste |
+| `page5_history.html` | 5 | Historie: Tabelle aller Events (Produkte, Lager, Inventar) |
 
 **Page 1 – Produktverwaltung:**
 - Großer "+" Button zum Erstellen neuer Produkte
-- Live-Suche mit Autocomplete-Vorschlägen
+- Live-Suche mit Autocomplete-Vorschlägen (Tastaturnavigation, Dark-Mode-optimiert)
 - Produktliste mit Klick zum Bearbeiten
+- Lager-Filter (Dropdown); zeigt pro Produkt nur den Bestand in diesem Lager an
+- "Produkt verschieben"-Dialog zum Umlagern von Beständen zwischen Lagern
 
 **Page 2 – Produktbearbeitung:**
 - Großer BACK-Button
-- Produktname mit ID in Klammern
-- Default-Attribute (nicht löschbar): Lager, Menge, Preis, Währung, Lieferant, Produkt-ID
+- Produktname mit ID in Klammern (bei bestehenden Produkten)
+- Pflichtfelder: Name, Preis, Gewicht (Preis + Gewicht werden serverseitig validiert)
+- Bestände in allen Lagern: eine Zeile pro Lager mit eigener Mengen-Eingabe (Multi-Lager-Unterstützung)
+- Default-Attribute (nicht löschbar): Preis, Währung, Gewicht, Lieferant, Beschreibung
 - Benutzerdefinierte Attribute (dynamisch hinzufügbar/löschbar)
 - Sticky Bottom Action Bar: Speichern, Verwerfen, Zurücksetzen, Attribut hinzufügen/löschen
-- Ungespeicherte Änderungen Bestätigungsdialog
+- Bestätigungs-Modal für das Löschen eines Produkts (inkl. aller Lagerbestände)
 
 **Page 3 – Lagerliste:**
 - Lagername, Adresse, Max. Plätze, Belegung (%)
