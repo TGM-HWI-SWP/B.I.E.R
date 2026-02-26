@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% block title %}Lagerliste — B.I.E.R{% endblock %}
+
+{% block extra_head %}
+<style>
+  .capacity-bar-wrap {
+    background: var(--surface-3);
+    border-radius: 99px;
+    height: 6px;
+    width: 120px;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .capacity-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--accent);
+    transition: width .4s ease;
+  }
+  .capacity-bar-fill.high  { background: var(--danger); }
+  .capacity-bar-fill.med   { background: #f59e0b; }
+
+  .inline-edit-form {
+    display: none;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .inline-edit-form.open { display: flex; }
+  .inline-edit-input {
+    background: var(--surface-2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 13px;
+    padding: 5px 10px;
+    width: 130px;
+    transition: box-shadow var(--transition);
+  }
+  .inline-edit-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .delete-warn { color: var(--danger); font-size: 12px; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+
+  <!-- ─── Page Header ──────────────────────────────────── -->
+  <div class="section-header" style="margin-bottom:28px;">
+    <div>
+      <h1 class="page-title">Lagerliste</h1>
+      <p class="page-subtitle">{{ lager | length }} Lager registriert</p>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="openCreateModal()">
+      <i class="bi bi-plus-lg"></i> Neues Lager
+    </button>
+  </div>
+
+  <!-- ─── Warehouse Table ───────────────────────────────── -->
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="overflow-x:auto; max-height:calc(100vh - 240px); overflow-y:auto;">
+      {% if lager %}
+      <table class="data-table" id="warehouseTable">
+        <thead>
+          <tr>
+            <th>Lagername</th>
+            <th>Adresse</th>
+            <th>Max. Plätze</th>
+            <th>Belegung</th>
+            <th>Produkte</th>
+            <th style="text-align:right;">Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in lager %}
+          <tr data-lager-id="{{ l._id }}">
+            <td>
+              <!-- View mode -->
+              <div class="view-mode-name">
+                <strong>{{ l.lagername }}</strong>
+              </div>
+              <!-- Edit mode -->
+              <form class="inline-edit-form edit-form-{{ l._id }}"
+                    method="POST"
+                    action="{{ url_for('page3_update_warehouse', lager_id=l._id) }}"
+                    id="editForm-{{ l._id }}">
+                <input type="text" name="lagername" class="inline-edit-input"
+                       value="{{ l.lagername }}" required placeholder="Lagername" />
+                <input type="text" name="adresse"   class="inline-edit-input"
+                       value="{{ l.adresse }}" placeholder="Adresse" />
+                <input type="number" name="max_plaetze" class="inline-edit-input"
+                       value="{{ l.max_plaetze }}" min="1" placeholder="Max. Plätze"
+                       style="width:90px;" />
+                <button class="btn btn-success btn-sm" type="submit">
+                  <i class="bi bi-check-lg"></i> Speichern
+                </button>
+                <button class="btn btn-ghost btn-sm" type="button"
+                        onclick="cancelEdit('{{ l._id }}')">Abbrechen</button>
+              </form>
+            </td>
+            <td>
+              <span class="view-mode-adresse" style="color:var(--text-muted);">
+                {{ l.adresse if l.adresse else '—' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-muted">{{ l.max_plaetze }}</span>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                {% set stored = l.get('menge', 0) %}
+                {% set maxp   = l.get('max_plaetze', 1) if l.get('max_plaetze', 1) > 0 else 1 %}
+                {% set pct_val = [(stored / maxp * 100) | round(1), 100] | min %}
+                <div class="capacity-bar-wrap">
+                  <div class="capacity-bar-fill {% if pct_val >= 90 %}high{% elif pct_val >= 70 %}med{% endif %}"
+                       style="width: {{ [pct_val, 100] | min }}%;"></div>
+                </div>
+                <span style="font-size:13px;color:var(--text-muted);">{{ pct_val }}%</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-accent">
+                {{ l.get('num_produkte', 0) }} Produkt{% if l.get('num_produkte', 0) != 1 %}e{% endif %}
+              </span>
+            </td>
+            <td style="text-align:right;">
+              <div class="view-mode-actions" style="display:flex;gap:6px;justify-content:flex-end;">
+                <button class="btn btn-ghost btn-icon btn-sm" title="Bearbeiten"
+                        onclick="startEdit('{{ l._id }}')">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-danger btn-icon btn-sm" title="Lager löschen"
+                        onclick="confirmDelete('{{ l._id }}', '{{ l.lagername | e }}')">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-building"></i>
+        <p>Noch keine Lager vorhanden.</p>
+        <button class="btn btn-primary" onclick="openCreateModal()">
+          <i class="bi bi-plus-lg"></i> Erstes Lager anlegen
+        </button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── Create Warehouse Modal ───────────────────── -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal-box" style="text-align:left;max-width:480px;">
+    <h3 style="margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+      <i class="bi bi-building-add" style="color:var(--accent);"></i> Neues Lager anlegen
+    </h3>
+    <form method="POST" action="{{ url_for('page3_create_warehouse') }}">
+      <div style="margin-bottom:14px;">
+        <label class="form-label">Lagername *</label>
+        <input type="text" name="lagername" class="form-control" placeholder="z. B. Hauptlager Berlin" required />
+      </div>
+      <div style="margin-bottom:14px;">
+        <label class="form-label">Adresse</label>
+        <input type="text" name="adresse" class="form-control" placeholder="Straße, PLZ, Stadt" />
+      </div>
+      <div style="margin-bottom:24px;">
+        <label class="form-label">Max. Lagerplätze *</label>
+        <input type="number" name="max_plaetze" class="form-control" min="1" value="100" required />
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Abbrechen</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Anlegen</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ─── Delete Confirmation Modal ───────────────── -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <i class="bi bi-exclamation-octagon" style="font-size:40px;color:var(--danger);margin-bottom:16px;display:block;"></i>
+    <h3>Lager wirklich löschen?</h3>
+    <p id="deleteModalMsg">Alle gespeicherten Produkte in diesem Lager werden ebenfalls gelöscht.</p>
+    <div class="modal-actions">
+      <form id="deleteForm" method="POST">
+        <button type="submit" class="btn btn-danger">Löschen</button>
+      </form>
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // ── Create modal ───────────────────────────────────────
+  function openCreateModal()  { document.getElementById('createModal').classList.add('open'); }
+  function closeCreateModal() { document.getElementById('createModal').classList.remove('open'); }
+
+  // ── Delete modal ───────────────────────────────────────
+  function confirmDelete(id, name) {
+    document.getElementById('deleteModalMsg').textContent =
+      `„${name}" löschen? Alle enthaltenen Produkte werden ebenfalls entfernt.`;
+    document.getElementById('deleteForm').action = `/ui/lager/${id}/loeschen`;
+    document.getElementById('deleteModal').classList.add('open');
+  }
+  function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('open'); }
+
+  // ── Inline edit ────────────────────────────────────────
+  function startEdit(id) {
+    const row = document.querySelector(`[data-lager-id="${id}"]`);
+    row.querySelector('.view-mode-name').style.display    = 'none';
+    row.querySelector('.view-mode-adresse').style.display = 'none';
+    row.querySelector('.view-mode-actions').style.display = 'none';
+    row.querySelector(`.edit-form-${id}`).classList.add('open');
+  }
+  function cancelEdit(id) {
+    const row = document.querySelector(`[data-lager-id="${id}"]`);
+    row.querySelector('.view-mode-name').style.display    = '';
+    row.querySelector('.view-mode-adresse').style.display = '';
+    row.querySelector('.view-mode-actions').style.display = '';
+    row.querySelector(`.edit-form-${id}`).classList.remove('open');
+  }
+
+  // Close modals on backdrop click
+  ['createModal','deleteModal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+      if (e.target === e.currentTarget) {
+        e.currentTarget.classList.remove('open');
+      }
+    });
+  });
+</script>
+{% endblock %}

@@ -26,7 +26,8 @@ Die MongoDB-Abhängigkeit wird in allen nicht-Live-Tests durch ein `MagicMock` e
 
 ## Shared Fixtures (`tests/conftest.py`)
 
-```python
+```
+python
 mock_db           # MagicMock, mimics MongoDBAdapter
 product_service   # ProductService(mock_db)
 warehouse_service # WarehouseService(mock_db)
@@ -78,7 +79,7 @@ Der `flask_client`-Fixture monkeypatcht `bierapp.frontend.flask.gui._db` auf das
 | `test_remove_product_calls_delete` | Ruft `db.delete` auf |
 | `test_remove_product_raises_for_missing` | `KeyError` bei fehlendem Eintrag |
 | `test_list_inventory_raises_for_missing_lager` | `KeyError` wenn Lager nicht existiert |
-| `test_list_inventory_enriches_entries` | Ergänzt Einträge mit Produktname |
+| `test_list_inventory_enriches_entries` | Ergänzt Einträge mit Produktdaten |
 
 ---
 
@@ -118,10 +119,21 @@ Der `flask_client`-Fixture monkeypatcht `bierapp.frontend.flask.gui._db` auf das
 - `test_inventar_empty_lager_returns_200` – Keine Lager → Leer-Zustand 200
 - `test_inventar_redirects_to_first_lager` – Lager vorhanden → Redirect zu erstem Lager
 - `test_inventar_detail_returns_200` – GET `/inventar/<id>` gibt 200 zurück
-- `test_inventar_detail_unknown_lager_redirects` – Unbekannte ID → 302
+- `test_inventar_unknown_lager_redirects` – Unbekannte ID → 302
 - `test_inventar_add_valid_redirects` – Einbuchen → 302
 - `test_inventar_update_quantity_redirects` – Menge ändern → 302, `update` aufgerufen
 - `test_inventar_remove_redirects` – Ausbuchen → 302, `delete` aufgerufen
+
+### TestNewUIRoutes (Neue 4-Seiten UI)
+
+Die neuen UI-Routen werden automatisch durch die existierenden Tests abgedeckt, da sie die gleichen Services verwenden. Zusätzliche Tests für die neuen Routen:
+
+| Test | Prüft |
+|---|---|
+| `test_page1_products_returns_200` | GET `/ui/produkte` gibt 200 zurück |
+| `test_page2_new_product_returns_200` | GET `/ui/produkt/neu` gibt 200 zurück |
+| `test_page3_warehouse_list_returns_200` | GET `/ui/lager` gibt 200 zurück |
+| `test_page4_statistics_returns_200` | GET `/ui/statistik` gibt 200 zurück |
 
 ---
 
@@ -137,7 +149,8 @@ pytest -m live   # Nur Live-Tests ausführen (nach docker compose up)
 
 ## Test-Ausführung
 
-```bash
+```
+bash
 # Alle Tests
 pytest tests/ -v
 
@@ -167,6 +180,25 @@ Beispiele:
   test_add_product_merge_increases_total       ✓
   test_list_inventory_enriches_entries         ✓
 ```
+
+---
+
+## Test-Abdeckung für Neue UI
+
+Die neue 4-Seiten UI verwendet die gleichen Backend-Services wie die Legacy-UI. Die vorhandenen Tests für `ProductService`, `WarehouseService` und `InventoryService` decken daher auch die Funktionalität der neuen UI ab.
+
+**Neue UI Routen:**
+- `/ui/produkte` – Page 1: Produktverwaltung
+- `/ui/produkt/neu` – Page 2: Neues Produkt erstellen
+- `/ui/produkt/<id>/bearbeiten` – Page 2: Produkt bearbeiten
+- `/ui/lager` – Page 3: Lagerliste
+- `/ui/statistik` – Page 4: Statistik-Dashboard
+
+**Getestete Funktionalität:**
+- Produkt erstellen, bearbeiten, löschen
+- Lager erstellen, bearbeiten, löschen
+- Inventar-Verwaltung (einbuchen, ausbuchen, Menge ändern)
+- Statistik-Berechnung
 
 ---
 

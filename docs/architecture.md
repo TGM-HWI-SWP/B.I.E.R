@@ -11,11 +11,11 @@ B.I.E.R folgt der **Hexagonalen Architektur** (Ports & Adapters). Jede Schicht k
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                  Frontend (Flask / Jinja2)                   │
-│   gui.py  ·  layout.html  ·  produkte / lager / inventar    │
+│   gui.py  ·  base.html  ·  page1-4 templates               │
 └─────────────────────────┬────────────────────────────────────┘
                           │  ruft auf
 ┌─────────────────────────▼────────────────────────────────────┐
-│                  Backend (Service-Layer)                      │
+│                  Backend (Service-Layer)                     │
 │      ProductService  ·  WarehouseService  ·  InventoryService│
 └─────────────────────────┬────────────────────────────────────┘
                           │  nutzt Port
@@ -54,21 +54,21 @@ src/bierapp/
         └── gui.py            # Flask-App, Routen, Template-Rendering
 
 src/resources/
-├── pictures/                 # Statische Bilddateien
+├── pictures/                 # Statische Bilddateien (BIER ICONS, Logos)
 └── templates/
-    ├── layout.html           # Bootstrap-5-Basis-Template
-    ├── index.html            # Dashboard
-    ├── produkte.html         # Produktverwaltung (CRUD)
-    ├── lager.html            # Lagerverwaltung (CRUD)
-    └── inventar.html         # Bestandsverwaltung
+    ├── base.html             # Bootstrap-5-Basis-Template mit Dark-Theme
+    ├── page1_products.html   # Produktverwaltung (Liste, Suche)
+    ├── page2_product_edit.html  # Produkt bearbeiten/erstellen
+    ├── page3_warehouse_list.html # Lagerliste
+    └── page4_statistics.html # Statistik-Dashboard
 
 tests/
 ├── conftest.py               # Shared Fixtures (mock_db, Services, Flask-Client)
 ├── unit/
-│   └── test_domain.py        # Unit-Tests für alle Services (26 Tests)
+│   └── test_domain.py        # Unit-Tests für alle Services
 └── integration/
-    ├── test_flask.py         # Flask-Routen via Test-Client (19 Tests)
-    ├── test_integration.py   # Service-Interaktionstests (5 Tests)
+    ├── test_flask.py         # Flask-Routen via Test-Client
+    ├── test_integration.py   # Service-Interaktionstests
     └── test_mongodb.py       # Live-Connectivity (überspringt ohne Docker)
 ```
 
@@ -128,7 +128,8 @@ Alle anderen Schichten importieren nur diese Interfaces — nie konkrete Klassen
 
 Flask-Anwendung mit Lazy-Singleton-Pattern für DB und Services:
 
-```python
+```
+python
 _db: Optional[MongoDBAdapter] = None
 
 def get_db() -> MongoDBAdapter:      # erstellt Verbindung bei Bedarf
@@ -137,16 +138,16 @@ def get_warehouse_service() -> WarehouseService:
 def get_inventory_service() -> InventoryService:
 ```
 
-**Routen-Übersicht:**
+**Routen-Übersicht (Legacy):**
 
 | Methode | Route | Beschreibung |
 |---|---|---|
-| GET | `/` | Dashboard (Statistik-Karten, Lagerliste) |
-| GET | `/produkte` | Produktliste |
+| GET | `/` | Redirect to dashboard |
+| GET | `/produkte` | Produktliste (Legacy) |
 | POST | `/produkte/neu` | Produkt erstellen |
 | POST | `/produkte/<id>/bearbeiten` | Produkt aktualisieren |
 | POST | `/produkte/<id>/loeschen` | Produkt löschen |
-| GET | `/lager` | Lagerliste |
+| GET | `/lager` | Lagerliste (Legacy) |
 | POST | `/lager/neu` | Lager erstellen |
 | POST | `/lager/<id>/bearbeiten` | Lager aktualisieren |
 | POST | `/lager/<id>/loeschen` | Lager löschen |
@@ -155,31 +156,85 @@ def get_inventory_service() -> InventoryService:
 | POST | `/inventar/<lager_id>/hinzufuegen` | Produkt einbuchen |
 | POST | `/inventar/<lager_id>/<produkt_id>/aktualisieren` | Menge ändern |
 | POST | `/inventar/<lager_id>/<produkt_id>/entfernen` | Produkt ausbuchen |
+| GET | `/statistik` | Statistik (Legacy) |
+
+**Routen-Übersicht (Neue 4-Seiten UI):**
+
+| Methode | Route | Beschreibung |
+|---|---|---|
+| GET | `/ui/produkte` | **Page 1** – Produktverwaltung |
+| GET | `/ui/produkt/neu` | **Page 2** – Neues Produkt erstellen |
+| POST | `/ui/produkt/neu` | Produkt speichern (neu) |
+| GET | `/ui/produkt/<id>/bearbeiten` | **Page 2** – Produkt bearbeiten |
+| POST | `/ui/produkt/<id>/speichern` | Produkt speichern (update) |
+| GET | `/ui/lager` | **Page 3** – Lagerliste |
+| POST | `/ui/lager/neu` | Lager erstellen |
+| POST | `/ui/lager/<id>/bearbeiten` | Lager aktualisieren |
+| POST | `/ui/lager/<id>/loeschen` | Lager löschen |
+| GET | `/ui/statistik` | **Page 4** – Statistik-Dashboard |
 
 ### 5. Templates (`src/resources/templates/`)
 
-Alle Templates erben von `layout.html` (Bootstrap 5.3, Bootstrap Icons 1.11, Amber/Dark Theme).
+Alle Templates erben von `base.html` und verwenden Bootstrap 5.3, Bootstrap Icons 1.11, Chart.js 4.4 mit einem modernen Dark-Theme.
 
-| Template | Inhalt |
-|---|---|
-| `layout.html` | Navbar, Flash-Messages, Block-Struktur |
-| `index.html` | Stat-Karten (Produkte, Lager, Gesamtmenge), Lagertabelle |
-| `produkte.html` | Produkttabelle + Bootstrap-Modal (Erstellen / Bearbeiten / Löschen) |
-| `lager.html` | Lagertabelle + Bootstrap-Modal |
-| `inventar.html` | Sidebar (Lagerliste) + Bestandstabelle + Produkt-Hinzufügen-Modal |
+**Design-Merkmale:**
+- Modernes Dark-Theme mit benutzerdefinierten CSS-Variablen
+- Gerundete Ecken (`border-radius: 12px`)
+- Sticky Navigation und Action Bars
+- Autocomplete-Suche
+- Modal-Dialoge für Bestätigungen
+- Responsive Layout
+
+| Template | Seite | Inhalt |
+|---|---|---|
+| `base.html` | — | Navigation, Flash-Messages, Modals, Block-Struktur |
+| `page1_products.html` | 1 | Produktverwaltung: Liste, Suche mit Autocomplete, "+ Neues Produkt" Button |
+| `page2_product_edit.html` | 2 | Produkt bearbeiten/erstellen: Default-Attribute + benutzerdefinierte Attribute, Sticky Action Bar |
+| `page3_warehouse_list.html` | 3 | Lagerliste: Tabelle mit Inline-Bearbeitung, Kapazitätsbalken, Create/Delete Modals |
+| `page4_statistics.html` | 4 | Statistik: KPI-Karten, Donut-Charts, Bar-Charts, Top-Produkte Liste |
+
+**Page 1 – Produktverwaltung:**
+- Großer "+" Button zum Erstellen neuer Produkte
+- Live-Suche mit Autocomplete-Vorschlägen
+- Produktliste mit Klick zum Bearbeiten
+
+**Page 2 – Produktbearbeitung:**
+- Großer BACK-Button
+- Produktname mit ID in Klammern
+- Default-Attribute (nicht löschbar): Lager, Menge, Preis, Währung, Lieferant, Produkt-ID
+- Benutzerdefinierte Attribute (dynamisch hinzufügbar/löschbar)
+- Sticky Bottom Action Bar: Speichern, Verwerfen, Zurücksetzen, Attribut hinzufügen/löschen
+- Ungespeicherte Änderungen Bestätigungsdialog
+
+**Page 3 – Lagerliste:**
+- Lagername, Adresse, Max. Plätze, Belegung (%)
+- Kapazitätsbalken mit Farbcodierung
+- Inline-Bearbeitung
+- Lösch-Warnung (alle Produkte werden gelöscht)
+
+**Page 4 – Statistik:**
+- KPI-Karten: Produkte gesamt, Lager gesamt, Einheiten gesamt, Höchster Einzelbestand
+- Donut-Chart: Produktverteilung je Lager
+- Bar-Chart: Top-Produkte nach Bestand
+- Bar-Chart: Lagerauslastung (%)
+- Pie-Chart: Kategorieverteilung
+- Top-Produkte Liste mit Rang und Fortschrittsbalken
 
 ---
 
-## Datenfluss (Beispiel: Produkt erstellen)
+## Datenfluss (Beispiel: Produkt erstellen - Neue UI)
 
 ```
-1. Nutzer füllt Formular auf /produkte aus und klickt "Speichern"
-2. Browser sendet POST /produkte/neu
-3. gui.py: produkte_create() liest request.form
-4. get_product_service() gibt ProductService(get_db()) zurück
-5. ProductService.create_product() validiert Eingaben
-6. MongoDBAdapter.insert("produkte", doc) schreibt in MongoDB
-7. Redirect auf GET /produkte → Flash-Message "Erfolgreich"
+1. Nutzer klickt "+ Neues Produkt" auf Page 1
+2. Browser ruft GET /ui/produkt/neu auf
+3. gui.py: page2_product_edit() rendert page2_product_edit.html
+4. Nutzer füllt Formular aus und klickt "Speichern"
+5. Browser sendet POST /ui/produkt/neu
+6. gui.py: page2_create_product() liest request.form
+7. get_product_service() gibt ProductService(get_db()) zurück
+8. ProductService.create_product() validiert Eingaben und erstellt Produkt
+9. MongoDBAdapter.insert("produkte", doc) schreibt in MongoDB
+10. Redirect auf GET /ui/produkte → Flash-Message "Erfolgreich"
 ```
 
 ---
@@ -188,7 +243,8 @@ Alle Templates erben von `layout.html` (Bootstrap 5.3, Bootstrap Icons 1.11, Amb
 
 Services erhalten den DB-Adapter über den Konstruktor:
 
-```python
+```
+python
 # Produktion
 service = ProductService(MongoDBAdapter())
 
@@ -227,4 +283,4 @@ Umgebungsvariablen (konfigurierbar über `.env` oder Docker Compose):
 ---
 
 **Letzte Aktualisierung:** 2026-02-25
-**Version:** 1.0
+**Version:** 1.1

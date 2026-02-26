@@ -270,3 +270,120 @@ class TestInventar:
         response = flask_client.post(f"/inventar/{FAKE_ID}/pid123/entfernen")
         assert response.status_code == 302
         mock_db.delete.assert_called_once()
+
+
+class TestNewUIRoutes:
+    """Tests for the new 4-page UI routes (/ui/*)."""
+
+    def test_page1_products_returns_200(self, flask_client, mock_db):
+        """GET /ui/produkte renders Page 1 - Product Management."""
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/produkte")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        assert "Produktverwaltung" in body
+
+    def test_page2_new_product_returns_200(self, flask_client, mock_db):
+        """GET /ui/produkt/neu renders Page 2 - New Product form."""
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/produkt/neu")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        assert "Neues Produkt" in body
+
+    def test_page2_edit_product_returns_200(self, flask_client, mock_db):
+        """GET /ui/produkt/<id>/bearbeiten renders Page 2 - Edit Product form."""
+        product_doc = {"_id": FAKE_ID, "name": "TestProdukt", "beschreibung": "Test"}
+        mock_db.find_by_id.return_value = product_doc
+        mock_db.find_all.return_value = [{"_id": "lager1", "lagername": "Lager A"}]
+        response = flask_client.get(f"/ui/produkt/{FAKE_ID}/bearbeiten")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        assert "TestProdukt" in body
+
+    def test_page2_create_product_redirects(self, flask_client, mock_db):
+        """POST /ui/produkt/neu with valid data creates product and redirects."""
+        mock_db.insert.return_value = FAKE_ID
+        mock_db.find_all.return_value = []
+        response = flask_client.post(
+            "/ui/produkt/neu",
+            data={
+                "name": "Neues Produkt",
+                "beschreibung": "Beschreibung",
+                "gewicht": "1.5",
+                "preis": "10.00",
+                "waehrung": "EUR",
+                "lieferant": "Lieferant X",
+                "menge": "100",
+            },
+        )
+        assert response.status_code == 302
+        assert "/ui/produkte" in response.headers["Location"]
+
+    def test_page2_save_product_redirects(self, flask_client, mock_db):
+        """POST /ui/produkt/<id>/speichern updates product and redirects."""
+        product_doc = {"_id": FAKE_ID, "name": "TestProdukt"}
+        mock_db.find_by_id.return_value = product_doc
+        mock_db.find_all.return_value = []
+        response = flask_client.post(
+            f"/ui/produkt/{FAKE_ID}/speichern",
+            data={
+                "name": "Geändertes Produkt",
+                "beschreibung": "Neue Beschreibung",
+                "gewicht": "2.0",
+                "preis": "15.00",
+                "waehrung": "USD",
+                "lieferant": "Neuer Lieferant",
+                "menge": "50",
+            },
+        )
+        assert response.status_code == 302
+        assert "/ui/produkte" in response.headers["Location"]
+
+    def test_page3_warehouse_list_returns_200(self, flask_client, mock_db):
+        """GET /ui/lager renders Page 3 - Warehouse List."""
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/lager")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        assert "Lagerliste" in body
+
+    def test_page3_create_warehouse_redirects(self, flask_client, mock_db):
+        """POST /ui/lager/neu creates warehouse and redirects."""
+        mock_db.insert.return_value = FAKE_ID
+        mock_db.find_all.return_value = []
+        response = flask_client.post(
+            "/ui/lager/neu",
+            data={"lagername": "Neues Lager", "adresse": "Wien", "max_plaetze": "200"},
+        )
+        assert response.status_code == 302
+        assert "/ui/lager" in response.headers["Location"]
+
+    def test_page3_delete_warehouse_redirects(self, flask_client, mock_db):
+        """POST /ui/lager/<id>/loeschen deletes warehouse and redirects."""
+        lager_doc = {"_id": FAKE_ID, "lagername": "TestLager"}
+        mock_db.find_by_id.return_value = lager_doc
+        mock_db.find_all.return_value = [{"_id": FAKE_ID, "lagername": "TestLager"}]
+        response = flask_client.post(f"/ui/lager/{FAKE_ID}/loeschen")
+        assert response.status_code == 302
+        assert "/ui/lager" in response.headers["Location"]
+
+    def test_page4_statistics_returns_200(self, flask_client, mock_db):
+        """GET /ui/statistik renders Page 4 - Statistics Dashboard."""
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/statistik")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        assert "Statistik" in body
+
+    def test_page4_statistics_contains_charts(self, flask_client, mock_db):
+        """GET /ui/statistik renders chart canvas elements."""
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/statistik")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        # Check for Chart.js canvas elements
+        assert "donutChart" in body
+        assert "barChart" in body
+        assert "ausChart" in body
+        assert "katChart" in body

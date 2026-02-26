@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+{% block title %}{% if produkt %}{{ produkt.name }} bearbeiten{% else %}Neues Produkt{% endif %} — B.I.E.R{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ─── Page 2 specific ──────────────────────────────────── */
+  .attr-row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn .15s ease;
+  }
+  .attr-row:last-child { border-bottom: none; }
+  .attr-row.selected { background: var(--accent-soft); margin: 0 -24px; padding: 10px 24px; border-radius: var(--radius-sm); }
+  .attr-row.default-attr .attr-key { cursor: default; }
+  .attr-key {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-muted);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .attr-lock { font-size: 12px; color: var(--text-muted); opacity: .5; }
+  .attr-val-input {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 14px;
+    padding: 8px 12px;
+    width: 100%;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .attr-val-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .attr-row-select-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: 6px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition);
+    font-size: 15px;
+  }
+  .attr-row-select-btn:hover { background: var(--surface-3); color: var(--text); }
+  .attr-row.selected .attr-row-select-btn { color: var(--accent); }
+
+  .form-section {
+    padding: 24px;
+    overflow-y: auto;
+    max-height: calc(100vh - var(--nav-h) - 180px);
+  }
+
+  .product-hero {
+    padding: 28px 40px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .product-hero .product-icon {
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 24px;
+    color: var(--accent);
+  }
+  .product-hero h2 {
+    font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -.4px;
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  }
+  .product-hero .pid-badge {
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 2px 10px;
+  }
+  .product-hero p { color: var(--text-muted); font-size: 13px; margin: 0; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* overide page-content for this page: no inner padding, full height flex */
+  .page2-layout {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--nav-h));
+    overflow: hidden;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page2-layout">
+
+  <!-- ─── Product Hero Header ──────────────────────── -->
+  <div class="product-hero">
+    <a href="{{ url_for('page1_products') }}" class="btn btn-ghost btn-icon" id="backBtn" title="Zurück">
+      <i class="bi bi-arrow-left" style="font-size:20px;"></i>
+    </a>
+    <div class="product-icon">
+      <i class="bi bi-box"></i>
+    </div>
+    <div>
+      <h2 id="heroProductName">
+        {% if produkt %}{{ produkt.name }}{% else %}<span style="color:var(--text-muted)">Neues Produkt</span>{% endif %}
+        {% if produkt %}
+          <span class="pid-badge">{{ produkt._id }}</span>
+        {% endif %}
+      </h2>
+      <p>{% if produkt %}Produkt bearbeiten{% else %}Neues Produkt erstellen{% endif %}</p>
+    </div>
+  </div>
+
+  <!-- ─── Attributes Form (scrollable) ─────────────── -->
+  <div class="form-section" id="attributeSection">
+    <div style="max-width:800px; margin:0 auto;">
+
+      <!-- DEFAULT ATTRIBUTES -->
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+                  color:var(--text-muted);margin-bottom:12px;">
+        Standardattribute
+      </div>
+
+      <!-- Name (separate, since it also drives the hero) -->
+      <div class="attr-row default-attr" id="row-name">
+        <div class="attr-key"><i class="bi bi-tag"></i> Name <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="text" name="name" id="field-name" class="attr-val-input"
+               value="{{ produkt.name if produkt else '' }}"
+               placeholder="Produktname…" required />
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-lager">
+        <div class="attr-key"><i class="bi bi-building"></i> Lager <i class="bi bi-lock-fill attr-lock"></i></div>
+        <select name="lager_id" id="field-lager" class="attr-val-input">
+          <option value="">— kein Lager —</option>
+          {% for l in lager %}
+            <option value="{{ l._id }}"
+              {% if produkt and produkt.lager_id == l._id %}selected{% endif %}>
+              {{ l.lagername }}
+            </option>
+          {% endfor %}
+        </select>
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-menge">
+        <div class="attr-key"><i class="bi bi-123"></i> Menge <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="number" name="menge" id="field-menge" class="attr-val-input" min="0"
+               value="{{ produkt.menge if produkt and produkt.menge is defined else 0 }}"
+               placeholder="0" />
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-preis">
+        <div class="attr-key"><i class="bi bi-currency-euro"></i> Preis <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="number" name="preis" id="field-preis" class="attr-val-input" min="0" step="0.01"
+               value="{{ produkt.preis if produkt and produkt.preis is defined else '' }}"
+               placeholder="0.00" />
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-waehrung">
+        <div class="attr-key"><i class="bi bi-coin"></i> Währung <i class="bi bi-lock-fill attr-lock"></i></div>
+        <select name="waehrung" id="field-waehrung" class="attr-val-input">
+          {% set cur = produkt.waehrung if produkt and produkt.waehrung is defined else 'EUR' %}
+          <option value="EUR" {% if cur == 'EUR' %}selected{% endif %}>EUR — Euro</option>
+          <option value="USD" {% if cur == 'USD' %}selected{% endif %}>USD — US Dollar</option>
+          <option value="CHF" {% if cur == 'CHF' %}selected{% endif %}>CHF — Schweizer Franken</option>
+          <option value="GBP" {% if cur == 'GBP' %}selected{% endif %}>GBP — Britisches Pfund</option>
+        </select>
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-lieferant">
+        <div class="attr-key"><i class="bi bi-truck"></i> Lieferant <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="text" name="lieferant" id="field-lieferant" class="attr-val-input"
+               value="{{ produkt.lieferant if produkt and produkt.lieferant is defined else '' }}"
+               placeholder="Lieferantenname…" />
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-beschreibung">
+        <div class="attr-key"><i class="bi bi-card-text"></i> Beschreibung <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="text" name="beschreibung" id="field-beschreibung" class="attr-val-input"
+               value="{{ produkt.beschreibung if produkt else '' }}"
+               placeholder="Kurzbeschreibung…" />
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-gewicht">
+        <div class="attr-key"><i class="bi bi-speedometer"></i> Gewicht (kg) <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="number" name="gewicht" id="field-gewicht" class="attr-val-input" min="0" step="0.001"
+               value="{{ produkt.gewicht if produkt else '0' }}"
+               placeholder="0.000" />
+        <span></span>
+      </div>
+
+      <!-- CUSTOM ATTRIBUTES -->
+      <hr class="divider" />
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+                  color:var(--text-muted);margin-bottom:12px;">
+        Benutzerdefinierte Attribute
+      </div>
+
+      <div id="customAttrContainer">
+        {% if produkt and produkt.extra_attrs %}
+          {% for key, val in produkt.extra_attrs.items() %}
+          <div class="attr-row custom-attr" data-selected="false">
+            <input type="text" class="attr-val-input custom-key" name="extra_key[]"
+                   placeholder="Attributname" value="{{ key }}" />
+            <input type="text" class="attr-val-input custom-val" name="extra_val[]"
+                   placeholder="Wert" value="{{ val }}" />
+            <button type="button" class="attr-row-select-btn select-attr-btn"
+                    title="Auswählen" onclick="toggleAttrSelect(this)">
+              <i class="bi bi-check2-circle"></i>
+            </button>
+          </div>
+          {% endfor %}
+        {% endif %}
+      </div>
+
+      <div style="height:120px;"></div><!-- spacer so last items above sticky bar -->
+    </div>
+  </div>
+
+  <!-- ─── Sticky Bottom Action Bar ─────────────────── -->
+  <div class="action-bar" id="actionBar">
+    <button class="btn btn-success" onclick="saveChanges()">
+      <i class="bi bi-floppy"></i> Speichern
+    </button>
+    <button class="btn btn-secondary" onclick="discardChanges()">
+      <i class="bi bi-x-lg"></i> Verwerfen
+    </button>
+    <button class="btn btn-ghost" onclick="revertChanges()">
+      <i class="bi bi-arrow-counterclockwise"></i> Zurücksetzen
+    </button>
+    <div class="spacer"></div>
+    <button class="btn btn-secondary" onclick="addAttribute()">
+      <i class="bi bi-plus-lg"></i> Attribut hinzufügen
+    </button>
+    <button class="btn btn-danger" id="deleteAttrBtn" onclick="deleteSelectedAttribute()" disabled>
+      <i class="bi bi-trash"></i> Attribut löschen
+    </button>
+  </div>
+</div>
+
+<!-- ─── Hidden Form for submitting ──────────────── -->
+<form id="productForm" method="POST"
+      action="{% if produkt %}{{ url_for('page2_save_product', produkt_id=produkt._id) }}{% else %}{{ url_for('page2_create_product') }}{% endif %}"
+      style="display:none;">
+  <input type="hidden" name="name"        id="hf-name" />
+  <input type="hidden" name="lager_id"    id="hf-lager" />
+  <input type="hidden" name="menge"       id="hf-menge" />
+  <input type="hidden" name="preis"       id="hf-preis" />
+  <input type="hidden" name="waehrung"    id="hf-waehrung" />
+  <input type="hidden" name="lieferant"   id="hf-lieferant" />
+  <input type="hidden" name="beschreibung" id="hf-beschreibung" />
+  <input type="hidden" name="gewicht"     id="hf-gewicht" />
+  <div id="hf-extra"></div>
+</form>
+
+<!-- ─── Unsaved Changes Modal ────────────────────── -->
+<div class="modal-overlay" id="unsavedModal">
+  <div class="modal-box">
+    <i class="bi bi-exclamation-triangle" style="font-size:40px;color:var(--danger);margin-bottom:16px;display:block;"></i>
+    <h3>Ungespeicherte Änderungen</h3>
+    <p>Es gibt ungespeicherte Änderungen. Möchten Sie die Seite wirklich verlassen?</p>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="confirmLeaveBtn">Verlassen</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // ── State ──────────────────────────────────────────────
+  let isDirty  = false;
+  let pendingHref = null;
+  let selectedAttrRow = null;
+
+  const originalValues = captureValues();
+
+  // ── Track changes ──────────────────────────────────────
+  document.getElementById('attributeSection').addEventListener('input', () => { isDirty = true; });
+
+  // Update hero name in real time
+  document.getElementById('field-name').addEventListener('input', e => {
+    const nm = e.target.value.trim();
+    document.getElementById('heroProductName').firstChild.textContent = nm || 'Neues Produkt';
+  });
+
+  // ── Capture current field values ───────────────────────
+  function captureValues() {
+    const vals = {};
+    document.querySelectorAll('[id^="field-"]').forEach(el => {
+      vals[el.id] = el.value;
+    });
+    return vals;
+  }
+
+  // ── Save ───────────────────────────────────────────────
+  function saveChanges() {
+    // Copy fields to hidden form
+    document.getElementById('hf-name').value        = document.getElementById('field-name').value;
+    document.getElementById('hf-lager').value       = document.getElementById('field-lager').value;
+    document.getElementById('hf-menge').value       = document.getElementById('field-menge').value;
+    document.getElementById('hf-preis').value       = document.getElementById('field-preis').value;
+    document.getElementById('hf-waehrung').value    = document.getElementById('field-waehrung').value;
+    document.getElementById('hf-lieferant').value   = document.getElementById('field-lieferant').value;
+    document.getElementById('hf-beschreibung').value= document.getElementById('field-beschreibung').value;
+    document.getElementById('hf-gewicht').value     = document.getElementById('field-gewicht').value;
+
+    // Extra attrs
+    const hfExtra = document.getElementById('hf-extra');
+    hfExtra.innerHTML = '';
+    document.querySelectorAll('#customAttrContainer .custom-attr').forEach(row => {
+      const k = row.querySelector('.custom-key').value.trim();
+      const v = row.querySelector('.custom-val').value.trim();
+      if (!k) return;
+      const ki = document.createElement('input');
+      ki.type = 'hidden'; ki.name = 'extra_key[]'; ki.value = k;
+      const vi = document.createElement('input');
+      vi.type = 'hidden'; vi.name = 'extra_val[]'; vi.value = v;
+      hfExtra.appendChild(ki);
+      hfExtra.appendChild(vi);
+    });
+
+    isDirty = false;
+    document.getElementById('productForm').submit();
+  }
+
+  // ── Discard (redirect back) ────────────────────────────
+  function discardChanges() {
+    if (isDirty) {
+      pendingHref = '{{ url_for("page1_products") }}';
+      openModal();
+    } else {
+      window.location = '{{ url_for("page1_products") }}';
+    }
+  }
+
+  // ── Revert to original values ──────────────────────────
+  function revertChanges() {
+    Object.entries(originalValues).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    });
+    // Remove all custom attrs added after load
+    document.querySelectorAll('#customAttrContainer .custom-attr.new-attr').forEach(r => r.remove());
+    isDirty = false;
+  }
+
+  // ── Add attribute ──────────────────────────────────────
+  function addAttribute() {
+    const container = document.getElementById('customAttrContainer');
+    const row = document.createElement('div');
+    row.className = 'attr-row custom-attr new-attr';
+    row.dataset.selected = 'false';
+    row.innerHTML = `
+      <input type="text" class="attr-val-input custom-key" name="extra_key[]" placeholder="Attributname" />
+      <input type="text" class="attr-val-input custom-val" name="extra_val[]" placeholder="Wert" />
+      <button type="button" class="attr-row-select-btn select-attr-btn"
+              title="Auswählen" onclick="toggleAttrSelect(this)">
+        <i class="bi bi-check2-circle"></i>
+      </button>
+    `;
+    container.appendChild(row);
+    row.querySelector('.custom-key').focus();
+    isDirty = true;
+    // Scroll into view
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // ── Select / deselect attribute row ───────────────────
+  function toggleAttrSelect(btn) {
+    const row = btn.closest('.attr-row');
+    const isSelected = row.dataset.selected === 'true';
+
+    // Deselect previous
+    if (selectedAttrRow && selectedAttrRow !== row) {
+      selectedAttrRow.dataset.selected = 'false';
+      selectedAttrRow.classList.remove('selected');
+    }
+
+    if (isSelected) {
+      row.dataset.selected = 'false';
+      row.classList.remove('selected');
+      selectedAttrRow = null;
+    } else {
+      row.dataset.selected = 'true';
+      row.classList.add('selected');
+      selectedAttrRow = row;
+    }
+    document.getElementById('deleteAttrBtn').disabled = !selectedAttrRow;
+  }
+
+  // ── Delete selected attribute ──────────────────────────
+  function deleteSelectedAttribute() {
+    if (!selectedAttrRow) return;
+    selectedAttrRow.remove();
+    selectedAttrRow = null;
+    document.getElementById('deleteAttrBtn').disabled = true;
+    isDirty = true;
+  }
+
+  // ── Modal ──────────────────────────────────────────────
+  function openModal()  { document.getElementById('unsavedModal').classList.add('open'); }
+  function closeModal() { document.getElementById('unsavedModal').classList.remove('open'); }
+
+  document.getElementById('confirmLeaveBtn').addEventListener('click', () => {
+    isDirty = false;
+    window.location = pendingHref || '{{ url_for("page1_products") }}';
+  });
+
+  // Intercept nav tab clicks when dirty
+  document.querySelectorAll('.nav-tab').forEach(link => {
+    link.addEventListener('click', e => {
+      if (isDirty) {
+        e.preventDefault();
+        pendingHref = link.href;
+        openModal();
+      }
+    });
+  });
+
+  // Back button
+  document.getElementById('backBtn').addEventListener('click', e => {
+    if (isDirty) {
+      e.preventDefault();
+      pendingHref = '{{ url_for("page1_products") }}';
+      openModal();
+    }
+  });
+
+  // Close modal on backdrop click
+  document.getElementById('unsavedModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+</script>
+{% endblock %}

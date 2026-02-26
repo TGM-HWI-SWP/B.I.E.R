@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Produktverwaltung — B.I.E.R{% endblock %}
+
+{% block content %}
+<div class="page-content">
+
+  <!-- ─── Page Header ──────────────────────────────────── -->
+  <div class="section-header" style="margin-bottom:28px;">
+    <div>
+      <h1 class="page-title">Produktverwaltung</h1>
+      <p class="page-subtitle">{{ produkte | length }} Produkt{% if produkte | length != 1 %}e{% endif %} gespeichert</p>
+    </div>
+    <a href="{{ url_for('page2_product_edit') }}" class="btn btn-primary btn-lg" id="addProductBtn">
+      <i class="bi bi-plus-lg"></i> Neues Produkt
+    </a>
+  </div>
+
+  <!-- ─── Search ───────────────────────────────────────── -->
+  <div class="card" style="margin-bottom:20px; padding:20px;">
+    <div class="autocomplete-wrap">
+      <div style="position:relative;">
+        <i class="bi bi-search" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:17px;pointer-events:none;"></i>
+        <input
+          type="text"
+          id="searchInput"
+          class="form-control"
+          placeholder="Produkt suchen…"
+          autocomplete="off"
+          style="padding-left:46px; font-size:15px; height:50px; border-radius:10px;"
+        />
+      </div>
+      <div class="autocomplete-list" id="autocompleteList">
+        {% for p in produkte %}
+          <div class="autocomplete-item" data-id="{{ p._id }}" data-name="{{ p.name }}"
+               onclick="openProduct('{{ p._id }}')">
+            <i class="bi bi-box"></i>
+            <div>
+              <div style="font-weight:500;">{{ p.name }}</div>
+              <div class="item-id">ID: {{ p._id }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Product List ─────────────────────────────────── -->
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="max-height:calc(100vh - 340px); overflow-y:auto;" id="productListContainer">
+      {% if produkte %}
+        <table class="data-table" id="productTable">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Produktname</th>
+              <th>Beschreibung</th>
+              <th>Gewicht</th>
+              <th style="width:80px; text-align:right;">Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in produkte %}
+            <tr class="product-row" data-name="{{ p.name | lower }}" data-id="{{ p._id }}"
+                style="cursor:pointer;"
+                onclick="openProduct('{{ p._id }}')">
+              <td style="color:var(--text-muted); font-size:13px;">{{ loop.index }}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-soft);
+                              display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <i class="bi bi-box" style="color:var(--accent);"></i>
+                  </div>
+                  <div>
+                    <div style="font-weight:600;">{{ p.name }}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="color:var(--text-muted);">
+                {{ p.beschreibung if p.beschreibung else '—' }}
+              </td>
+              <td>
+                {% if p.gewicht is defined and p.gewicht is not none %}
+                  <span class="badge badge-muted">{{ p.gewicht }} kg</span>
+                {% else %}
+                  <span style="color:var(--text-muted);">—</span>
+                {% endif %}
+              </td>
+              <td style="text-align:right;" onclick="event.stopPropagation();">
+                <a href="{{ url_for('page2_product_edit', produkt_id=p._id) }}"
+                   class="btn btn-ghost btn-icon btn-sm" title="Bearbeiten">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <i class="bi bi-box-seam"></i>
+          <p>Noch keine Produkte vorhanden.</p>
+          <a href="{{ url_for('page2_product_edit') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Erstes Produkt anlegen
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── No unsaved changes modal needed on this page ── -->
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const searchInput       = document.getElementById('searchInput');
+  const autocompleteList  = document.getElementById('autocompleteList');
+  const productRows       = document.querySelectorAll('.product-row');
+  let acHighlight = -1;
+
+  function openProduct(id) {
+    window.location = '/ui/produkt/' + id + '/bearbeiten';
+  }
+
+  // ── Live search filter ─────────────────────────────────────
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.trim().toLowerCase();
+    acHighlight = -1;
+
+    // Filter table rows
+    productRows.forEach(row => {
+      const match = row.dataset.name.includes(q);
+      row.style.display = match ? '' : 'none';
+    });
+
+    // Autocomplete list
+    const items = autocompleteList.querySelectorAll('.autocomplete-item');
+    let anyVisible = false;
+    items.forEach(item => {
+      const match = item.dataset.name.toLowerCase().includes(q);
+      item.style.display = match ? '' : 'none';
+      if (match) anyVisible = true;
+    });
+    autocompleteList.classList.toggle('open', q.length > 0 && anyVisible);
+    applyHighlight();
+  });
+
+  // ── Keyboard navigation ────────────────────────────────────
+  searchInput.addEventListener('keydown', e => {
+    const items = [...autocompleteList.querySelectorAll('.autocomplete-item:not([style*="display: none"])')];
+    if (e.key === 'ArrowDown') {
+      acHighlight = Math.min(acHighlight + 1, items.length - 1);
+      applyHighlight(); e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      acHighlight = Math.max(acHighlight - 1, -1);
+      applyHighlight(); e.preventDefault();
+    } else if (e.key === 'Enter' && acHighlight >= 0) {
+      items[acHighlight]?.click(); e.preventDefault();
+    } else if (e.key === 'Escape') {
+      autocompleteList.classList.remove('open');
+    }
+  });
+
+  function applyHighlight() {
+    const items = [...autocompleteList.querySelectorAll('.autocomplete-item:not([style*="display: none"])')];
+    items.forEach((item, i) => item.classList.toggle('highlighted', i === acHighlight));
+  }
+
+  // Close autocomplete on outside click
+  document.addEventListener('click', e => {
+    if (!searchInput.contains(e.target) && !autocompleteList.contains(e.target)) {
+      autocompleteList.classList.remove('open');
+    }
+  });
+</script>
+{% endblock %}

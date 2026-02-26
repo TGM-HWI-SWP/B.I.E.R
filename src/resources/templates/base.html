@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}B.I.E.R — Lagerverwaltung{% endblock %}</title>
+
+  <!-- Bootstrap 5 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js" defer></script>
+
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────── */
+    :root {
+      --bg:          #0f1117;
+      --surface:     #1a1d27;
+      --surface-2:   #242736;
+      --surface-3:   #2e3245;
+      --border:      #2e3245;
+      --accent:      #4f7fff;
+      --accent-soft: rgba(79,127,255,.15);
+      --accent-hover:#6f9fff;
+      --danger:      #ff5454;
+      --danger-soft: rgba(255,84,84,.15);
+      --success:     #3dd68c;
+      --success-soft:rgba(61,214,140,.15);
+      --text:        #e8eaf0;
+      --text-muted:  #7b8199;
+      --radius:      12px;
+      --radius-sm:   8px;
+      --nav-h:       60px;
+      --transition:  .18s ease;
+    }
+
+    /* ─── Reset / Base ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ─── Scrollbar ─────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+    /* ─── Fixed Top Nav ─────────────────────────────────────── */
+    .top-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--nav-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 8px;
+      z-index: 1000;
+      backdrop-filter: blur(12px);
+    }
+
+    .top-nav .brand {
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--accent);
+      letter-spacing: -.5px;
+      margin-right: 16px;
+      text-decoration: none;
+      flex-shrink: 0;
+    }
+
+    .nav-tabs-custom {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .nav-tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 20px;
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 14px;
+      font-weight: 500;
+      transition: color var(--transition), background var(--transition);
+      white-space: nowrap;
+    }
+    .nav-tab:hover {
+      color: var(--text);
+      background: var(--surface-2);
+    }
+    .nav-tab.active {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+    .nav-tab i { font-size: 16px; }
+
+    /* ─── Page Wrapper ──────────────────────────────────────── */
+    .page-wrapper {
+      margin-top: var(--nav-h);
+      min-height: calc(100vh - var(--nav-h));
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page-content {
+      flex: 1;
+      padding: 32px 40px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ─── Flash Messages ────────────────────────────────────── */
+    .flash-container {
+      position: fixed;
+      top: calc(var(--nav-h) + 12px);
+      right: 20px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 380px;
+    }
+
+    .flash-msg {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13.5px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: fadeSlide .25s ease;
+      backdrop-filter: blur(8px);
+    }
+    .flash-msg.success { background: var(--success-soft); border: 1px solid var(--success); color: var(--success); }
+    .flash-msg.danger  { background: var(--danger-soft);  border: 1px solid var(--danger);  color: var(--danger);  }
+    .flash-msg.info    { background: var(--accent-soft);  border: 1px solid var(--accent);  color: var(--accent);  }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ─── Card / Surface ────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .card-sm { padding: 16px; }
+
+    /* ─── Buttons ───────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition);
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-primary   { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
+    .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--surface-3); color: var(--text); }
+    .btn-danger    { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-success   { background: var(--success-soft); color: var(--success); border: 1px solid var(--success); }
+    .btn-success:hover { background: var(--success); color: #000; }
+    .btn-ghost     { background: transparent; color: var(--text-muted); }
+    .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
+    .btn-icon      { padding: 9px; }
+    .btn-lg { padding: 12px 28px; font-size: 15px; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ─── Form Controls ─────────────────────────────────────── */
+    .form-control, .form-select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 14px;
+      width: 100%;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .form-control:focus, .form-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+      background: var(--surface-2);
+      color: var(--text);
+    }
+    .form-control::placeholder { color: var(--text-muted); }
+    .form-select option { background: var(--surface-2); color: var(--text); }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    /* ─── Table ─────────────────────────────────────────────── */
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .data-table thead th {
+      background: var(--surface-2);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table thead th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+    .data-table thead th:last-child  { border-radius: 0 var(--radius-sm) 0 0; }
+    .data-table tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    .data-table tbody tr:last-child { border-bottom: none; }
+    .data-table tbody tr:hover { background: var(--surface-2); }
+    .data-table tbody td {
+      padding: 14px 16px;
+      font-size: 14px;
+      vertical-align: middle;
+    }
+
+    /* ─── Badge ─────────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-accent { background: var(--accent-soft); color: var(--accent); }
+    .badge-muted  { background: var(--surface-3);   color: var(--text-muted); }
+
+    /* ─── Page Title ────────────────────────────────────────── */
+    .page-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -.5px;
+      color: var(--text);
+      margin: 0 0 8px;
+    }
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    /* ─── Section header row ────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    /* ─── Divider ───────────────────────────────────────────── */
+    .divider { border-color: var(--border); margin: 20px 0; }
+
+    /* ─── Empty State ───────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 64px 24px;
+      color: var(--text-muted);
+    }
+    .empty-state i { font-size: 48px; margin-bottom: 16px; display: block; }
+    .empty-state p { font-size: 15px; }
+
+    /* ─── Sticky action bar ─────────────────────────────────── */
+    .action-bar {
+      position: sticky;
+      bottom: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 14px 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+    }
+    .action-bar .spacer { flex: 1; }
+
+    /* ─── Modal overlay ─────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition);
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+    }
+    .modal-box h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
+    .modal-box p  { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+    .modal-actions { display: flex; gap: 12px; justify-content: center; }
+
+    /* ─── Autocomplete dropdown ─────────────────────────────── */
+    .autocomplete-wrap { position: relative; }
+    .autocomplete-list {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0; right: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      z-index: 500;
+      max-height: 260px;
+      overflow-y: auto;
+      display: none;
+      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    }
+    .autocomplete-list.open { display: block; }
+    .autocomplete-item {
+      padding: 10px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background var(--transition);
+    }
+    .autocomplete-item:hover, .autocomplete-item.highlighted { background: var(--surface-3); }
+    .autocomplete-item .item-id { font-size: 11px; color: var(--text-muted); }
+
+    /* ─── Responsive ────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .page-content { padding: 20px 16px; }
+      .action-bar   { padding: 12px 16px; }
+      .page-title   { font-size: 22px; }
+      .top-nav      { padding: 0 16px; }
+      .nav-tab span { display: none; }
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- ─── Top Navigation ─────────────────────── -->
+  <nav class="top-nav">
+    <a href="{{ url_for('page1_products') }}" class="brand">
+      <i class="bi bi-box-seam-fill"></i> B.I.E.R
+    </a>
+    <div class="nav-tabs-custom">
+      <a href="{{ url_for('page1_products') }}"
+         class="nav-tab {% if active_page == 1 %}active{% endif %}">
+        <i class="bi bi-boxes"></i><span>Produkte</span>
+      </a>
+      <a href="{{ url_for('page2_product_edit') }}"
+         class="nav-tab {% if active_page == 2 %}active{% endif %}">
+        <i class="bi bi-pencil-square"></i><span>Produkt&nbsp;bearbeiten</span>
+      </a>
+      <a href="{{ url_for('page3_warehouse_list') }}"
+         class="nav-tab {% if active_page == 3 %}active{% endif %}">
+        <i class="bi bi-building"></i><span>Lagerliste</span>
+      </a>
+      <a href="{{ url_for('page4_statistics') }}"
+         class="nav-tab {% if active_page == 4 %}active{% endif %}">
+        <i class="bi bi-bar-chart-line"></i><span>Statistik</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ─── Flash Messages ─────────────────────── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container" id="flashContainer">
+        {% for category, message in messages %}
+          <div class="flash-msg {{ category }}">
+            <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ─── Page Wrapper ────────────────────────── -->
+  <div class="page-wrapper">
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Auto-dismiss flash messages
+    setTimeout(() => {
+      const fc = document.getElementById('flashContainer');
+      if (fc) fc.style.transition = 'opacity .5s'; fc && (fc.style.opacity = '0');
+      setTimeout(() => fc && fc.remove(), 500);
+    }, 4000);
+  </script>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

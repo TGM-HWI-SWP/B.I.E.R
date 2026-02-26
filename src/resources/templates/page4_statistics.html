@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% block title %}Statistik — B.I.E.R{% endblock %}
+
+{% block extra_head %}
+<style>
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat-card .stat-icon {
+    font-size: 22px;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .stat-card .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -.5px;
+  }
+  .stat-card .stat-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .chart-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chart-title i { color: var(--accent); }
+  .chart-container {
+    position: relative;
+    height: 280px;
+  }
+
+  .top-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 380px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .top-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 16px;
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    transition: background var(--transition);
+  }
+  .top-item:hover { background: var(--surface-3); }
+  .top-rank {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  .top-rank.rank-1 { background: var(--accent-soft); color: var(--accent); }
+  .top-rank.rank-2 { background: rgba(245,158,11,.15); color: #f59e0b; }
+  .top-rank.rank-3 { background: rgba(239,68,68,.15);  color: #ef4444; }
+  .top-item-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .top-item-val {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .filter-bar label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+
+  <!-- ─── Page Header ──────────────────────────────────── -->
+  <div class="section-header" style="margin-bottom:24px;">
+    <div>
+      <h1 class="page-title">Statistik</h1>
+      <p class="page-subtitle">Überblick über Bestände, Auslastung und Produktverteilung</p>
+    </div>
+  </div>
+
+  <!-- ─── Filter Bar ───────────────────────────────────── -->
+  <div class="filter-bar">
+    <label for="filterLager"><i class="bi bi-building"></i> Lager:</label>
+    <select class="form-select" id="filterLager" style="max-width:220px; height:36px; padding:6px 12px;"
+            onchange="applyFilter()">
+      <option value="">Alle Lager</option>
+      {% for l in lager_stats %}
+        <option value="{{ loop.index0 }}">{{ l.lagername }}</option>
+      {% endfor %}
+    </select>
+    <div style="flex:1;"></div>
+    <span style="font-size:13px;color:var(--text-muted);">
+      Daten aktuell — {{ num_inventar }} Inventareinträge
+    </span>
+  </div>
+
+  <!-- ─── KPI Cards ─────────────────────────────────────── -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <i class="bi bi-box-seam stat-icon"></i>
+      <div class="stat-value">{{ num_produkte }}</div>
+      <div class="stat-label">Produkte gesamt</div>
+    </div>
+    <div class="stat-card">
+      <i class="bi bi-building stat-icon"></i>
+      <div class="stat-value">{{ num_lager }}</div>
+      <div class="stat-label">Lager gesamt</div>
+    </div>
+    <div class="stat-card">
+      <i class="bi bi-stack stat-icon"></i>
+      <div class="stat-value">{{ total_menge }}</div>
+      <div class="stat-label">Einheiten gesamt</div>
+    </div>
+    <div class="stat-card">
+      <i class="bi bi-graph-up stat-icon"></i>
+      {% if top10_values %}
+        <div class="stat-value">{{ top10_values[0] }}</div>
+        <div class="stat-label">Höchster Einzelbestand</div>
+      {% else %}
+        <div class="stat-value">—</div>
+        <div class="stat-label">Höchster Einzelbestand</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ─── Charts (2-column) ────────────────────────────── -->
+  <div class="charts-grid">
+
+    <!-- Left: Donut — Distribution per warehouse -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <i class="bi bi-pie-chart-fill"></i> Produktverteilung je Lager
+      </div>
+      <div class="chart-container">
+        <canvas id="donutChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Right: Bar — Top 10 products by quantity -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <i class="bi bi-bar-chart-fill"></i> Top-Produkte nach Bestand
+      </div>
+      <div class="chart-container">
+        <canvas id="barChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Left: Capacity utilisation -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <i class="bi bi-speedometer2"></i> Lagerauslastung (%)
+      </div>
+      <div class="chart-container">
+        <canvas id="ausChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Right: Category distribution -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <i class="bi bi-tags-fill"></i> Kategorieverteilung
+      </div>
+      <div class="chart-container">
+        <canvas id="katChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── Top Products Info Section ────────────────────── -->
+  <div class="card">
+    <div class="section-header" style="margin-bottom:16px;">
+      <h2 style="font-size:17px;font-weight:700;margin:0;">
+        <i class="bi bi-trophy" style="color:var(--accent);"></i> Top-Produkte nach Gesamtbestand
+      </h2>
+      <span class="badge badge-accent">{{ top10_labels | length }} Einträge</span>
+    </div>
+    <div class="top-list">
+      {% if top10_labels %}
+        {% for name in top10_labels %}
+        <div class="top-item">
+          <div class="top-rank {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">
+            {{ loop.index }}
+          </div>
+          <div class="top-item-name">{{ name }}</div>
+          <div class="top-item-val">{{ top10_values[loop.index0] }} Stk.</div>
+          <div style="width:120px;">
+            <div style="background:var(--surface-3);border-radius:99px;height:4px;overflow:hidden;">
+              {% set maxval = top10_values[0] if top10_values[0] > 0 else 1 %}
+              <div style="height:100%;border-radius:99px;background:var(--accent);
+                          width:{{ (top10_values[loop.index0] / maxval * 100) | round(1) }}%;"></div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-state" style="padding:40px;">
+          <i class="bi bi-inbox"></i>
+          <p>Kein Bestand vorhanden.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // ── Chart colour palette ───────────────────────────────
+  const palette = [
+    '#4f7fff','#3dd68c','#f59e0b','#ef4444',
+    '#8b5cf6','#06b6d4','#ec4899','#10b981',
+    '#f97316','#6366f1'
+  ];
+
+  const chartDefaults = {
+    plugins: {
+      legend: {
+        labels: { color: '#7b8199', font: { size: 12 }, boxWidth: 14, padding: 16 }
+      },
+      tooltip: { backgroundColor: '#1a1d27', borderColor: '#2e3245', borderWidth: 1,
+                 titleColor: '#e8eaf0', bodyColor: '#7b8199', padding: 10 }
+    }
+  };
+
+  Chart.defaults.color = '#7b8199';
+  Chart.defaults.borderColor = '#2e3245';
+
+  // ── Data from Flask ────────────────────────────────────
+  const donutLabels = {{ lager_labels | tojson }};
+  const donutData   = {{ lager_mengen | tojson }};
+  const barLabels   = {{ top10_labels | tojson }};
+  const barData     = {{ top10_values | tojson }};
+  const ausLabels   = {{ aus_labels | tojson }};
+  const ausData     = {{ aus_pct | tojson }};
+  const katLabels   = {{ kat_labels | tojson }};
+  const katData     = {{ kat_counts | tojson }};
+
+  // ── Donut chart ────────────────────────────────────────
+  new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: {
+      labels: donutLabels,
+      datasets: [{
+        data: donutData,
+        backgroundColor: palette,
+        borderColor: '#0f1117',
+        borderWidth: 3,
+        hoverOffset: 8
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      cutout: '65%',
+      maintainAspectRatio: false,
+    }
+  });
+
+  // ── Bar chart (top 10) ─────────────────────────────────
+  new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+      labels: barLabels,
+      datasets: [{
+        label: 'Bestand',
+        data: barData,
+        backgroundColor: palette[0] + 'cc',
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      indexAxis: 'y',
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { color: '#2e3245' }, ticks: { color: '#7b8199' } },
+        y: { grid: { display: false },  ticks: { color: '#e8eaf0', font: { size: 12 } } }
+      }
+    }
+  });
+
+  // ── Auslastung bar chart ───────────────────────────────
+  new Chart(document.getElementById('ausChart'), {
+    type: 'bar',
+    data: {
+      labels: ausLabels,
+      datasets: [{
+        label: 'Auslastung %',
+        data: ausData,
+        backgroundColor: ausData.map(v =>
+          v >= 90 ? '#ff545488' : v >= 70 ? '#f59e0b88' : '#4f7fff88'
+        ),
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#e8eaf0' } },
+        y: { grid: { color: '#2e3245' }, ticks: { color: '#7b8199' },
+             max: 100, beginAtZero: true }
+      }
+    }
+  });
+
+  // ── Kategorie donut ────────────────────────────────────
+  new Chart(document.getElementById('katChart'), {
+    type: 'pie',
+    data: {
+      labels: katLabels,
+      datasets: [{
+        data: katData,
+        backgroundColor: palette,
+        borderColor: '#0f1117',
+        borderWidth: 3,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      maintainAspectRatio: false,
+    }
+  });
+
+  // ── Filter (client-side placeholder) ──────────────────
+  function applyFilter() {
+    // Full server-side filtering can be wired up here;
+    // for now just log the selection.
+    const val = document.getElementById('filterLager').value;
+    console.log('Filter lager index:', val);
+  }
+</script>
+{% endblock %}
