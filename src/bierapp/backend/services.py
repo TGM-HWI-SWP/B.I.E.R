@@ -5,15 +5,22 @@ bierapp.contracts and delegates all persistence to a MongoDBAdapter
 instance that must be injected at construction time.
 """
 
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from bierapp.contracts import InventoryServicePort, ProductServicePort, WarehouseServicePort
 from bierapp.db.mongodb import (
+    COLLECTION_EVENTS,
     COLLECTION_INVENTAR,
     COLLECTION_LAGER,
     COLLECTION_PRODUKTE,
     MongoDBAdapter,
 )
+
+
+def _now_iso() -> str:
+    """Return current UTC timestamp in ISO 8601 format with 'Z' suffix."""
+    return datetime.utcnow().isoformat() + "Z"
 
 
 class ProductService(ProductServicePort):
@@ -51,6 +58,18 @@ class ProductService(ProductServicePort):
         doc = {"name": name, "beschreibung": beschreibung, "gewicht": float(gewicht)}
         doc_id = self._db.insert(COLLECTION_PRODUKTE, doc)
         doc["_id"] = doc_id
+
+        # Historien-Event: Produkt angelegt
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "produkt",
+                "action": "create",
+                "entity_id": doc_id,
+                "summary": f"Produkt '{name}' angelegt.",
+            },
+        )
         return doc
 
     def get_product(self, produkt_id: str) -> Optional[Dict]:
@@ -105,8 +124,20 @@ class ProductService(ProductServicePort):
             allowed["gewicht"] = gewicht
 
         self._db.update(COLLECTION_PRODUKTE, produkt_id, allowed)
-        updated = self._db.find_by_id(COLLECTION_PRODUKTE, produkt_id)
-        return updated or {}
+        updated = self._db.find_by_id(COLLECTION_PRODUKTE, produkt_id) or {}
+
+        # Historien-Event: Produkt aktualisiert
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "produkt",
+                "action": "update",
+                "entity_id": produkt_id,
+                "summary": f"Produkt '{updated.get('name', produkt_id)}' aktualisiert.",
+            },
+        )
+        return updated
 
     def delete_product(self, produkt_id: str) -> None:
         """Permanently delete a product from the database.
@@ -121,6 +152,18 @@ class ProductService(ProductServicePort):
         if not existing:
             raise KeyError(f"Produkt '{produkt_id}' nicht gefunden.")
         self._db.delete(COLLECTION_PRODUKTE, produkt_id)
+
+        # Historien-Event: Produkt gelöscht
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "produkt",
+                "action": "delete",
+                "entity_id": produkt_id,
+                "summary": f"Produkt '{existing.get('name', produkt_id)}' gelöscht.",
+            },
+        )
 
 
 class WarehouseService(WarehouseServicePort):
@@ -158,6 +201,18 @@ class WarehouseService(WarehouseServicePort):
         doc = {"lagername": lagername, "adresse": adresse, "max_plaetze": max_plaetze}
         doc_id = self._db.insert(COLLECTION_LAGER, doc)
         doc["_id"] = doc_id
+
+        # Historien-Event: Lager angelegt
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "lager",
+                "action": "create",
+                "entity_id": doc_id,
+                "summary": f"Lager '{lagername}' angelegt.",
+            },
+        )
         return doc
 
     def get_warehouse(self, lager_id: str) -> Optional[Dict]:
@@ -212,8 +267,20 @@ class WarehouseService(WarehouseServicePort):
             allowed["max_plaetze"] = mp
 
         self._db.update(COLLECTION_LAGER, lager_id, allowed)
-        updated = self._db.find_by_id(COLLECTION_LAGER, lager_id)
-        return updated or {}
+        updated = self._db.find_by_id(COLLECTION_LAGER, lager_id) or {}
+
+        # Historien-Event: Lager aktualisiert
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "lager",
+                "action": "update",
+                "entity_id": lager_id,
+                "summary": f"Lager '{updated.get('lagername', lager_id)}' aktualisiert.",
+            },
+        )
+        return updated
 
     def delete_warehouse(self, lager_id: str) -> None:
         """Permanently delete a warehouse from the database.
@@ -228,6 +295,18 @@ class WarehouseService(WarehouseServicePort):
         if not existing:
             raise KeyError(f"Lager '{lager_id}' nicht gefunden.")
         self._db.delete(COLLECTION_LAGER, lager_id)
+
+        # Historien-Event: Lager gelöscht
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "lager",
+                "action": "delete",
+                "entity_id": lager_id,
+                "summary": f"Lager '{existing.get('lagername', lager_id)}' gelöscht.",
+            },
+        )
 
 
 class InventoryService(InventoryServicePort):
@@ -273,6 +352,18 @@ class InventoryService(InventoryServicePort):
                 {"lager_id": lager_id, "produkt_id": produkt_id, "menge": menge},
             )
 
+        # Historien-Event: Bestand hinzugefügt/erhöht
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "inventar",
+                "action": "stock_add",
+                "entity_id": f"{lager_id}:{produkt_id}",
+                "summary": f"Bestand: {menge}x '{produkt.get('name', produkt_id)}' zu Lager '{lager.get('lagername', lager_id)}' hinzugefügt.",
+            },
+        )
+
     def update_quantity(self, lager_id: str, produkt_id: str, menge: int) -> None:
         """Set the absolute stock quantity for a product in a warehouse.
 
@@ -294,6 +385,20 @@ class InventoryService(InventoryServicePort):
             )
         self._db.update(COLLECTION_INVENTAR, entry["_id"], {"menge": menge})
 
+        # Historien-Event: Bestand gesetzt
+        produkt = self._db.find_by_id(COLLECTION_PRODUKTE, produkt_id) or {}
+        lager = self._db.find_by_id(COLLECTION_LAGER, lager_id) or {}
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "inventar",
+                "action": "stock_update",
+                "entity_id": f"{lager_id}:{produkt_id}",
+                "summary": f"Bestand von '{produkt.get('name', produkt_id)}' in Lager '{lager.get('lagername', lager_id)}' auf {menge} gesetzt.",
+            },
+        )
+
     def remove_product(self, lager_id: str, produkt_id: str) -> None:
         """Remove a product entry from a warehouse inventory.
 
@@ -310,6 +415,90 @@ class InventoryService(InventoryServicePort):
                 f"Kein Inventareintrag für Lager '{lager_id}' / Produkt '{produkt_id}'."
             )
         self._db.delete(COLLECTION_INVENTAR, entry["_id"])
+
+        # Historien-Event: Bestandseintrag entfernt
+        produkt = self._db.find_by_id(COLLECTION_PRODUKTE, produkt_id) or {}
+        lager = self._db.find_by_id(COLLECTION_LAGER, lager_id) or {}
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "inventar",
+                "action": "stock_remove",
+                "entity_id": f"{lager_id}:{produkt_id}",
+                "summary": f"Bestandseintrag von '{produkt.get('name', produkt_id)}' in Lager '{lager.get('lagername', lager_id)}' entfernt.",
+            },
+        )
+
+    def move_product(self, source_lager_id: str, target_lager_id: str, produkt_id: str, menge: int) -> None:
+        """Move a quantity of a product from one warehouse to another.
+
+        Args:
+            source_lager_id (str): ID of the warehouse to move stock from.
+            target_lager_id (str): ID of the destination warehouse.
+            produkt_id (str): Product identifier.
+            menge (int): Quantity to move. Must be > 0.
+
+        Raises:
+            ValueError: If menge <= 0 or greater than available stock.
+            KeyError: If source entry does not exist or warehouses/products invalid.
+        """
+        if not isinstance(menge, int) or menge <= 0:
+            raise ValueError("Menge zum Verschieben muss eine positive ganze Zahl sein.")
+
+        # Ensure both warehouses and product exist
+        source = self._db.find_by_id(COLLECTION_LAGER, source_lager_id)
+        target = self._db.find_by_id(COLLECTION_LAGER, target_lager_id)
+        produkt = self._db.find_by_id(COLLECTION_PRODUKTE, produkt_id)
+        if not source:
+            raise KeyError(f"Quelllager '{source_lager_id}' nicht gefunden.")
+        if not target:
+            raise KeyError(f"Ziellager '{target_lager_id}' nicht gefunden.")
+        if not produkt:
+            raise KeyError(f"Produkt '{produkt_id}' nicht gefunden.")
+
+        entry = self._db.find_inventar_entry(source_lager_id, produkt_id)
+        if not entry:
+            raise KeyError(
+                f"Kein Inventareintrag für Lager '{source_lager_id}' / Produkt '{produkt_id}'."
+            )
+        current = int(entry.get("menge", 0))
+        if menge > current:
+            raise ValueError("Es können nicht mehr Einheiten verschoben werden als vorhanden sind.")
+
+        # Decrease in source
+        remaining = current - menge
+        if remaining > 0:
+            self._db.update(COLLECTION_INVENTAR, entry["_id"], {"menge": remaining})
+        else:
+            self._db.delete(COLLECTION_INVENTAR, entry["_id"])
+
+        # Increase or create in target
+        target_entry = self._db.find_inventar_entry(target_lager_id, produkt_id)
+        if target_entry:
+            new_menge = int(target_entry.get("menge", 0)) + menge
+            self._db.update(COLLECTION_INVENTAR, target_entry["_id"], {"menge": new_menge})
+        else:
+            self._db.insert(
+                COLLECTION_INVENTAR,
+                {"lager_id": target_lager_id, "produkt_id": produkt_id, "menge": menge},
+            )
+
+        # Historien-Event: Bestand verschoben
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "inventar",
+                "action": "stock_move",
+                "entity_id": produkt_id,
+                "summary": (
+                    f"{menge}x '{produkt.get('name', produkt_id)}' von Lager "
+                    f"'{source.get('lagername', source_lager_id)}' nach "
+                    f"'{target.get('lagername', target_lager_id)}' verschoben."
+                ),
+            },
+        )
 
     def list_inventory(self, lager_id: str) -> List[Dict]:
         """List all inventory entries for a warehouse, enriched with product details.

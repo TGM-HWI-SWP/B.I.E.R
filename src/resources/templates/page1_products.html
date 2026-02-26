@@ -8,7 +8,12 @@
   <div class="section-header" style="margin-bottom:28px;">
     <div>
       <h1 class="page-title">Produktverwaltung</h1>
-      <p class="page-subtitle">{{ produkte | length }} Produkt{% if produkte | length != 1 %}e{% endif %} gespeichert</p>
+      <p class="page-subtitle">
+        {{ produkte | length }} Produkt{% if produkte | length != 1 %}e{% endif %} gespeichert
+        {% if active_lager_filter %}
+          <span class="badge badge-accent">Filter: {{ active_lager_filter.lagername }}</span>
+        {% endif %}
+      </p>
     </div>
     <a href="{{ url_for('page2_product_edit') }}" class="btn btn-primary btn-lg" id="addProductBtn">
       <i class="bi bi-plus-lg"></i> Neues Produkt
@@ -55,7 +60,7 @@
               <th>Produktname</th>
               <th>Beschreibung</th>
               <th>Gewicht</th>
-              <th style="width:80px; text-align:right;">Aktion</th>
+              <th style="width:120px; text-align:right;">Aktion</th>
             </tr>
           </thead>
           <tbody>
@@ -65,15 +70,7 @@
                 onclick="openProduct('{{ p._id }}')">
               <td style="color:var(--text-muted); font-size:13px;">{{ loop.index }}</td>
               <td>
-                <div style="display:flex;align-items:center;gap:10px;">
-                  <div style="width:36px;height:36px;border-radius:8px;background:var(--accent-soft);
-                              display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                    <i class="bi bi-box" style="color:var(--accent);"></i>
-                  </div>
-                  <div>
-                    <div style="font-weight:600;">{{ p.name }}</div>
-                  </div>
-                </div>
+                <div style="font-weight:600;">{{ p.name }}</div>
               </td>
               <td style="color:var(--text-muted);">
                 {{ p.beschreibung if p.beschreibung else '—' }}
@@ -86,10 +83,10 @@
                 {% endif %}
               </td>
               <td style="text-align:right;" onclick="event.stopPropagation();">
-                <a href="{{ url_for('page2_product_edit', produkt_id=p._id) }}"
-                   class="btn btn-ghost btn-icon btn-sm" title="Bearbeiten">
-                  <i class="bi bi-pencil"></i>
-                </a>
+                <button type="button" class="btn btn-secondary btn-sm" title="In anderes Lager verschieben"
+                        onclick="openMoveModal('{{ p._id }}', '{{ p.name | e }}', {{ p.menge | default(0) }}, '{{ p.lager_id | default('') }}')">
+                  <i class="bi bi-arrow-left-right"></i>
+                </button>
               </td>
             </tr>
             {% endfor %}
@@ -107,6 +104,36 @@
     </div>
   </div>
 
+</div>
+
+<!-- ─── Move Product Modal ───────────────────────── -->
+<div class="modal-overlay" id="moveModal">
+  <div class="modal-box" style="text-align:left;max-width:480px;">
+    <h3 style="margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+      <i class="bi bi-arrow-left-right" style="color:var(--accent);"></i>
+      Produkt in anderes Lager verschieben
+    </h3>
+    <p id="moveModalInfo" style="color:var(--text-muted);font-size:13px;margin-bottom:16px;"></p>
+    <form method="POST" id="moveForm">
+      <div style="margin-bottom:14px;">
+        <label class="form-label">Ziel-Lager *</label>
+        <select name="target_lager_id" class="form-select" required>
+          <option value="">Lager auswählen…</option>
+          {% for l in lager %}
+            <option value="{{ l._id }}">{{ l.lagername }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label class="form-label">Menge *</label>
+        <input type="number" name="menge" class="form-control" min="1" value="1" required />
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeMoveModal()">Abbrechen</button>
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Verschieben</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- ─── No unsaved changes modal needed on this page ── -->
@@ -171,6 +198,47 @@
   document.addEventListener('click', e => {
     if (!searchInput.contains(e.target) && !autocompleteList.contains(e.target)) {
       autocompleteList.classList.remove('open');
+    }
+  });
+
+  // ── Move modal ─────────────────────────────────────────
+  function openMoveModal(id, name, available, currentLagerId) {
+    const overlay = document.getElementById('moveModal');
+    const info    = document.getElementById('moveModalInfo');
+    const form    = document.getElementById('moveForm');
+    if (!overlay || !info || !form) return;
+
+    info.textContent = `Produkt "${name}" verschieben. Verfügbare Menge: ${available} Stk.`;
+    form.action = `/ui/produkt/${id}/verschieben`;
+
+    // Reset fields
+    const select = form.querySelector('select[name="target_lager_id"]');
+    if (select) {
+      // Alle Optionen anzeigen und dann aktuelles Lager ausblenden
+      [...select.options].forEach(opt => { opt.hidden = false; opt.disabled = false; });
+      if (currentLagerId) {
+        [...select.options].forEach(opt => {
+          if (opt.value === currentLagerId) {
+            opt.hidden = true;
+            opt.disabled = true;
+          }
+        });
+      }
+      select.value = '';
+    }
+    form.menge.value = available > 0 ? 1 : 0;
+
+    overlay.classList.add('open');
+  }
+
+  function closeMoveModal() {
+    const overlay = document.getElementById('moveModal');
+    if (overlay) overlay.classList.remove('open');
+  }
+
+  document.getElementById('moveModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) {
+      closeMoveModal();
     }
   });
 </script>

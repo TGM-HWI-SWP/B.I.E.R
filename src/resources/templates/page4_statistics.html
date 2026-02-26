@@ -93,13 +93,15 @@
     color: var(--text-muted);
     flex-shrink: 0;
   }
-  .top-rank.rank-1 { background: var(--accent-soft); color: var(--accent); }
-  .top-rank.rank-2 { background: rgba(245,158,11,.15); color: #f59e0b; }
-  .top-rank.rank-3 { background: rgba(239,68,68,.15);  color: #ef4444; }
+  /* Platz 1 = Gold, 2 = Silber, 3 = Bronze */
+  .top-rank.rank-1 { background: #facc15; color: #92400e; }
+  .top-rank.rank-2 { background: #e5e7eb; color: #4b5563; }
+  .top-rank.rank-3 { background: #fed7aa;  color: #9a3412; }
   .top-item-name {
     flex: 1;
     font-size: 14px;
     font-weight: 500;
+    color: var(--text);
   }
   .top-item-val {
     font-size: 15px;
@@ -226,36 +228,12 @@
   <!-- ─── Top Products Info Section ────────────────────── -->
   <div class="card">
     <div class="section-header" style="margin-bottom:16px;">
-      <h2 style="font-size:17px;font-weight:700;margin:0;">
+      <h2 style="font-size:17px;font-weight:700;margin:0;color:var(--text);">
         <i class="bi bi-trophy" style="color:var(--accent);"></i> Top-Produkte nach Gesamtbestand
       </h2>
       <span class="badge badge-accent">{{ top10_labels | length }} Einträge</span>
     </div>
-    <div class="top-list">
-      {% if top10_labels %}
-        {% for name in top10_labels %}
-        <div class="top-item">
-          <div class="top-rank {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">
-            {{ loop.index }}
-          </div>
-          <div class="top-item-name">{{ name }}</div>
-          <div class="top-item-val">{{ top10_values[loop.index0] }} Stk.</div>
-          <div style="width:120px;">
-            <div style="background:var(--surface-3);border-radius:99px;height:4px;overflow:hidden;">
-              {% set maxval = top10_values[0] if top10_values[0] > 0 else 1 %}
-              <div style="height:100%;border-radius:99px;background:var(--accent);
-                          width:{{ (top10_values[loop.index0] / maxval * 100) | round(1) }}%;"></div>
-            </div>
-          </div>
-        </div>
-        {% endfor %}
-      {% else %}
-        <div class="empty-state" style="padding:40px;">
-          <i class="bi bi-inbox"></i>
-          <p>Kein Bestand vorhanden.</p>
-        </div>
-      {% endif %}
-    </div>
+    <div class="top-list" id="topListContainer"></div>
   </div>
 
 </div>
@@ -263,45 +241,74 @@
 
 {% block extra_scripts %}
 <script>
-  // ── Chart colour palette ───────────────────────────────
+  let donutChart, barChart, ausChart, katChart;
+
+  // ── Theme-aware colours (red/white) ─────────────────────
+  const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+  // Helle, kontrastreiche Farben im Dark Mode
+  const axisMain   = isLight ? '#111827' : '#f9fafb';   // primary text
+  const axisMuted  = isLight ? '#6b7280' : '#e5e7eb';   // secondary text
+  const gridColor  = isLight ? '#e5e7eb' : '#374151';   // grid lines
+  const borderCol  = isLight ? '#d1d5db' : '#4b5563';   // chart borders
+  const surfaceBg  = isLight ? '#f5f5f7' : '#050608';   // page background
+  const tooltipBg  = isLight ? '#ffffff' : '#111827';
+  const tooltipBor = isLight ? '#d1d5db' : '#4b5563';
+
+  // Palette mit Rot-/Neutral-Tönen
   const palette = [
-    '#4f7fff','#3dd68c','#f59e0b','#ef4444',
-    '#8b5cf6','#06b6d4','#ec4899','#10b981',
-    '#f97316','#6366f1'
+    '#ef4444','#fecaca','#b91c1c','#fda4af',
+    '#991b1b','#fee2e2','#7f1d1d','#f97373',
+    '#fca5a5','#450a0a'
   ];
 
   const chartDefaults = {
     plugins: {
       legend: {
-        labels: { color: '#7b8199', font: { size: 12 }, boxWidth: 14, padding: 16 }
+        labels: { color: axisMuted, font: { size: 12 }, boxWidth: 14, padding: 16 }
       },
-      tooltip: { backgroundColor: '#1a1d27', borderColor: '#2e3245', borderWidth: 1,
-                 titleColor: '#e8eaf0', bodyColor: '#7b8199', padding: 10 }
+      tooltip: {
+        backgroundColor: tooltipBg,
+        borderColor: tooltipBor,
+        borderWidth: 1,
+        titleColor: axisMain,
+        bodyColor: axisMuted,
+        padding: 10
+      }
     }
   };
 
-  Chart.defaults.color = '#7b8199';
-  Chart.defaults.borderColor = '#2e3245';
+  Chart.defaults.color = axisMuted;
+  Chart.defaults.borderColor = borderCol;
 
   // ── Data from Flask ────────────────────────────────────
   const donutLabels = {{ lager_labels | tojson }};
   const donutData   = {{ lager_mengen | tojson }};
-  const barLabels   = {{ top10_labels | tojson }};
-  const barData     = {{ top10_values | tojson }};
+  const globalTopLabels = {{ top10_labels | tojson }};
+  const globalTopValues = {{ top10_values | tojson }};
+  const lagerTopLabels  = {{ lager_top_labels | tojson }};
+  const lagerTopValues  = {{ lager_top_values | tojson }};
+  const barLabels       = globalTopLabels.slice();
+  const barData         = globalTopValues.slice();
   const ausLabels   = {{ aus_labels | tojson }};
   const ausData     = {{ aus_pct | tojson }};
   const katLabels   = {{ kat_labels | tojson }};
   const katData     = {{ kat_counts | tojson }};
 
+  // Basisfarben für Filter-Highlighting
+  const donutBaseColors = donutLabels.map((_, i) => palette[i % palette.length]);
+  const ausBaseColors   = ausData.map(v =>
+    v >= 90 ? '#b91c1ccc' : v >= 70 ? '#f97316cc' : '#22c55ecc'
+  );
+
   // ── Donut chart ────────────────────────────────────────
-  new Chart(document.getElementById('donutChart'), {
+  donutChart = new Chart(document.getElementById('donutChart'), {
     type: 'doughnut',
     data: {
       labels: donutLabels,
       datasets: [{
         data: donutData,
-        backgroundColor: palette,
-        borderColor: '#0f1117',
+        backgroundColor: donutBaseColors,
+        borderColor: surfaceBg,
         borderWidth: 3,
         hoverOffset: 8
       }]
@@ -314,14 +321,14 @@
   });
 
   // ── Bar chart (top 10) ─────────────────────────────────
-  new Chart(document.getElementById('barChart'), {
+  barChart = new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
       labels: barLabels,
       datasets: [{
         label: 'Bestand',
         data: barData,
-        backgroundColor: palette[0] + 'cc',
+        backgroundColor: palette[0] + 'dd',
         borderRadius: 6,
         borderSkipped: false,
       }]
@@ -331,23 +338,22 @@
       indexAxis: 'y',
       maintainAspectRatio: false,
       scales: {
-        x: { grid: { color: '#2e3245' }, ticks: { color: '#7b8199' } },
-        y: { grid: { display: false },  ticks: { color: '#e8eaf0', font: { size: 12 } } }
+        x: { grid: { color: gridColor }, ticks: { color: axisMuted } },
+        y: { grid: { display: false },  ticks: { color: axisMain, font: { size: 12 } } }
       }
     }
   });
 
   // ── Auslastung bar chart ───────────────────────────────
-  new Chart(document.getElementById('ausChart'), {
+  ausChart = new Chart(document.getElementById('ausChart'), {
     type: 'bar',
     data: {
       labels: ausLabels,
       datasets: [{
         label: 'Auslastung %',
         data: ausData,
-        backgroundColor: ausData.map(v =>
-          v >= 90 ? '#ff545488' : v >= 70 ? '#f59e0b88' : '#4f7fff88'
-        ),
+        // Grün (niedrig), Gelb (mittel), Rot (hoch)
+        backgroundColor: ausBaseColors,
         borderRadius: 6,
         borderSkipped: false,
       }]
@@ -356,22 +362,22 @@
       ...chartDefaults,
       maintainAspectRatio: false,
       scales: {
-        x: { grid: { display: false }, ticks: { color: '#e8eaf0' } },
-        y: { grid: { color: '#2e3245' }, ticks: { color: '#7b8199' },
+        x: { grid: { display: false }, ticks: { color: axisMain } },
+        y: { grid: { color: gridColor }, ticks: { color: axisMuted },
              max: 100, beginAtZero: true }
       }
     }
   });
 
   // ── Kategorie donut ────────────────────────────────────
-  new Chart(document.getElementById('katChart'), {
+  katChart = new Chart(document.getElementById('katChart'), {
     type: 'pie',
     data: {
       labels: katLabels,
       datasets: [{
         data: katData,
         backgroundColor: palette,
-        borderColor: '#0f1117',
+        borderColor: surfaceBg,
         borderWidth: 3,
       }]
     },
@@ -380,13 +386,109 @@
       maintainAspectRatio: false,
     }
   });
+  function renderTopList(labels, values) {
+    const container = document.getElementById('topListContainer');
+    if (!container) return;
 
-  // ── Filter (client-side placeholder) ──────────────────
-  function applyFilter() {
-    // Full server-side filtering can be wired up here;
-    // for now just log the selection.
-    const val = document.getElementById('filterLager').value;
-    console.log('Filter lager index:', val);
+    container.innerHTML = '';
+
+    if (!labels || !labels.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.style.padding = '40px';
+      empty.innerHTML = '<i class="bi bi-inbox"></i><p>Kein Bestand vorhanden.</p>';
+      container.appendChild(empty);
+      return;
+    }
+
+    const maxVal = (values && values.length && values[0] > 0) ? values[0] : 1;
+
+    labels.forEach((name, idx) => {
+      const value = values && values[idx] ? values[idx] : 0;
+      const item  = document.createElement('div');
+      item.className = 'top-item';
+
+      const rank = idx + 1;
+      let rankClass = 'top-rank';
+      if (rank === 1) rankClass += ' rank-1';
+      else if (rank === 2) rankClass += ' rank-2';
+      else if (rank === 3) rankClass += ' rank-3';
+
+      const rankDiv = document.createElement('div');
+      rankDiv.className = rankClass;
+      rankDiv.textContent = String(rank);
+
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'top-item-name';
+      nameDiv.textContent = name;
+
+      const valDiv = document.createElement('div');
+      valDiv.className = 'top-item-val';
+      valDiv.textContent = value + ' Stk.';
+
+      const barWrapper = document.createElement('div');
+      barWrapper.style.width = '120px';
+      const barBg = document.createElement('div');
+      barBg.style.background = 'var(--surface-3)';
+      barBg.style.borderRadius = '99px';
+      barBg.style.height = '4px';
+      barBg.style.overflow = 'hidden';
+
+      const barFill = document.createElement('div');
+      barFill.style.height = '100%';
+      barFill.style.borderRadius = '99px';
+      barFill.style.background = 'var(--accent)';
+      barFill.style.width = ((value / maxVal * 100) || 0) + '%';
+
+      barBg.appendChild(barFill);
+      barWrapper.appendChild(barBg);
+
+      item.appendChild(rankDiv);
+      item.appendChild(nameDiv);
+      item.appendChild(valDiv);
+      item.appendChild(barWrapper);
+
+      container.appendChild(item);
+    });
   }
+
+  // ── Filter (client-side) ──────────────────────────────
+  function applyFilter() {
+    const select = document.getElementById('filterLager');
+    if (!select || !donutChart || !ausChart || !barChart) return;
+
+    const val = select.value;
+    const idx = val === '' ? -1 : parseInt(val, 10);
+
+    // Donut: ausgewähltes Lager hervorheben, andere abdunkeln
+    donutChart.data.datasets[0].backgroundColor = donutBaseColors.map((c, i) =>
+      idx === -1 || i === idx ? c : 'rgba(148,163,184,0.25)'
+    );
+    donutChart.update();
+
+    // Auslastung: ausgewählte Bar hervorheben
+    ausChart.data.datasets[0].backgroundColor = ausBaseColors.map((c, i) =>
+      idx === -1 || i === idx ? c : 'rgba(148,163,184,0.25)'
+    );
+    ausChart.update();
+
+    // Top-Produkte nach Bestand (Chart wird gefiltert)
+    if (idx === -1) {
+      barChart.data.labels = globalTopLabels;
+      barChart.data.datasets[0].data = globalTopValues;
+    } else {
+      const labels = lagerTopLabels[idx] || [];
+      const values = lagerTopValues[idx] || [];
+      barChart.data.labels = labels;
+      barChart.data.datasets[0].data = values;
+    }
+    barChart.update();
+
+    // Top-Produkte nach Gesamtbestand (Liste unten bleibt global)
+    renderTopList(globalTopLabels, globalTopValues);
+  }
+
+  // Initial ohne Filter alles anzeigen
+  applyFilter();
 </script>
 {% endblock %}

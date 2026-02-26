@@ -12,6 +12,7 @@ from bierapp.contracts import DatabasePort
 COLLECTION_PRODUKTE = "produkte"
 COLLECTION_LAGER = "lager"
 COLLECTION_INVENTAR = "inventar"
+COLLECTION_EVENTS = "events"
 
 
 class MongoDBAdapter(DatabasePort):

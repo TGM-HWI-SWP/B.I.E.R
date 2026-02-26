@@ -5,7 +5,7 @@
 Dieses Dokument beschreibt die Test-Strategie und Test-Struktur des B.I.E.R-Projekts.
 
 **Test-Framework:** pytest 9+  
-**Test-Ergebnis (Stand 2026-02-25):** 49 passed, 2 skipped (1.74 s)
+**Test-Ergebnis (Stand 2026-02-26):** 59 passed, 2 skipped (1.30 s)
 
 ---
 
@@ -202,4 +202,4 @@ Die neue 4-Seiten UI verwendet die gleichen Backend-Services wie die Legacy-UI. 
 
 ---
 
-**Letzte Aktualisierung:** 2026-02-25
+**Letzte Aktualisierung:** 2026-02-26

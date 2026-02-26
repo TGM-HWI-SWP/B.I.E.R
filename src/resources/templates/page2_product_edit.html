@@ -94,8 +94,24 @@
   .page2-layout {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - var(--nav-h));
+    min-height: calc(100vh - var(--nav-h));
     overflow: hidden;
+  }
+
+  /* Action bar am unteren Rand der Seite halten */
+  .page2-layout .form-section {
+    flex: 1;
+  }
+
+  .page2-layout .action-bar {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+  }
+
+  /* Emoji-freundliche Schrift für Währungs-Dropdown */
+  .currency-select {
+    font-family: system-ui, "Noto Color Emoji", "Segoe UI Emoji", sans-serif;
   }
 </style>
 {% endblock %}
@@ -143,42 +159,64 @@
 
       <div class="attr-row default-attr" id="row-lager">
         <div class="attr-key"><i class="bi bi-building"></i> Lager <i class="bi bi-lock-fill attr-lock"></i></div>
-        <select name="lager_id" id="field-lager" class="attr-val-input">
-          <option value="">— kein Lager —</option>
-          {% for l in lager %}
-            <option value="{{ l._id }}"
-              {% if produkt and produkt.lager_id == l._id %}selected{% endif %}>
-              {{ l.lagername }}
-            </option>
-          {% endfor %}
-        </select>
+        {% if not produkt %}
+          <!-- Bei neuen Produkten Lager frei wählbar -->
+          <select name="lager_id" id="field-lager" class="attr-val-input">
+              <option value="">— kein Lager —</option>
+            {% for l in lager %}
+              <option value="{{ l._id }}">{{ l.lagername }}</option>
+            {% endfor %}
+          </select>
+        {% else %}
+          <!-- Bei bestehenden Produkten Lager nur anzeigen, nicht änderbar -->
+          {% set current_lager = (lager | selectattr('_id','equalto', produkt.lager_id) | list | first) %}
+          <input type="text" class="attr-val-input" value="{{ current_lager.lagername if current_lager else 'Kein Lager zugeordnet' }}" disabled />
+        {% endif %}
         <span></span>
       </div>
 
       <div class="attr-row default-attr" id="row-menge">
-        <div class="attr-key"><i class="bi bi-123"></i> Menge <i class="bi bi-lock-fill attr-lock"></i></div>
-        <input type="number" name="menge" id="field-menge" class="attr-val-input" min="0"
-               value="{{ produkt.menge if produkt and produkt.menge is defined else 0 }}"
+        <div class="attr-key"><i class="bi bi-stack"></i> Menge <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="number" name="menge" id="field-menge" class="attr-val-input" min="0" step="1"
+               value="{{ produkt.menge if produkt and produkt.menge is defined else '0' }}"
                placeholder="0" />
         <span></span>
       </div>
 
       <div class="attr-row default-attr" id="row-preis">
-        <div class="attr-key"><i class="bi bi-currency-euro"></i> Preis <i class="bi bi-lock-fill attr-lock"></i></div>
+        <div class="attr-key"><i class="bi bi-cash-stack"></i> Preis <i class="bi bi-lock-fill attr-lock"></i></div>
         <input type="number" name="preis" id="field-preis" class="attr-val-input" min="0" step="0.01"
                value="{{ produkt.preis if produkt and produkt.preis is defined else '' }}"
-               placeholder="0.00" />
+               placeholder="Preis z.B. 9.99" required />
         <span></span>
       </div>
 
+        <div class="attr-row default-attr" id="row-gewicht">
+          <div class="attr-key"><i class="bi bi-speedometer"></i> Gewicht (kg) <i class="bi bi-lock-fill attr-lock"></i></div>
+          <input type="number" name="gewicht" id="field-gewicht" class="attr-val-input" min="0" step="0.001" required
+                 value="{{ produkt.gewicht if produkt else '' }}"
+                 placeholder="0.000" />
+          <span></span>
+        </div>
+
       <div class="attr-row default-attr" id="row-waehrung">
         <div class="attr-key"><i class="bi bi-coin"></i> Währung <i class="bi bi-lock-fill attr-lock"></i></div>
-        <select name="waehrung" id="field-waehrung" class="attr-val-input">
+        <select name="waehrung" id="field-waehrung" class="attr-val-input currency-select">
           {% set cur = produkt.waehrung if produkt and produkt.waehrung is defined else 'EUR' %}
-          <option value="EUR" {% if cur == 'EUR' %}selected{% endif %}>EUR — Euro</option>
-          <option value="USD" {% if cur == 'USD' %}selected{% endif %}>USD — US Dollar</option>
-          <option value="CHF" {% if cur == 'CHF' %}selected{% endif %}>CHF — Schweizer Franken</option>
-          <option value="GBP" {% if cur == 'GBP' %}selected{% endif %}>GBP — Britisches Pfund</option>
+          <option value="EUR" {% if cur == 'EUR' %}selected{% endif %}>🇪🇺 EUR — Euro</option>
+          <option value="USD" {% if cur == 'USD' %}selected{% endif %}>🇺🇸 USD — US Dollar</option>
+          <option value="CHF" {% if cur == 'CHF' %}selected{% endif %}>🇨🇭 CHF — Schweizer Franken</option>
+          <option value="GBP" {% if cur == 'GBP' %}selected{% endif %}>🇬🇧 GBP — Britisches Pfund</option>
+          <option value="JPY" {% if cur == 'JPY' %}selected{% endif %}>🇯🇵 JPY — Japanischer Yen</option>
+          <option value="CNY" {% if cur == 'CNY' %}selected{% endif %}>🇨🇳 CNY — Chinesischer Yuan</option>
+          <option value="SEK" {% if cur == 'SEK' %}selected{% endif %}>🇸🇪 SEK — Schwedische Krone</option>
+          <option value="NOK" {% if cur == 'NOK' %}selected{% endif %}>🇳🇴 NOK — Norwegische Krone</option>
+          <option value="DKK" {% if cur == 'DKK' %}selected{% endif %}>🇩🇰 DKK — Dänische Krone</option>
+          <option value="PLN" {% if cur == 'PLN' %}selected{% endif %}>🇵🇱 PLN — Polnischer Złoty</option>
+          <option value="CZK" {% if cur == 'CZK' %}selected{% endif %}>🇨🇿 CZK — Tschechische Krone</option>
+          <option value="HUF" {% if cur == 'HUF' %}selected{% endif %}>🇭🇺 HUF — Ungarischer Forint</option>
+          <option value="AUD" {% if cur == 'AUD' %}selected{% endif %}>🇦🇺 AUD — Australischer Dollar</option>
+          <option value="CAD" {% if cur == 'CAD' %}selected{% endif %}>🇨🇦 CAD — Kanadischer Dollar</option>
         </select>
         <span></span>
       </div>
@@ -192,22 +230,13 @@
       </div>
 
       <div class="attr-row default-attr" id="row-beschreibung">
-        <div class="attr-key"><i class="bi bi-card-text"></i> Beschreibung <i class="bi bi-lock-fill attr-lock"></i></div>
-        <input type="text" name="beschreibung" id="field-beschreibung" class="attr-val-input"
-               value="{{ produkt.beschreibung if produkt else '' }}"
-               placeholder="Kurzbeschreibung…" />
-        <span></span>
-      </div>
+         <div class="attr-key"><i class="bi bi-card-text"></i> Beschreibung <i class="bi bi-lock-fill attr-lock"></i></div>
+         <input type="text" name="beschreibung" id="field-beschreibung" class="attr-val-input"
+           value="{{ produkt.beschreibung if produkt else '' }}"
+           placeholder="Kurzbeschreibung…" />
+         <span></span>
+            </div>
 
-      <div class="attr-row default-attr" id="row-gewicht">
-        <div class="attr-key"><i class="bi bi-speedometer"></i> Gewicht (kg) <i class="bi bi-lock-fill attr-lock"></i></div>
-        <input type="number" name="gewicht" id="field-gewicht" class="attr-val-input" min="0" step="0.001"
-               value="{{ produkt.gewicht if produkt else '0' }}"
-               placeholder="0.000" />
-        <span></span>
-      </div>
-
-      <!-- CUSTOM ATTRIBUTES -->
       <hr class="divider" />
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
                   color:var(--text-muted);margin-bottom:12px;">
@@ -253,6 +282,11 @@
     <button class="btn btn-danger" id="deleteAttrBtn" onclick="deleteSelectedAttribute()" disabled>
       <i class="bi bi-trash"></i> Attribut löschen
     </button>
+    {% if produkt %}
+    <button class="btn btn-danger" onclick="confirmDeleteProduct()" style="margin-left:16px;">
+      <i class="bi bi-x-octagon"></i> Produkt löschen
+    </button>
+    {% endif %}
   </div>
 </div>
 
@@ -283,6 +317,22 @@
     </div>
   </div>
 </div>
+{% if produkt %}
+<!-- ─── Delete Product Confirmation Modal ─────────── -->
+<div class="modal-overlay" id="deleteProductModal">
+  <div class="modal-box">
+    <i class="bi bi-exclamation-octagon" style="font-size:40px;color:var(--danger);margin-bottom:16px;display:block;"></i>
+    <h3>Produkt wirklich löschen?</h3>
+    <p>Dieses Produkt und sein Lagerbestand werden endgültig gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.</p>
+    <div class="modal-actions">
+      <form id="deleteProductForm" method="POST" action="{{ url_for('page2_delete_product', produkt_id=produkt._id) }}">
+        <button type="submit" class="btn btn-danger">Löschen</button>
+      </form>
+      <button class="btn btn-secondary" onclick="closeDeleteProductModal()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -314,11 +364,16 @@
 
   // ── Save ───────────────────────────────────────────────
   function saveChanges() {
-    // Copy fields to hidden form
-    document.getElementById('hf-name').value        = document.getElementById('field-name').value;
-    document.getElementById('hf-lager').value       = document.getElementById('field-lager').value;
-    document.getElementById('hf-menge').value       = document.getElementById('field-menge').value;
-    document.getElementById('hf-preis').value       = document.getElementById('field-preis').value;
+    // Sichtbare Felder in das versteckte Formular kopieren
+    const nameEl  = document.getElementById('field-name');
+    const lagerEl = document.getElementById('field-lager');
+    const mengeEl = document.getElementById('field-menge');
+    const preisEl = document.getElementById('field-preis');
+
+    document.getElementById('hf-name').value        = nameEl  ? nameEl.value  : '';
+    document.getElementById('hf-lager').value       = lagerEl ? lagerEl.value : '';
+    document.getElementById('hf-menge').value       = mengeEl ? mengeEl.value : '';
+    document.getElementById('hf-preis').value       = preisEl ? preisEl.value : '';
     document.getElementById('hf-waehrung').value    = document.getElementById('field-waehrung').value;
     document.getElementById('hf-lieferant').value   = document.getElementById('field-lieferant').value;
     document.getElementById('hf-beschreibung').value= document.getElementById('field-beschreibung').value;
@@ -450,5 +505,26 @@
   document.getElementById('unsavedModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });
+
+  {% if produkt %}
+  // ── Produkt löschen (Bestätigungsmodal) ────────────
+  function confirmDeleteProduct() {
+    const overlay = document.getElementById('deleteProductModal');
+    if (overlay) overlay.classList.add('open');
+  }
+
+  function closeDeleteProductModal() {
+    const overlay = document.getElementById('deleteProductModal');
+    if (overlay) overlay.classList.remove('open');
+  }
+
+  // Close delete modal on backdrop click
+  const deleteOverlay = document.getElementById('deleteProductModal');
+  if (deleteOverlay) {
+    deleteOverlay.addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeDeleteProductModal();
+    });
+  }
+  {% endif %}
 </script>
 {% endblock %}

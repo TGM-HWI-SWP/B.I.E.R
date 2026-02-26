@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Historie — B.I.E.R{% endblock %}
+
+{% block extra_head %}
+<style>
+  .history-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .history-filters label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .history-filters .spacer { flex: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="section-header" style="margin-bottom:24px;">
+    <div>
+      <h1 class="page-title">Historie</h1>
+      <p class="page-subtitle">Alle Änderungen an Produkten, Lagern und Beständen</p>
+    </div>
+  </div>
+
+  <div class="history-filters">
+    <label for="filterType">Typ:</label>
+    <select id="filterType" class="form-select" style="max-width:180px;height:36px;padding:6px 12px;">
+      <option value="">Alle</option>
+      <option value="produkt">Produkte</option>
+      <option value="lager">Lager</option>
+      <option value="inventar">Bestand</option>
+    </select>
+
+    <label for="filterText" style="margin-left:10px;">Suche:</label>
+    <input id="filterText" type="text" class="form-control" placeholder="Textsuche..." style="max-width:260px;height:36px;padding:6px 12px;" />
+
+    <div class="spacer"></div>
+
+    <label for="sortDir">Sortierung:</label>
+    <select id="sortDir" class="form-select" style="max-width:190px;height:36px;padding:6px 12px;">
+      <option value="desc">Neueste zuerst</option>
+      <option value="asc">Älteste zuerst</option>
+    </select>
+  </div>
+
+  <div class="card" style="padding:0; overflow:hidden;">
+    <div style="max-height:calc(100vh - 260px); overflow-y:auto;">
+      {% if events %}
+      <table class="data-table" id="historyTable">
+        <thead>
+          <tr>
+            <th style="width:200px;">Zeitstempel</th>
+            <th style="width:120px;">Typ</th>
+            <th style="width:140px;">Aktion</th>
+            <th>Beschreibung</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in events %}
+          <tr class="event-row"
+              data-type="{{ e.entity_type }}"
+              data-action="{{ e.action }}"
+              data-time="{{ e.timestamp }}"
+              data-text="{{ (e.summary or '') | lower }}">
+            <td style="font-size:13px;color:var(--text-muted);white-space:nowrap;">{{ e.display_time }}</td>
+            <td>
+              {% if e.entity_type == 'produkt' %}Produkt
+              {% elif e.entity_type == 'lager' %}Lager
+              {% elif e.entity_type == 'inventar' %}Bestand
+              {% else %}Sonstiges{% endif %}
+            </td>
+            <td>
+              {% if e.action == 'create' %}Angelegt
+              {% elif e.action == 'update' %}Aktualisiert
+              {% elif e.action == 'delete' %}Gelöscht
+              {% elif e.action == 'stock_add' %}Bestand hinzugefügt
+              {% elif e.action == 'stock_update' %}Bestand gesetzt
+              {% elif e.action == 'stock_remove' %}Bestand entfernt
+              {% elif e.action == 'stock_move' %}Bestand verschoben
+              {% else %}{{ e.action }}{% endif %}
+            </td>
+            <td>{{ e.summary or '' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state">
+        <i class="bi bi-inbox"></i>
+        <p>Noch keine Historie-Einträge vorhanden.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const filterType = document.getElementById('filterType');
+  const filterText = document.getElementById('filterText');
+  const sortDir    = document.getElementById('sortDir');
+  const tableBody  = document.querySelector('#historyTable tbody');
+
+  function applyHistoryFilter() {
+    if (!tableBody) return;
+    const typeVal = filterType.value;
+    const textVal = filterText.value.trim().toLowerCase();
+
+    tableBody.querySelectorAll('.event-row').forEach(row => {
+      const rowType = row.dataset.type || '';
+      const rowText = row.dataset.text || '';
+      const typeMatch = !typeVal || rowType === typeVal;
+      const textMatch = !textVal || rowText.includes(textVal);
+      row.style.display = typeMatch && textMatch ? '' : 'none';
+    });
+  }
+
+  function applyHistorySort() {
+    if (!tableBody) return;
+    const dir = sortDir.value === 'asc' ? 1 : -1;
+    const rows = Array.from(tableBody.querySelectorAll('.event-row'));
+    rows.sort((a, b) => {
+      const ta = a.dataset.time || '';
+      const tb = b.dataset.time || '';
+      return ta < tb ? -1 * dir : ta > tb ? 1 * dir : 0;
+    });
+    rows.forEach(r => tableBody.appendChild(r));
+  }
+
+  if (filterType && filterText && sortDir && tableBody) {
+    filterType.addEventListener('change', applyHistoryFilter);
+    filterText.addEventListener('input', applyHistoryFilter);
+    sortDir.addEventListener('change', () => {
+      applyHistorySort();
+      applyHistoryFilter();
+    });
+
+    // Initial sort (neueste zuerst) und Filter anwenden
+    applyHistorySort();
+    applyHistoryFilter();
+  }
+</script>
+{% endblock %}

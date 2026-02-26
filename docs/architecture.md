@@ -140,19 +140,22 @@ def get_inventory_service() -> InventoryService:
 
 **Routen-Übersicht (Legacy):**
 
+Die Legacy-Routen wurden so angepasst, dass sie intern die neuen Page-1–4-Templates
+verwenden, aber nach außen kompatibel zu den bestehenden Tests bleiben.
+
 | Methode | Route | Beschreibung |
 |---|---|---|
-| GET | `/` | Redirect to dashboard |
-| GET | `/produkte` | Produktliste (Legacy) |
+| GET | `/` | Rendert Dashboard (Page 1 – Produktverwaltung) |
+| GET | `/produkte` | Produktliste (nutzt Page 1 UI) |
 | POST | `/produkte/neu` | Produkt erstellen |
 | POST | `/produkte/<id>/bearbeiten` | Produkt aktualisieren |
 | POST | `/produkte/<id>/loeschen` | Produkt löschen |
-| GET | `/lager` | Lagerliste (Legacy) |
+| GET | `/lager` | Lagerliste (nutzt Page 3 UI) |
 | POST | `/lager/neu` | Lager erstellen |
 | POST | `/lager/<id>/bearbeiten` | Lager aktualisieren |
 | POST | `/lager/<id>/loeschen` | Lager löschen |
-| GET | `/inventar` | Redirect zum ersten Lager |
-| GET | `/inventar/<lager_id>` | Bestand eines Lagers |
+| GET | `/inventar` | Redirect zum ersten Lager (bei vorhandenen Lagern), sonst Dashboard |
+| GET | `/inventar/<lager_id>` | Bestand eines Lagers (nutzt Statistik-Dashboard) |
 | POST | `/inventar/<lager_id>/hinzufuegen` | Produkt einbuchen |
 | POST | `/inventar/<lager_id>/<produkt_id>/aktualisieren` | Menge ändern |
 | POST | `/inventar/<lager_id>/<produkt_id>/entfernen` | Produkt ausbuchen |

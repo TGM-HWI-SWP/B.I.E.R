@@ -15,9 +15,11 @@
   .capacity-bar-fill {
     height: 100%;
     border-radius: 99px;
-    background: var(--accent);
+    /* Niedrige Auslastung standardmäßig grün */
+    background: #22c55e;
     transition: width .4s ease;
   }
+  /* Mittel = gelb, Hoch = rot */
   .capacity-bar-fill.high  { background: var(--danger); }
   .capacity-bar-fill.med   { background: #f59e0b; }
 
@@ -113,7 +115,7 @@
             </td>
             <td>
               <div style="display:flex;align-items:center;gap:10px;">
-                {% set stored = l.get('menge', 0) %}
+                {% set stored = l.get('num_produkte', 0) %}
                 {% set maxp   = l.get('max_plaetze', 1) if l.get('max_plaetze', 1) > 0 else 1 %}
                 {% set pct_val = [(stored / maxp * 100) | round(1), 100] | min %}
                 <div class="capacity-bar-wrap">
@@ -130,6 +132,10 @@
             </td>
             <td style="text-align:right;">
               <div class="view-mode-actions" style="display:flex;gap:6px;justify-content:flex-end;">
+                <a class="btn btn-secondary btn-sm" title="Produkte in diesem Lager anzeigen"
+                   href="{{ url_for('page1_products') }}?lager_id={{ l._id }}">
+                  <i class="bi bi-box-seam"></i>
+                </a>
                 <button class="btn btn-ghost btn-icon btn-sm" title="Bearbeiten"
                         onclick="startEdit('{{ l._id }}')">
                   <i class="bi bi-pencil"></i>
