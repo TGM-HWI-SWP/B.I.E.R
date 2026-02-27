@@ -2,13 +2,13 @@ Globale Lagerstatistik
 ========================================================================
 Gesamtzahl Produkte:   150
 Gesamtzahl Lager:      5
-Gesamtbestand (Stk.):  148547
-Gesamtgewicht (kg):    1288948.040
-Gesamtwert (€):        25480542.82
+Gesamtbestand (Stk.):  157904
+Gesamtgewicht (kg):    1256129.530
+Gesamtwert (€):        31773092.93
 
 Kapazitätsauslastung pro Lager:
-  - Außenlager Linz:  66.5% belegt
-  - Depot Innsbruck:  52.8% belegt
-  - Hauptlager Wien:  28.2% belegt
-  - Kühlhaus Salzburg:  74.0% belegt
-  - Nebenlager Graz:  33.7% belegt
+  - Außenlager Linz:  46.0% belegt
+  - Depot Innsbruck:  65.6% belegt
+  - Hauptlager Wien:  25.8% belegt
+  - Kühlhaus Salzburg:  98.7% belegt
+  - Nebenlager Graz:  49.0% belegt
