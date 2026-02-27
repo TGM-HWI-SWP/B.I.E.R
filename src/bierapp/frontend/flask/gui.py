@@ -1,10 +1,11 @@
 """UI layer – Flask web interface for B.I.E.R."""
 
 from collections import defaultdict
+from datetime import datetime
 from os import environ, path
 from typing import Optional
 
-from flask import Flask, flash, redirect, render_template, request, send_from_directory, url_for, Response
+from flask import Flask, Response, flash, redirect, render_template, request, send_from_directory, url_for
 
 from bierapp.backend.services import InventoryService, ProductService, WarehouseService
 from bierapp.contracts import (
@@ -21,7 +22,6 @@ from bierapp.db.mongodb import (
     COLLECTION_PRODUKTE,
     MongoDBAdapter,
 )
-from datetime import datetime
 
 _HERE = path.dirname(__file__)
 _DEFAULT_RESOURCES = path.abspath(path.join(_HERE, "..", "..", "..", "resources"))
@@ -37,9 +37,27 @@ class FlaskHttpAdapter(HttpResponsePort):
     """Concrete implementation of HttpResponsePort for Flask JSON responses."""
 
     def success(self, data: dict, status: int = 200) -> tuple[dict, int]:
+        """Build a successful JSON response.
+
+        Args:
+            data (dict): Payload to include under the ``data`` key.
+            status (int): HTTP status code. Defaults to 200.
+
+        Returns:
+            tuple[dict, int]: Response body and HTTP status code.
+        """
         return {"status": "ok", "data": data}, status
 
     def error(self, message: str, status: int = 400) -> tuple[dict, int]:
+        """Build an error JSON response.
+
+        Args:
+            message (str): Human-readable error description.
+            status (int): HTTP status code. Defaults to 400.
+
+        Returns:
+            tuple[dict, int]: Response body containing the error message and HTTP status code.
+        """
         return {"status": "error", "message": message}, status
 
 
@@ -88,6 +106,11 @@ def get_inventory_service() -> InventoryServicePort:
 
 @app.route("/favicon.ico")
 def favicon():
+    """Serve the application favicon.
+
+    Returns:
+        Response: PNG image served from the resources directory.
+    """
     return send_from_directory(RESOURCES_DIR, "BIER_ICON_COMPRESSED.png", mimetype="image/png")
 
 
@@ -98,6 +121,12 @@ def logo(variant: str):
     The UI used to request separate light/dark variants. We now only
     have a single transparent logo file, so the *variant* argument is
     ignored but kept for backwards compatibility.
+
+    Args:
+        variant (str): Logo variant name (ignored, kept for URL compatibility).
+
+    Returns:
+        Response: PNG image served from the resources directory.
     """
     filename = "BIER_LOGO_NOBG.png"
     return send_from_directory(RESOURCES_DIR, filename, mimetype="image/png")
@@ -110,24 +139,36 @@ def index():
     For backwards compatibility with the tests and legacy UI this
     renders the same content as the new Page 1 product overview
     instead of issuing a redirect.
+
+    Returns:
+        str: Rendered HTML of the product overview page.
     """
     return page1_products()
 
 
 @app.route("/produkte")
 def produkte_list():
-    """Render the legacy product list using the new Page 1 UI."""
+    """Render the legacy product list using the new Page 1 UI.
+
+    Returns:
+        str: Rendered HTML of the product list page.
+    """
     return page1_products()
 
 
 @app.route("/produkte/neu", methods=["POST"])
 def produkte_create():
+    """Handle the creation of a new product from form data.
+
+    Returns:
+        Response: Redirect to the product list.
+    """
     svc = get_product_service()
     try:
         svc.create_product(
             name=request.form["name"],
-            beschreibung=request.form.get("beschreibung", ""),
-            gewicht=float(request.form.get("gewicht", 0)),
+            description=request.form.get("beschreibung", ""),
+            weight=float(request.form.get("gewicht", 0)),
         )
         flash("Produkt erfolgreich angelegt.", "success")
     except (ValueError, KeyError) as exc:
@@ -182,9 +223,13 @@ def produkte_delete(produkt_id: str):
 
 @app.route("/lager")
 def lager_list():
-    """Render the legacy warehouse list using the new Page 3 UI."""
-    raw_lager = get_warehouse_service().list_warehouses()
-    enriched = _enrich_warehouses(raw_lager)
+    """Render the legacy warehouse list using the new Page 3 UI.
+
+    Returns:
+        str: Rendered HTML of the warehouse list page.
+    """
+    raw_warehouses = get_warehouse_service().list_warehouses()
+    enriched = _enrich_warehouses(raw_warehouses)
     return render_template("page3_warehouse_list.html", lager=enriched, active_page=3)
 
 
@@ -255,22 +300,22 @@ def lager_delete(lager_id: str):
 
 @app.route("/inventar")
 def inventar_select():
-        """Entry point for inventory management.
+    """Entry point for inventory management.
 
-        Behaviour for tests / legacy UI:
-        * If no warehouses exist: render a 200 OK page
-            (we reuse the statistics dashboard).
-        * If warehouses exist: redirect to the detail view of the first
-            warehouse, preserving the original semantics.
-        """
-        db = get_db()
-        lager_list = db.find_all(COLLECTION_LAGER)
-        if not lager_list:
-                # Empty state – just show the statistics dashboard (200 OK).
-                return page4_statistics()
+    Behaviour for tests / legacy UI:
+    * If no warehouses exist: render a 200 OK page
+      (we reuse the statistics dashboard).
+    * If warehouses exist: redirect to the detail view of the first
+      warehouse, preserving the original semantics.
+    """
+    db = get_db()
+    warehouses_list = db.find_all(COLLECTION_LAGER)
+    if not warehouses_list:
+        # Empty state – just show the statistics dashboard (200 OK).
+        return page4_statistics()
 
-        first = lager_list[0]
-        return redirect(url_for("inventar_detail", lager_id=first["_id"]))
+    first = warehouses_list[0]
+    return redirect(url_for("inventar_detail", lager_id=first["_id"]))
 
 
 @app.route("/inventar/<lager_id>")
@@ -305,9 +350,9 @@ def inventar_add(lager_id: str):
     svc = get_inventory_service()
     try:
         svc.add_product(
-            lager_id=lager_id,
-            produkt_id=request.form["produkt_id"],
-            menge=int(request.form.get("menge", 1)),
+            warehouse_id=lager_id,
+            product_id=request.form["produkt_id"],
+            quantity=int(request.form.get("menge", 1)),
         )
         flash("Produkt dem Lager hinzugefügt.", "success")
     except (ValueError, KeyError) as exc:
@@ -329,9 +374,9 @@ def inventar_update(lager_id: str, produkt_id: str):
     svc = get_inventory_service()
     try:
         svc.update_quantity(
-            lager_id=lager_id,
-            produkt_id=produkt_id,
-            menge=int(request.form.get("menge", 0)),
+            warehouse_id=lager_id,
+            product_id=produkt_id,
+            quantity=int(request.form.get("menge", 0)),
         )
         flash("Menge aktualisiert.", "success")
     except (ValueError, KeyError) as exc:
@@ -352,7 +397,7 @@ def inventar_remove(lager_id: str, produkt_id: str):
     """
     svc = get_inventory_service()
     try:
-        svc.remove_product(lager_id=lager_id, produkt_id=produkt_id)
+        svc.remove_product(warehouse_id=lager_id, product_id=produkt_id)
         flash("Produkt aus Lager entfernt.", "success")
     except KeyError as exc:
         flash(f"Fehler: {exc}", "danger")
@@ -367,57 +412,53 @@ def statistik():
         str: Rendered HTML of statistik.html with all chart datasets.
     """
     db = get_db()
-    produkte   = db.find_all(COLLECTION_PRODUKTE)
-    lager_list = db.find_all(COLLECTION_LAGER)
-    inventar   = db.find_all(COLLECTION_INVENTAR)
+    products        = db.find_all(COLLECTION_PRODUKTE)
+    warehouses_list = db.find_all(COLLECTION_LAGER)
+    inventory       = db.find_all(COLLECTION_INVENTAR)
 
-    # --- Bestand je Lager -------------------------------------------------
-    menge_per_lager: dict[str, int]         = defaultdict(int)
-    produkte_per_lager: dict[str, set[str]] = defaultdict(set)
-    for entry in inventar:
+    # --- Stock per warehouse -----------------------------------------------
+    qty_per_warehouse: dict[str, int]      = defaultdict(int)
+    products_per_warehouse: dict[str, set[str]] = defaultdict(set)
+    for entry in inventory:
         lid = entry.get("lager_id", "")
-        menge_per_lager[lid]       += entry.get("menge", 0)
-        produkte_per_lager[lid].add(entry.get("produkt_id", ""))
+        qty_per_warehouse[lid]       += entry.get("menge", 0)
+        products_per_warehouse[lid].add(entry.get("produkt_id", ""))
 
-    lager_labels = [l.get("lagername", l["_id"]) for l in lager_list]
-    lager_mengen = [menge_per_lager.get(l["_id"], 0) for l in lager_list]
+    warehouse_labels    = [w.get("lagername", w["_id"]) for w in warehouses_list]
+    warehouse_quantities = [qty_per_warehouse.get(w["_id"], 0) for w in warehouses_list]
 
-    lager_stats = []
-    for l in lager_list:
-        lid = l["_id"]
-        lager_stats.append({
-            "lagername":   l.get("lagername", lid),
-            "num_produkte": len(produkte_per_lager.get(lid, set())),
-            "menge":        menge_per_lager.get(lid, 0),
-            "max_plaetze":  l.get("max_plaetze", 1),
+    warehouse_stats = []
+    for w in warehouses_list:
+        lid = w["_id"]
+        warehouse_stats.append({
+            "lagername":    w.get("lagername", lid),
+            "num_produkte": len(products_per_warehouse.get(lid, set())),
+            "menge":        qty_per_warehouse.get(lid, 0),
+            "max_plaetze":  w.get("max_plaetze", 1),
         })
 
-    # --- Auslastung (%) auf Basis der belegten Plätze (Anzahl Produkte) ---
-    aus_labels = [r["lagername"] for r in lager_stats]
-    aus_pct    = [
+    utilisation_labels = [r["lagername"] for r in warehouse_stats]
+    utilisation_pct    = [
         round(min(r["num_produkte"] / max(r["max_plaetze"], 1) * 100, 100), 1)
-        for r in lager_stats
+        for r in warehouse_stats
     ]
 
-    # --- Kategorieverteilung ----------------------------------------------
-    kat_counts_map: dict[str, int] = defaultdict(int)
-    for p in produkte:
-        kat = p.get("kategorie") or "Sonstige"
-        kat_counts_map[kat] += 1
-    kat_labels = list(kat_counts_map.keys())
-    kat_counts  = list(kat_counts_map.values())
+    category_counts_map: dict[str, int] = defaultdict(int)
+    for p in products:
+        cat = p.get("kategorie") or "Sonstige"
+        category_counts_map[cat] += 1
+    category_labels = list(category_counts_map.keys())
+    category_counts = list(category_counts_map.values())
 
-    # --- Top 10 Produkte nach Gesamtbestand --------------------------------
-    produkt_name  = {p["_id"]: p.get("name", p["_id"]) for p in produkte}
-    menge_per_p: dict[str, int] = defaultdict(int)
-    for entry in inventar:
-        menge_per_p[entry.get("produkt_id", "")] += entry.get("menge", 0)
-    top10 = sorted(menge_per_p.items(), key=lambda x: x[1], reverse=True)[:10]
-    top10_labels = [produkt_name.get(pid, pid) for pid, _ in top10]
+    product_name  = {p["_id"]: p.get("name", p["_id"]) for p in products}
+    qty_per_product: dict[str, int] = defaultdict(int)
+    for entry in inventory:
+        qty_per_product[entry.get("produkt_id", "")] += entry.get("menge", 0)
+    top10 = sorted(qty_per_product.items(), key=lambda x: x[1], reverse=True)[:10]
+    top10_labels = [product_name.get(pid, pid) for pid, _ in top10]
     top10_values = [v for _, v in top10]
 
-    # --- Gewichtsverteilung (Histogramm) ----------------------------------
-    bins = [
+    weight_bins_def = [
         (0,   0.5,  "0–0.5"),
         (0.5, 1,    "0.5–1"),
         (1,   2,    "1–2"),
@@ -427,63 +468,64 @@ def statistik():
         (20,  50,   "20–50"),
         (50,  1e9,  ">50"),
     ]
-    gewicht_bins   = [b[2] for b in bins]
-    gewicht_counts = [0] * len(bins)
-    for p in produkte:
+    weight_bin_labels  = [b[2] for b in weight_bins_def]
+    weight_bin_counts  = [0] * len(weight_bins_def)
+    for p in products:
         w = float(p.get("gewicht", 0))
-        for i, (lo, hi, _) in enumerate(bins):
+        for i, (lo, hi, _) in enumerate(weight_bins_def):
             if lo <= w < hi:
-                gewicht_counts[i] += 1
+                weight_bin_counts[i] += 1
                 break
 
-    total_menge = sum(menge_per_lager.values())
+    total_quantity = sum(qty_per_warehouse.values())
 
     return render_template(
         "statistik.html",
-        num_produkte=len(produkte),
-        num_lager=len(lager_list),
-        total_menge=total_menge,
-        num_inventar=len(inventar),
-        lager_stats=lager_stats,
-        lager_labels=lager_labels,
-        lager_mengen=lager_mengen,
-        kat_labels=kat_labels,
-        kat_counts=kat_counts,
+        num_produkte=len(products),
+        num_lager=len(warehouses_list),
+        total_menge=total_quantity,
+        num_inventar=len(inventory),
+        lager_stats=warehouse_stats,
+        lager_labels=warehouse_labels,
+        lager_mengen=warehouse_quantities,
+        kat_labels=category_labels,
+        kat_counts=category_counts,
         top10_labels=top10_labels,
         top10_values=top10_values,
-        gewicht_bins=gewicht_bins,
-        gewicht_counts=gewicht_counts,
-        aus_labels=aus_labels,
-        aus_pct=aus_pct,
+        gewicht_bins=weight_bin_labels,
+        gewicht_counts=weight_bin_counts,
+        aus_labels=utilisation_labels,
+        aus_pct=utilisation_pct,
     )
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# NEW UI ROUTES  (4-page modern dashboard)
-# ──────────────────────────────────────────────────────────────────────────────
+def _enrich_warehouses(warehouse_list: list) -> list:
+    """Attach aggregated stock quantity and product count to each warehouse dict.
 
-# ── Helper: enrich warehouses with menge & num_produkte ───────────────────────
-def _enrich_warehouses(lager_list):
-    """Attach aggregated menge and num_produkte to each warehouse dict."""
+    Args:
+        warehouse_list (list): Raw list of warehouse documents from the database.
+
+    Returns:
+        list: Enriched warehouse documents each containing menge and num_produkte.
+    """
     db = get_db()
-    inventar_all = db.find_all(COLLECTION_INVENTAR)
-    menge_per_lager: dict = defaultdict(int)
-    produkte_per_lager: dict = defaultdict(set)
-    for entry in inventar_all:
+    all_inventory = db.find_all(COLLECTION_INVENTAR)
+    qty_per_warehouse: dict = defaultdict(int)
+    products_per_warehouse: dict = defaultdict(set)
+    for entry in all_inventory:
         lid = entry.get("lager_id", "")
-        menge_per_lager[lid] += entry.get("menge", 0)
-        produkte_per_lager[lid].add(entry.get("produkt_id", ""))
+        qty_per_warehouse[lid] += entry.get("menge", 0)
+        products_per_warehouse[lid].add(entry.get("produkt_id", ""))
     enriched = []
-    for l in lager_list:
-        lid = l["_id"]
-        l = dict(l)
-        l["menge"]        = menge_per_lager.get(lid, 0)
-        l["num_produkte"] = len(produkte_per_lager.get(lid, set()))
-        enriched.append(l)
+    for warehouse in warehouse_list:
+        lid = warehouse["_id"]
+        warehouse = dict(warehouse)
+        warehouse["menge"]        = qty_per_warehouse.get(lid, 0)
+        warehouse["num_produkte"] = len(products_per_warehouse.get(lid, set()))
+        enriched.append(warehouse)
     return enriched
 
 
-# PAGE 1 — Product list
 @app.route("/ui/produkte")
 def page1_products():
     """Render Page 1: product management overview."""
@@ -491,138 +533,129 @@ def page1_products():
     svc_w = get_warehouse_service()
     db = get_db()
 
-    lager_id = request.args.get("lager_id", "").strip()
-    produkte = svc_p.list_products()
+    warehouse_filter_id = request.args.get("lager_id", "").strip()
+    products = svc_p.list_products()
 
-    # Map produkt_id -> {lager_id: menge} aus Inventar
-    inventar_all = db.find_all(COLLECTION_INVENTAR)
-    inventar_by_product: dict[str, dict[str, int]] = {}
-    for entry in inventar_all:
+    all_inventory = db.find_all(COLLECTION_INVENTAR)
+    inventory_by_product: dict[str, dict[str, int]] = {}
+    for entry in all_inventory:
         pid = entry.get("produkt_id", "")
         lid = entry.get("lager_id", "")
         if not pid or not lid:
             continue
-        if pid not in inventar_by_product:
-            inventar_by_product[pid] = {}
-        inventar_by_product[pid][lid] = inventar_by_product[pid].get(lid, 0) + entry.get("menge", 0)
+        if pid not in inventory_by_product:
+            inventory_by_product[pid] = {}
+        inventory_by_product[pid][lid] = inventory_by_product[pid].get(lid, 0) + entry.get("menge", 0)
 
-    # Enrich products with lager_id/menge for the UI
     enriched: list[dict] = []
-    for p in produkte:
+    for p in products:
         pid = p.get("_id")
-        lager_map = inventar_by_product.get(pid, {})
+        warehouse_map = inventory_by_product.get(pid, {})
         p = dict(p)
-        if lager_id:
-            # Bei aktivem Lager-Filter: Menge in genau diesem Lager anzeigen
-            p["lager_id"] = lager_id
-            p["menge"] = lager_map.get(lager_id, 0)
-            if lager_id in lager_map:
+        if warehouse_filter_id:
+            p["lager_id"] = warehouse_filter_id
+            p["menge"] = warehouse_map.get(warehouse_filter_id, 0)
+            if warehouse_filter_id in warehouse_map:
                 enriched.append(p)
         else:
-            # Ohne Filter: Gesamtmenge über alle Lager anzeigen
+            # show total quantity across all warehouses
             p["lager_id"] = ""
-            p["menge"] = sum(lager_map.values()) if lager_map else 0
+            p["menge"] = sum(warehouse_map.values()) if warehouse_map else 0
             enriched.append(p)
 
-    lager = svc_w.list_warehouses()
+    warehouses = svc_w.list_warehouses()
     active_filter = None
-    for l in lager:
-        if l["_id"] == lager_id:
-            active_filter = l
+    for w in warehouses:
+        if w["_id"] == warehouse_filter_id:
+            active_filter = w
             break
 
     return render_template(
         "page1_products.html",
         produkte=enriched,
-        lager=lager,
+        lager=warehouses,
         active_page=1,
         active_lager_filter=active_filter,
     )
 
 
-# PAGE 2 — Product edit (new)
 @app.route("/ui/produkt/neu")
 def page2_product_edit():
     """Render Page 2 in create-mode (no existing product)."""
-    lager = get_warehouse_service().list_warehouses()
-    # Für neue Produkte gibt es noch keine Lagerzuordnung
-    produkt_menge_by_lager: dict[str, int] = {}
+    warehouses = get_warehouse_service().list_warehouses()
+    stock_by_warehouse: dict[str, int] = {}
     return render_template(
         "page2_product_edit.html",
         produkt=None,
-        lager=lager,
+        lager=warehouses,
         inventar_entries=[],
-        produkt_menge_by_lager=produkt_menge_by_lager,
+        produkt_menge_by_lager=stock_by_warehouse,
         active_page=2,
     )
 
 
-# PAGE 2 — Product edit (existing)
 @app.route("/ui/produkt/<produkt_id>/bearbeiten")
 def page2_product_edit_existing(produkt_id: str):
     """Render Page 2 in edit-mode for an existing product."""
     svc_p = get_product_service()
     svc_w = get_warehouse_service()
-    produkt = svc_p.get_product(produkt_id)
-    if not produkt:
+    product = svc_p.get_product(produkt_id)
+    if not product:
         flash("Produkt nicht gefunden.", "danger")
         return redirect(url_for("page1_products"))
-    # Attach inventory data: all inventar-Einträge dieses Produkts mit Lagername
     db = get_db()
-    lager = svc_w.list_warehouses()
-    lager_by_id = {l["_id"]: l for l in lager}
-    inventar_entries: list[dict] = []
+    warehouses = svc_w.list_warehouses()
+    warehouse_by_id = {w["_id"]: w for w in warehouses}
+    inventory_entries: list[dict] = []
     for entry in db.find_all(COLLECTION_INVENTAR):
         if entry.get("produkt_id") == produkt_id:
             lid = entry.get("lager_id", "")
-            lager_doc = lager_by_id.get(lid)
-            inventar_entries.append(
+            warehouse_doc = warehouse_by_id.get(lid)
+            inventory_entries.append(
                 {
                     "lager_id": lid,
-                    "lagername": lager_doc.get("lagername", lid) if lager_doc else lid,
+                    "lagername": warehouse_doc.get("lagername", lid) if warehouse_doc else lid,
                     "menge": entry.get("menge", 0),
                 }
             )
 
-    produkt_menge_by_lager: dict[str, int] = {
-        e["lager_id"]: int(e.get("menge", 0)) for e in inventar_entries if e.get("lager_id")
+    stock_by_warehouse: dict[str, int] = {
+        e["lager_id"]: int(e.get("menge", 0)) for e in inventory_entries if e.get("lager_id")
     }
 
     # Gather extra attrs (all keys not among the defaults)
     defaults = {"_id", "name", "beschreibung", "gewicht", "preis", "waehrung", "lieferant"}
-    extra = {k: v for k, v in produkt.items() if k not in defaults}
-    produkt["extra_attrs"] = extra
+    extra = {k: v for k, v in product.items() if k not in defaults}
+    product["extra_attrs"] = extra
     return render_template(
         "page2_product_edit.html",
-        produkt=produkt,
-        lager=lager,
-        inventar_entries=inventar_entries,
-        produkt_menge_by_lager=produkt_menge_by_lager,
+        produkt=product,
+        lager=warehouses,
+        inventar_entries=inventory_entries,
+        produkt_menge_by_lager=stock_by_warehouse,
         active_page=2,
     )
 
 
-# PAGE 2 — Save (create)
 @app.route("/ui/produkt/neu", methods=["POST"])
 def page2_create_product():
     """Handle product creation from the Page 2 form."""
     svc_p = get_product_service()
     svc_inv = get_inventory_service()
-    # Pflichtfelder validieren (Name, Preis, Gewicht)
     name = request.form.get("name", "").strip()
-    preis_raw = request.form.get("preis", "").strip()
-    gewicht_raw = request.form.get("gewicht", "").strip()
-    if not name or not preis_raw or not gewicht_raw:
+    price_raw = request.form.get("preis", "").strip()
+    weight_raw = request.form.get("gewicht", "").strip()
+    if not name or not price_raw or not weight_raw:
         flash("Bitte alle Pflichtfelder (Name, Preis und Gewicht) ausfüllen.", "danger")
         return redirect(url_for("page2_product_edit"))
 
     try:
         doc = svc_p.create_product(
             name=name,
-            beschreibung=request.form.get("beschreibung", ""),
-            gewicht=float(gewicht_raw),
+            description=request.form.get("beschreibung", ""),
+            weight=float(weight_raw),
         )
-        produkt_id = doc["_id"]
+        product_id = doc["_id"]
 
         # Extra standard fields stored via update
         extra_data: dict = {}
@@ -640,42 +673,40 @@ def page2_create_product():
                 extra_data[k] = v.strip()
 
         if extra_data:
-            svc_p.update_product(produkt_id, extra_data)
+            svc_p.update_product(product_id, extra_data)
 
-        # Inventory entries: support multiple Lager mit unterschiedlichen Mengen
-        lager_ids = request.form.getlist("lager_ids[]")
-        mengen_raw = request.form.getlist("mengen[]")
+        # inventory entries: support multiple warehouses with different quantities
+        warehouse_ids = request.form.getlist("lager_ids[]")
+        quantities_raw = request.form.getlist("mengen[]")
         stock_entries: list[tuple[str, int]] = []
 
-        for lid, m_raw in zip(lager_ids, mengen_raw):
+        for lid, qty_raw in zip(warehouse_ids, quantities_raw):
             lid = (lid or "").strip()
             if not lid:
                 continue
             try:
-                menge_val = int(m_raw or 0)
+                qty_val = int(qty_raw or 0)
             except ValueError:
                 continue
-            # 0 oder negative Mengen ignorieren (kein Bestand)
-            if menge_val <= 0:
+            if qty_val <= 0:
                 continue
-            stock_entries.append((lid, menge_val))
+            stock_entries.append((lid, qty_val))
 
-        # Fallback: falls nur ein einzelnes Lager/Menge-Paar gesendet wurde
+        # fallback for single warehouse/quantity pair
         if not stock_entries:
-            single_lager_id = request.form.get("lager_id", "").strip()
-            single_menge_raw = request.form.get("menge", "").strip()
+            single_warehouse_id = request.form.get("lager_id", "").strip()
+            single_qty_raw = request.form.get("menge", "").strip()
             try:
-                single_menge = int(single_menge_raw or 0)
+                single_qty = int(single_qty_raw or 0)
             except ValueError:
-                single_menge = 0
-            if single_lager_id and single_menge > 0:
-                stock_entries.append((single_lager_id, single_menge))
+                single_qty = 0
+            if single_warehouse_id and single_qty > 0:
+                stock_entries.append((single_warehouse_id, single_qty))
 
-        for lid, menge_val in stock_entries:
+        for lid, qty_val in stock_entries:
             try:
-                svc_inv.add_product(lager_id=lid, produkt_id=produkt_id, menge=menge_val)
+                svc_inv.add_product(warehouse_id=lid, product_id=product_id, quantity=qty_val)
             except (KeyError, ValueError):
-                # Ungültige Lager-IDs oder Mengen ignorieren wir still
                 pass
 
         flash("Produkt erfolgreich angelegt.", "success")
@@ -684,17 +715,15 @@ def page2_create_product():
     return redirect(url_for("page1_products"))
 
 
-# PAGE 2 — Save (update)
 @app.route("/ui/produkt/<produkt_id>/speichern", methods=["POST"])
 def page2_save_product(produkt_id: str):
     """Handle product update from the Page 2 form."""
     svc_p = get_product_service()
     svc_inv = get_inventory_service()
-    # Pflichtfelder validieren (Name, Preis, Gewicht)
     name = request.form.get("name", "").strip()
-    preis_raw = request.form.get("preis", "").strip()
-    gewicht_raw = request.form.get("gewicht", "").strip()
-    if not name or not preis_raw or not gewicht_raw:
+    price_raw = request.form.get("preis", "").strip()
+    weight_raw = request.form.get("gewicht", "").strip()
+    if not name or not price_raw or not weight_raw:
         flash("Bitte alle Pflichtfelder (Name, Preis und Gewicht) ausfüllen.", "danger")
         return redirect(url_for("page2_product_edit_existing", produkt_id=produkt_id))
 
@@ -702,7 +731,7 @@ def page2_save_product(produkt_id: str):
         update_data: dict = {
             "name":         name,
             "beschreibung": request.form.get("beschreibung", "").strip(),
-            "gewicht":      float(gewicht_raw or 0),
+            "gewicht":      float(weight_raw or 0),
         }
         for field in ("preis", "waehrung", "lieferant"):
             val = request.form.get(field, "").strip()
@@ -718,62 +747,61 @@ def page2_save_product(produkt_id: str):
 
         svc_p.update_product(produkt_id, update_data)
 
-        # Inventory: alle Lager/Mengen dieses Produkts synchronisieren
-        lager_ids = request.form.getlist("lager_ids[]")
-        mengen_raw = request.form.getlist("mengen[]")
+        # sync warehouse stock entries for this product
+        warehouse_ids = request.form.getlist("lager_ids[]")
+        quantities_raw = request.form.getlist("mengen[]")
         stock_entries: list[tuple[str, int]] = []
 
-        for lid, m_raw in zip(lager_ids, mengen_raw):
+        for lid, qty_raw in zip(warehouse_ids, quantities_raw):
             lid = (lid or "").strip()
             if not lid:
                 continue
             try:
-                menge_val = int(m_raw or 0)
+                qty_val = int(qty_raw or 0)
             except ValueError:
                 continue
-            if menge_val <= 0:
+            if qty_val <= 0:
                 continue
-            stock_entries.append((lid, menge_val))
+            stock_entries.append((lid, qty_val))
 
-        # Fallback für alte Formate: einzelnes Lager/Menge-Paar
+        # fallback for single warehouse/quantity pair
         if not stock_entries:
-            single_lager_id = request.form.get("lager_id", "").strip()
-            single_menge_raw = request.form.get("menge", "").strip()
+            single_warehouse_id = request.form.get("lager_id", "").strip()
+            single_qty_raw = request.form.get("menge", "").strip()
             try:
-                single_menge = int(single_menge_raw or 0)
+                single_qty = int(single_qty_raw or 0)
             except ValueError:
-                single_menge = 0
-            if single_lager_id and single_menge > 0:
-                stock_entries.append((single_lager_id, single_menge))
+                single_qty = 0
+            if single_warehouse_id and single_qty > 0:
+                stock_entries.append((single_warehouse_id, single_qty))
 
         db = get_db()
         existing_entries = [
             e for e in db.find_all(COLLECTION_INVENTAR) if e.get("produkt_id") == produkt_id
         ]
-        existing_by_lager: dict[str, dict] = {
+        existing_by_warehouse: dict[str, dict] = {
             e.get("lager_id", ""): e for e in existing_entries if e.get("lager_id")
         }
 
-        # Ziel-Mengen pro Lager aggregieren (falls Lager mehrfach vorkommt)
-        desired_by_lager: dict[str, int] = {}
-        for lid, menge_val in stock_entries:
-            desired_by_lager[lid] = desired_by_lager.get(lid, 0) + menge_val
+        # aggregate desired quantities per warehouse
+        desired_by_warehouse: dict[str, int] = {}
+        for lid, qty_val in stock_entries:
+            desired_by_warehouse[lid] = desired_by_warehouse.get(lid, 0) + qty_val
 
-        # Updates / Neuanlagen
-        for lid, menge_val in desired_by_lager.items():
+        for lid, qty_val in desired_by_warehouse.items():
             try:
-                if lid in existing_by_lager:
-                    svc_inv.update_quantity(lager_id=lid, produkt_id=produkt_id, menge=menge_val)
+                if lid in existing_by_warehouse:
+                    svc_inv.update_quantity(warehouse_id=lid, product_id=produkt_id, quantity=qty_val)
                 else:
-                    svc_inv.add_product(lager_id=lid, produkt_id=produkt_id, menge=menge_val)
+                    svc_inv.add_product(warehouse_id=lid, product_id=produkt_id, quantity=qty_val)
             except (KeyError, ValueError) as exc:
                 flash(f"Fehler beim Aktualisieren des Bestands für Lager {lid}: {exc}", "danger")
 
-        # Entfernen von Lagerzuordnungen, die nicht mehr vorhanden sein sollen
-        for lid in list(existing_by_lager.keys()):
-            if lid not in desired_by_lager:
+        # remove warehouse assignments no longer desired
+        for lid in list(existing_by_warehouse.keys()):
+            if lid not in desired_by_warehouse:
                 try:
-                    svc_inv.remove_product(lager_id=lid, produkt_id=produkt_id)
+                    svc_inv.remove_product(warehouse_id=lid, product_id=produkt_id)
                 except KeyError:
                     pass
 
@@ -783,7 +811,6 @@ def page2_save_product(produkt_id: str):
     return redirect(url_for("page1_products"))
 
 
-# PAGE 2 — Move product between warehouses
 @app.route("/ui/produkt/<produkt_id>/verschieben", methods=["POST"])
 def page2_move_product(produkt_id: str):
     """Move a quantity of a product from its current warehouse to another.
@@ -792,20 +819,20 @@ def page2_move_product(produkt_id: str):
     """
     svc_inv = get_inventory_service()
     db = get_db()
-    target_lager_id = request.form.get("target_lager_id", "").strip()
-    source_lager_id_override = request.form.get("source_lager_id", "").strip()
-    menge_raw = request.form.get("menge", "0").strip()
+    target_warehouse_id = request.form.get("target_lager_id", "").strip()
+    source_warehouse_override = request.form.get("source_lager_id", "").strip()
+    qty_raw = request.form.get("menge", "0").strip()
 
     try:
-        menge = int(menge_raw or 0)
+        qty = int(qty_raw or 0)
     except ValueError:
         flash("Menge muss eine ganze Zahl sein.", "danger")
         return redirect(url_for("page1_products"))
 
-    # Finde Quelllager: bevorzugt das aus dem Formular, sonst erster Inventareintrag
+    # find source warehouse: prefer form value, fall back to first inventory entry
     source_entry = None
-    if source_lager_id_override:
-        source_entry = db.find_inventar_entry(source_lager_id_override, produkt_id)
+    if source_warehouse_override:
+        source_entry = db.find_inventory_entry(source_warehouse_override, produkt_id)
     if not source_entry:
         for e in db.find_all(COLLECTION_INVENTAR):
             if e.get("produkt_id") == produkt_id:
@@ -816,14 +843,14 @@ def page2_move_product(produkt_id: str):
         flash("Für dieses Produkt ist kein Lagerbestand vorhanden.", "danger")
         return redirect(url_for("page1_products"))
 
-    source_lager_id = source_entry.get("lager_id", "")
+    source_warehouse_id = source_entry.get("lager_id", "")
 
-    if not target_lager_id or target_lager_id == source_lager_id:
+    if not target_warehouse_id or target_warehouse_id == source_warehouse_id:
         flash("Bitte ein anderes Ziellager auswählen.", "danger")
         return redirect(url_for("page1_products"))
 
     try:
-        svc_inv.move_product(source_lager_id, target_lager_id, produkt_id, menge)
+        svc_inv.move_product(source_warehouse_id, target_warehouse_id, produkt_id, qty)
         flash("Produktbestand wurde verschoben.", "success")
     except (KeyError, ValueError) as exc:
         flash(f"Fehler beim Verschieben: {exc}", "danger")
@@ -831,7 +858,6 @@ def page2_move_product(produkt_id: str):
     return redirect(url_for("page1_products"))
 
 
-# PAGE 2 — Delete product (including inventory)
 @app.route("/ui/produkt/<produkt_id>/loeschen", methods=["POST"])
 def page2_delete_product(produkt_id: str):
     """Delete a product and all associated inventory entries from the new UI.
@@ -847,7 +873,7 @@ def page2_delete_product(produkt_id: str):
         for entry in db.find_all(COLLECTION_INVENTAR):
             if entry.get("produkt_id") == produkt_id:
                 try:
-                    svc_inv.remove_product(lager_id=entry.get("lager_id", ""), produkt_id=produkt_id)
+                    svc_inv.remove_product(warehouse_id=entry.get("lager_id", ""), product_id=produkt_id)
                 except KeyError:
                     # If an entry disappeared between reading and deleting, ignore
                     pass
@@ -858,16 +884,14 @@ def page2_delete_product(produkt_id: str):
     return redirect(url_for("page1_products"))
 
 
-# PAGE 3 — Warehouse list
 @app.route("/ui/lager")
 def page3_warehouse_list():
     """Render Page 3: warehouse list with enriched stats."""
-    raw_lager = get_warehouse_service().list_warehouses()
-    enriched = _enrich_warehouses(raw_lager)
+    raw_warehouses = get_warehouse_service().list_warehouses()
+    enriched = _enrich_warehouses(raw_warehouses)
     return render_template("page3_warehouse_list.html", lager=enriched, active_page=3)
 
 
-# PAGE 3 — Create warehouse
 @app.route("/ui/lager/neu", methods=["POST"])
 def page3_create_warehouse():
     """Handle warehouse creation from Page 3."""
@@ -884,7 +908,6 @@ def page3_create_warehouse():
     return redirect(url_for("page3_warehouse_list"))
 
 
-# PAGE 3 — Update warehouse
 @app.route("/ui/lager/<lager_id>/bearbeiten", methods=["POST"])
 def page3_update_warehouse(lager_id: str):
     """Handle inline warehouse update from Page 3."""
@@ -904,10 +927,9 @@ def page3_update_warehouse(lager_id: str):
     return redirect(url_for("page3_warehouse_list"))
 
 
-# PAGE 3 — Delete warehouse
 @app.route("/ui/lager/<lager_id>/loeschen", methods=["POST"])
 def page3_delete_warehouse(lager_id: str):
-    """Handle warehouse deletion from Page 3 (also removes inventar entries)."""
+    """Handle warehouse deletion from Page 3 (also removes inventory entries)."""
     svc_w   = get_warehouse_service()
     svc_inv = get_inventory_service()
     db      = get_db()
@@ -916,7 +938,7 @@ def page3_delete_warehouse(lager_id: str):
         for entry in db.find_all(COLLECTION_INVENTAR):
             if entry.get("lager_id") == lager_id:
                 try:
-                    svc_inv.remove_product(lager_id=lager_id, produkt_id=entry["produkt_id"])
+                    svc_inv.remove_product(warehouse_id=lager_id, product_id=entry["produkt_id"])
                 except KeyError:
                     pass
         svc_w.delete_warehouse(lager_id)
@@ -926,7 +948,6 @@ def page3_delete_warehouse(lager_id: str):
     return redirect(url_for("page3_warehouse_list"))
 
 
-# PAGE 5 — History of changes
 @app.route("/ui/historie")
 def page5_history():
     """Render a flat list of all recorded history events.
@@ -939,7 +960,6 @@ def page5_history():
     # Sort newest first by timestamp string (ISO 8601)
     events_sorted = sorted(events, key=lambda e: e.get("timestamp", ""), reverse=True)
 
-    # Add a human-friendly timestamp for display (dd.mm.yyyy HH:MM:SS)
     for ev in events_sorted:
         ts = ev.get("timestamp", "")
         display = ts
@@ -961,15 +981,15 @@ def export_history():
 
     db = get_db()
     events = db.find_all(COLLECTION_EVENTS)
-    events_sorted = sorted(events, key=lambda e: e.get("timestamp", ""))
+    sorted_events = sorted(events, key=lambda e: e.get("timestamp", ""))
 
     lines: list[str] = []
     lines.append("B.I.E.R – Vollständige Historie")
     lines.append("=" * 80)
-    if not events_sorted:
+    if not sorted_events:
         lines.append("Keine Historie-Einträge vorhanden.")
     else:
-        for ev in events_sorted:
+        for ev in sorted_events:
             ts = ev.get("timestamp", "")
             clean = ts.rstrip("Z")
             try:
@@ -991,111 +1011,109 @@ def export_history():
     )
 
 
-# PAGE 4 — Statistics  (reuses existing statistik logic)
 @app.route("/ui/statistik")
 def page4_statistics():
     """Render Page 4: statistics dashboard."""
     db = get_db()
-    produkte   = db.find_all(COLLECTION_PRODUKTE)
-    lager_list = db.find_all(COLLECTION_LAGER)
-    inventar   = db.find_all(COLLECTION_INVENTAR)
+    products  = db.find_all(COLLECTION_PRODUKTE)
+    warehouses = db.find_all(COLLECTION_LAGER)
+    inventory  = db.find_all(COLLECTION_INVENTAR)
 
-    menge_per_lager: dict = defaultdict(int)
-    produkte_per_lager: dict = defaultdict(set)
-    for entry in inventar:
+    qty_per_warehouse: dict = defaultdict(int)
+    products_per_warehouse: dict = defaultdict(set)
+    for entry in inventory:
         lid = entry.get("lager_id", "")
-        menge_per_lager[lid]       += entry.get("menge", 0)
-        produkte_per_lager[lid].add(entry.get("produkt_id", ""))
+        qty_per_warehouse[lid]        += entry.get("menge", 0)
+        products_per_warehouse[lid].add(entry.get("produkt_id", ""))
 
-    lager_labels = [l.get("lagername", l["_id"]) for l in lager_list]
-    lager_mengen = [menge_per_lager.get(l["_id"], 0) for l in lager_list]
+    warehouse_labels    = [w.get("lagername", w["_id"]) for w in warehouses]
+    warehouse_quantities = [qty_per_warehouse.get(w["_id"], 0) for w in warehouses]
 
-    lager_stats = []
-    for l in lager_list:
-        lid = l["_id"]
-        lager_stats.append({
-            "lagername":    l.get("lagername", lid),
-            "num_produkte": len(produkte_per_lager.get(lid, set())),
-            "menge":        menge_per_lager.get(lid, 0),
-            "max_plaetze":  l.get("max_plaetze", 1),
+    warehouse_stats = []
+    for w in warehouses:
+        lid = w["_id"]
+        warehouse_stats.append({
+            "lagername":    w.get("lagername", lid),
+            "num_produkte": len(products_per_warehouse.get(lid, set())),
+            "menge":        qty_per_warehouse.get(lid, 0),
+            "max_plaetze":  w.get("max_plaetze", 1),
         })
 
-    aus_labels = [r["lagername"] for r in lager_stats]
-    aus_pct    = [
+    utilisation_labels = [r["lagername"] for r in warehouse_stats]
+    utilisation_pct    = [
         round(min(r["num_produkte"] / max(r["max_plaetze"], 1) * 100, 100), 1)
-        for r in lager_stats
+        for r in warehouse_stats
     ]
 
-    kat_counts_map: dict = defaultdict(int)
-    for p in produkte:
-        kat = p.get("kategorie") or "Sonstige"
-        kat_counts_map[kat] += 1
-    kat_labels = list(kat_counts_map.keys())
-    kat_counts = list(kat_counts_map.values())
+    category_counts_map: dict = defaultdict(int)
+    for p in products:
+        cat = p.get("kategorie") or "Sonstige"
+        category_counts_map[cat] += 1
+    category_labels = list(category_counts_map.keys())
+    category_counts = list(category_counts_map.values())
 
-    produkt_name: dict = {p["_id"]: p.get("name", p["_id"]) for p in produkte}
-    menge_per_p: dict = defaultdict(int)
-    # Verteilung pro Produkt gesamt sowie pro Lager ermitteln
-    per_lager_product: dict = defaultdict(lambda: defaultdict(int))
-    for entry in inventar:
+    product_name: dict = {p["_id"]: p.get("name", p["_id"]) for p in products}
+    qty_per_product: dict = defaultdict(int)
+    qty_per_warehouse_product: dict = defaultdict(lambda: defaultdict(int))
+    for entry in inventory:
         pid = entry.get("produkt_id", "")
         lid = entry.get("lager_id", "")
-        menge = entry.get("menge", 0)
-        menge_per_p[pid] += menge
-        per_lager_product[lid][pid] += menge
+        qty = entry.get("menge", 0)
+        qty_per_product[pid] += qty
+        qty_per_warehouse_product[lid][pid] += qty
 
-    # Globale Top 10 über alle Lager
-    top10 = sorted(menge_per_p.items(), key=lambda x: x[1], reverse=True)[:10]
-    top10_labels = [produkt_name.get(pid, pid) for pid, _ in top10]
+    # top 10 products by total stock
+    top10 = sorted(qty_per_product.items(), key=lambda x: x[1], reverse=True)[:10]
+    top10_labels = [product_name.get(pid, pid) for pid, _ in top10]
     top10_values = [v for _, v in top10]
 
-    # Top-Produkte pro Lager (gleiche Reihenfolge wie lager_list)
-    lager_top_labels: list[list[str]] = []
-    lager_top_values: list[list[int]] = []
-    for l in lager_list:
-        lid = l["_id"]
-        items = per_lager_product.get(lid, {})
+    # top products per warehouse (same order as warehouses list)
+    warehouse_top_labels: list[list[str]] = []
+    warehouse_top_values: list[list[int]] = []
+    for w in warehouses:
+        lid = w["_id"]
+        items = qty_per_warehouse_product.get(lid, {})
         if items:
             sorted_items = sorted(items.items(), key=lambda x: x[1], reverse=True)[:10]
-            lager_top_labels.append([produkt_name.get(pid, pid) for pid, _ in sorted_items])
-            lager_top_values.append([v for _, v in sorted_items])
+            warehouse_top_labels.append([product_name.get(pid, pid) for pid, _ in sorted_items])
+            warehouse_top_values.append([v for _, v in sorted_items])
         else:
-            lager_top_labels.append([])
-            lager_top_values.append([])
+            warehouse_top_labels.append([])
+            warehouse_top_values.append([])
 
-    total_menge = sum(menge_per_lager.values())
+    total_quantity = sum(qty_per_warehouse.values())
 
-    preis_by_id: dict = {p["_id"]: float(p.get("preis", 0.0)) for p in produkte}
-    value_per_lager: dict = defaultdict(float)
-    for e in inventar:
+    price_by_id: dict = {p["_id"]: float(p.get("preis", 0.0)) for p in products}
+    value_per_warehouse: dict = defaultdict(float)
+    for e in inventory:
         lid = e.get("lager_id", "")
-        menge = int(e.get("menge", 0))
-        preis = preis_by_id.get(e.get("produkt_id", ""), 0.0)
-        value_per_lager[lid] += menge * preis
+        qty = int(e.get("menge", 0))
+        price = price_by_id.get(e.get("produkt_id", ""), 0.0)
+        value_per_warehouse[lid] += qty * price
 
-    lager_werte = [round(value_per_lager.get(l["_id"], 0.0), 2) for l in lager_list]
-    total_value = sum(lager_werte)
+    warehouse_values = [round(value_per_warehouse.get(w["_id"], 0.0), 2) for w in warehouses]
+    total_value = sum(warehouse_values)
 
     return render_template(
         "page4_statistics.html",
         active_page=4,
-        num_produkte=len(produkte),
-        num_lager=len(lager_list),
-        total_menge=total_menge,
+        num_produkte=len(products),
+        num_lager=len(warehouses),
+        total_menge=total_quantity,
         total_value=total_value,
-        num_inventar=len(inventar),
-        lager_stats=lager_stats,
-        lager_labels=lager_labels,
-        lager_werte=lager_werte,
-        lager_mengen=lager_mengen,
-        kat_labels=kat_labels,
-        kat_counts=kat_counts,
+        num_inventar=len(inventory),
+        lager_stats=warehouse_stats,
+        lager_labels=warehouse_labels,
+        lager_werte=warehouse_values,
+        lager_mengen=warehouse_quantities,
+        kat_labels=category_labels,
+        kat_counts=category_counts,
         top10_labels=top10_labels,
         top10_values=top10_values,
-        lager_top_labels=lager_top_labels,
-        lager_top_values=lager_top_values,
-        aus_labels=aus_labels,
-        aus_pct=aus_pct,
+        lager_top_labels=warehouse_top_labels,
+        lager_top_values=warehouse_top_values,
+        aus_labels=utilisation_labels,
+        aus_pct=utilisation_pct,
     )
 
 

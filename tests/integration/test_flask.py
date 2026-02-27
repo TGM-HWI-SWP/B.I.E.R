@@ -63,7 +63,7 @@ class TestProdukte:
         )
         assert response.status_code == 302
         assert "/produkte" in response.headers["Location"]
-        # Erster Insert muss in die "produkte"-Collection gehen (Produktspeicherung).
+        # First insert must target the "produkte" collection (product creation).
         assert mock_db.insert.call_args_list[0][0][0] == "produkte"
 
     def test_create_empty_name_redirects_with_flash(self, flask_client, mock_db):
@@ -146,7 +146,7 @@ class TestLager:
         )
         assert response.status_code == 302
         assert "/lager" in response.headers["Location"]
-        # Erster Insert muss in die "lager"-Collection gehen.
+        # First insert must target the "lager" collection.
         assert mock_db.insert.call_args_list[0][0][0] == "lager"
 
     def test_create_empty_name_redirects_without_insert(self, flask_client, mock_db):
@@ -213,7 +213,7 @@ class TestInventar:
         """
         lager_doc = {"_id": FAKE_ID, "lagername": "L1", "adresse": "", "max_plaetze": 50}
         mock_db.find_by_id.return_value = lager_doc
-        mock_db.find_inventar_by_lager.return_value = []
+        mock_db.find_inventory_by_warehouse.return_value = []
         mock_db.find_all.return_value = []
         response = flask_client.get(f"/inventar/{FAKE_ID}")
         assert response.status_code == 200
@@ -235,10 +235,10 @@ class TestInventar:
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
-            mock_db (MagicMock): find_by_id returns lager, find_inventar_entry None.
+            mock_db (MagicMock): find_by_id returns lager, find_inventory_entry None.
         """
         mock_db.find_by_id.return_value = {"_id": FAKE_ID}
-        mock_db.find_inventar_entry.return_value = None
+        mock_db.find_inventory_entry.return_value = None
         mock_db.insert.return_value = "newid"
         response = flask_client.post(
             f"/inventar/{FAKE_ID}/hinzufuegen",
@@ -251,9 +251,9 @@ class TestInventar:
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
-            mock_db (MagicMock): find_inventar_entry returns existing entry.
+            mock_db (MagicMock): find_inventory_entry returns existing entry.
         """
-        mock_db.find_inventar_entry.return_value = {"_id": "eid", "menge": 10}
+        mock_db.find_inventory_entry.return_value = {"_id": "eid", "menge": 10}
         response = flask_client.post(
             f"/inventar/{FAKE_ID}/pid123/aktualisieren",
             data={"menge": "15"},
@@ -266,9 +266,9 @@ class TestInventar:
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
-            mock_db (MagicMock): find_inventar_entry returns existing entry.
+            mock_db (MagicMock): find_inventory_entry returns existing entry.
         """
-        mock_db.find_inventar_entry.return_value = {"_id": "eid", "menge": 3}
+        mock_db.find_inventory_entry.return_value = {"_id": "eid", "menge": 3}
         response = flask_client.post(f"/inventar/{FAKE_ID}/pid123/entfernen")
         assert response.status_code == 302
         mock_db.delete.assert_called_once()

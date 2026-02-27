@@ -12,18 +12,18 @@ Or call :func:`seed_database` programmatically.
 
 from __future__ import annotations
 
-import random
 from os import environ
+from random import choice, randint, sample, uniform
 
-import pymongo
 from bson import ObjectId
+from pymongo import MongoClient
 
 COLLECTION_PRODUKTE = "produkte"
 COLLECTION_LAGER = "lager"
 COLLECTION_INVENTAR = "inventar"
 
 # ---------------------------------------------------------------------------
-# Seed data definitions
+# Seed data
 # ---------------------------------------------------------------------------
 
 _LAGER_DATA = [
@@ -38,6 +38,11 @@ _LAGER_DATA = [
 _PRODUKTE_DATA: list[dict] = []
 
 def _gen_products() -> list[dict]:
+    """Generate the list of 150 test products across 10 categories plus 50 filler items.
+
+    Returns:
+        list[dict]: List of product documents ready for insertion into MongoDB.
+    """
     categories = [
         # (category_prefix, items, weight_range_kg, price_range_eur)
         ("Bürostuhl",    ["Ergonomisch", "Standard", "Executive", "Netz", "Kinder",
@@ -64,8 +69,8 @@ def _gen_products() -> list[dict]:
     products = []
     for cat, variants, (wmin, wmax), (pmin, pmax) in categories:
         for i, variant in enumerate(variants):
-            gewicht = round(random.uniform(wmin, wmax), 2)
-            preis = round(random.uniform(pmin, pmax), 2)
+            gewicht = round(uniform(wmin, wmax), 2)
+            preis = round(uniform(pmin, pmax), 2)
             products.append({
                 "name": f"{cat} {variant}",
                 "beschreibung": (
@@ -82,12 +87,12 @@ def _gen_products() -> list[dict]:
                   "Smart", "Kompakt", "Light", "Heavy-Duty"]
     nouns = ["Halterung", "Aufbewahrung", "Ständer", "Ablage", "Organizer",
              "Box", "Schublade", "Haken", "Klemme", "Tablett"]
-    for i, (adj, noun) in enumerate([(random.choice(adjectives), random.choice(nouns)) for _ in range(50)]):
-        preis = round(random.uniform(5.0, 120.0), 2)
+    for i, (adj, noun) in enumerate([(choice(adjectives), choice(nouns)) for _ in range(50)]):
+        preis = round(uniform(5.0, 120.0), 2)
         products.append({
             "name": f"{adj} {noun} #{i+1}",
-            "beschreibung": f"Universeller {noun} in Qualitätsstufe '{adj}'.",
-            "gewicht": round(random.uniform(0.1, 10.0), 2),
+            "beschreibung": f"Universeller {noun} in Qualit\u00e4tsstufe '{adj}'.",
+            "gewicht": round(uniform(0.1, 10.0), 2),
             "preis": preis,
             "waehrung": "EUR",
             "kategorie": "Zubehör",
@@ -96,6 +101,11 @@ def _gen_products() -> list[dict]:
 
 
 def _build_uri() -> str:
+    """Construct a MongoDB connection URI from environment variables.
+
+    Returns:
+        str: A fully qualified mongodb:// URI string.
+    """
     user = environ.get("MONGO_USER", "admin")
     password = environ.get("MONGO_PASS", "secret")
     host = environ.get("MONGO_HOST", "localhost")
@@ -114,60 +124,57 @@ def seed_database(force: bool = False) -> None:
     """
     uri = _build_uri()
     db_name = environ.get("MONGO_DB", "bierapp")
-    client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=5_000)
+    client = MongoClient(uri, serverSelectionTimeoutMS=5_000)
     db = client[db_name]
 
     # Idempotency check
     if not force and db[COLLECTION_PRODUKTE].count_documents({}) > 0:
-        print("[seed] Datenbank enthält bereits Daten – Seed übersprungen. "
-              "(Verwende force=True um neu zu befüllen.)")
+        print("[seed] Database already contains data – seed skipped. "
+              "(Use force=True to re-seed.)")
         return
 
     if force:
         db[COLLECTION_PRODUKTE].drop()
         db[COLLECTION_LAGER].drop()
         db[COLLECTION_INVENTAR].drop()
-        print("[seed] Bestehende Daten gelöscht.")
+        print("[seed] Existing data deleted.")
 
-    # --- Lager ---
-    lager_ids: list[ObjectId] = []
+    warehouse_ids: list[ObjectId] = []
     for lager in _LAGER_DATA:
-        lager_doc = {
+        warehouse_doc = {
             "lagername": lager["lagername"],
             "adresse": lager.get("adresse", lager.get("adername", "")),
             "max_plaetze": lager["max_plaetze"],
         }
-        result = db[COLLECTION_LAGER].insert_one(lager_doc)
-        lager_ids.append(result.inserted_id)
-        print(f"[seed] Lager angelegt: {lager['lagername']}")
+        result = db[COLLECTION_LAGER].insert_one(warehouse_doc)
+        warehouse_ids.append(result.inserted_id)
+        print(f"[seed] Warehouse created: {lager['lagername']}")
 
-    # --- Produkte ---
     products = _gen_products()
-    produkt_ids: list[ObjectId] = []
-    produkt_docs = db[COLLECTION_PRODUKTE].insert_many(products)
-    produkt_ids = list(produkt_docs.inserted_ids)
-    print(f"[seed] {len(produkt_ids)} Produkte angelegt.")
+    product_ids: list[ObjectId] = []
+    product_docs = db[COLLECTION_PRODUKTE].insert_many(products)
+    product_ids = list(product_docs.inserted_ids)
+    print(f"[seed] {len(product_ids)} products created.")
 
-    # --- Inventar ---
     # Every warehouse gets a random subset of products with random quantities
-    inventar_docs = []
-    for lager_id in lager_ids:
+    inventory_docs = []
+    for warehouse_id in warehouse_ids:
         # Each warehouse stocks 60–100 % of products
-        subset_size = random.randint(int(len(produkt_ids) * 0.6), len(produkt_ids))
-        chosen = random.sample(produkt_ids, subset_size)
+        subset_size = randint(int(len(product_ids) * 0.6), len(product_ids))
+        chosen = sample(product_ids, subset_size)
         for pid in chosen:
-            inventar_docs.append({
-                "lager_id": str(lager_id),  # wird vom Adapter später wieder zu str(ObjectId) normalisiert
+            inventory_docs.append({
+                "lager_id": str(warehouse_id),
                 "produkt_id": str(pid),
-                "menge": random.randint(1, 500),
+                "menge": randint(1, 500),
             })
 
-    if inventar_docs:
-        db[COLLECTION_INVENTAR].insert_many(inventar_docs)
-        print(f"[seed] {len(inventar_docs)} Inventar-Einträge angelegt.")
+    if inventory_docs:
+        db[COLLECTION_INVENTAR].insert_many(inventory_docs)
+        print(f"[seed] {len(inventory_docs)} inventory entries created.")
 
     client.close()
-    print("[seed] Seed abgeschlossen.")
+    print("[seed] Seed complete.")
 
 
 if __name__ == "__main__":

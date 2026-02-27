@@ -4,7 +4,7 @@ All MongoDB interactions are replaced by a MagicMock so no real database
 connection is required.
 """
 
-import pytest
+from pytest import raises
 
 
 class TestProductService:
@@ -39,7 +39,7 @@ class TestProductService:
         Args:
             product_service (ProductService): Service under test.
         """
-        with pytest.raises(ValueError, match="leer"):
+        with raises(ValueError, match="leer"):
             product_service.create_product("   ", "", 1.0)
 
     def test_create_product_negative_price_raises(self, product_service):
@@ -48,8 +48,8 @@ class TestProductService:
         Args:
             product_service (ProductService): Service under test.
         """
-        with pytest.raises(ValueError, match="Preis"):
-            product_service.create_product("Regal", "", 1.0, preis=-5.0)
+        with raises(ValueError, match="Preis"):
+            product_service.create_product("Regal", "", 1.0, price=-5.0)
 
     def test_create_product_stores_preis(self, product_service, mock_db):
         """create_product persists the preis field in the product document.
@@ -58,7 +58,7 @@ class TestProductService:
             product_service (ProductService): Service under test.
             mock_db (MagicMock): Mock adapter.
         """
-        result = product_service.create_product("Stuhl", "Bürostuhl", 8.5, preis=129.99)
+        result = product_service.create_product("Stuhl", "Bürostuhl", 8.5, price=129.99)
         # The doc inserted into the DB must contain preis
         inserted_doc = mock_db.insert.call_args_list[0][0][1]
         assert inserted_doc["preis"] == 129.99
@@ -106,7 +106,7 @@ class TestProductService:
             mock_db (MagicMock): Mock adapter configured to return None.
         """
         mock_db.find_by_id.return_value = None
-        with pytest.raises(KeyError):
+        with raises(KeyError):
             product_service.update_product("nonexistent", {"name": "X"})
 
     def test_update_product_calls_db_update(self, product_service, mock_db):
@@ -139,7 +139,7 @@ class TestProductService:
             mock_db (MagicMock): Mock adapter configured to return None.
         """
         mock_db.find_by_id.return_value = None
-        with pytest.raises(KeyError):
+        with raises(KeyError):
             product_service.delete_product("gone")
 
 
@@ -154,7 +154,6 @@ class TestWarehouseService:
             mock_db (MagicMock): Mock adapter.
         """
         result = warehouse_service.create_warehouse("Lager A", "Wien 1010", 50)
-        # Der erste Insert muss in die "lager"-Collection gehen.
         assert mock_db.insert.call_args_list[0][0][0] == "lager"
         assert result["lagername"] == "Lager A"
         assert result["max_plaetze"] == 50
@@ -165,7 +164,7 @@ class TestWarehouseService:
         Args:
             warehouse_service (WarehouseService): Service under test.
         """
-        with pytest.raises(ValueError, match="leer"):
+        with raises(ValueError, match="leer"):
             warehouse_service.create_warehouse("  ", "Adresse", 10)
 
     def test_create_warehouse_zero_plaetze_raises(self, warehouse_service):
@@ -174,7 +173,7 @@ class TestWarehouseService:
         Args:
             warehouse_service (WarehouseService): Service under test.
         """
-        with pytest.raises(ValueError, match="positiv"):
+        with raises(ValueError, match="positiv"):
             warehouse_service.create_warehouse("Lager B", "", 0)
 
     def test_create_warehouse_negative_plaetze_raises(self, warehouse_service):
@@ -183,7 +182,7 @@ class TestWarehouseService:
         Args:
             warehouse_service (WarehouseService): Service under test.
         """
-        with pytest.raises(ValueError, match="positiv"):
+        with raises(ValueError, match="positiv"):
             warehouse_service.create_warehouse("Lager C", "", -5)
 
     def test_update_warehouse_raises_for_missing(self, warehouse_service, mock_db):
@@ -194,7 +193,7 @@ class TestWarehouseService:
             mock_db (MagicMock): Mock adapter configured to return None.
         """
         mock_db.find_by_id.return_value = None
-        with pytest.raises(KeyError):
+        with raises(KeyError):
             warehouse_service.update_warehouse("x", {"lagername": "Y"})
 
     def test_delete_warehouse_raises_for_missing(self, warehouse_service, mock_db):
@@ -205,7 +204,7 @@ class TestWarehouseService:
             mock_db (MagicMock): Mock adapter configured to return None.
         """
         mock_db.find_by_id.return_value = None
-        with pytest.raises(KeyError):
+        with raises(KeyError):
             warehouse_service.delete_warehouse("missing")
 
 
@@ -220,9 +219,8 @@ class TestInventoryService:
             mock_db (MagicMock): Mock adapter.
         """
         mock_db.find_by_id.return_value = {"_id": "lid"}
-        mock_db.find_inventar_entry.return_value = None
+        mock_db.find_inventory_entry.return_value = None
         inventory_service.add_product("lid", "pid", 5)
-        # Es muss mindestens ein Insert in die "inventar"-Collection erfolgt sein.
         assert any(call[0][0] == "inventar" for call in mock_db.insert.call_args_list)
 
     def test_add_product_merges_existing(self, inventory_service, mock_db):
@@ -233,7 +231,7 @@ class TestInventoryService:
             mock_db (MagicMock): Mock adapter.
         """
         mock_db.find_by_id.return_value = {"_id": "lid"}
-        mock_db.find_inventar_entry.return_value = {"_id": "eid", "menge": 10}
+        mock_db.find_inventory_entry.return_value = {"_id": "eid", "menge": 10}
         inventory_service.add_product("lid", "pid", 3)
         mock_db.update.assert_called_once()
         args = mock_db.update.call_args[0]
@@ -245,7 +243,7 @@ class TestInventoryService:
         Args:
             inventory_service (InventoryService): Service under test.
         """
-        with pytest.raises(ValueError, match="Menge"):
+        with raises(ValueError, match="Menge"):
             inventory_service.add_product("lid", "pid", -1)
 
     def test_update_quantity_raises_for_missing_entry(self, inventory_service, mock_db):
@@ -255,8 +253,8 @@ class TestInventoryService:
             inventory_service (InventoryService): Service under test.
             mock_db (MagicMock): Mock adapter configured to return None.
         """
-        mock_db.find_inventar_entry.return_value = None
-        with pytest.raises(KeyError):
+        mock_db.find_inventory_entry.return_value = None
+        with raises(KeyError):
             inventory_service.update_quantity("lid", "pid", 5)
 
     def test_update_quantity_negative_raises(self, inventory_service, mock_db):
@@ -266,7 +264,7 @@ class TestInventoryService:
             inventory_service (InventoryService): Service under test.
             mock_db (MagicMock): Mock adapter.
         """
-        with pytest.raises(ValueError, match="negativ"):
+        with raises(ValueError, match="negativ"):
             inventory_service.update_quantity("lid", "pid", -1)
 
     def test_remove_product_calls_delete(self, inventory_service, mock_db):
@@ -276,7 +274,7 @@ class TestInventoryService:
             inventory_service (InventoryService): Service under test.
             mock_db (MagicMock): Mock adapter.
         """
-        mock_db.find_inventar_entry.return_value = {"_id": "eid", "menge": 3}
+        mock_db.find_inventory_entry.return_value = {"_id": "eid", "menge": 3}
         inventory_service.remove_product("lid", "pid")
         mock_db.delete.assert_called_once()
 
@@ -287,8 +285,8 @@ class TestInventoryService:
             inventory_service (InventoryService): Service under test.
             mock_db (MagicMock): Mock adapter configured to return None.
         """
-        mock_db.find_inventar_entry.return_value = None
-        with pytest.raises(KeyError):
+        mock_db.find_inventory_entry.return_value = None
+        with raises(KeyError):
             inventory_service.remove_product("lid", "pid")
 
     def test_list_inventory_raises_for_missing_lager(self, inventory_service, mock_db):
@@ -299,7 +297,7 @@ class TestInventoryService:
             mock_db (MagicMock): Mock adapter configured to return None for lager.
         """
         mock_db.find_by_id.return_value = None
-        with pytest.raises(KeyError):
+        with raises(KeyError):
             inventory_service.list_inventory("nonexistent")
 
     def test_list_inventory_enriches_entries(self, inventory_service, mock_db):
@@ -313,7 +311,7 @@ class TestInventoryService:
             {"_id": "lid", "lagername": "L"},
             {"_id": "pid", "name": "Stift", "beschreibung": "Kugelschreiber"},
         ]
-        mock_db.find_inventar_by_lager.return_value = [
+        mock_db.find_inventory_by_warehouse.return_value = [
             {"_id": "eid", "produkt_id": "pid", "menge": 7}
         ]
         result = inventory_service.list_inventory("lid")
@@ -364,7 +362,7 @@ class TestInventoryService:
             mock_db (MagicMock): Mock adapter.
         """
         mock_db.find_by_id.return_value = {"_id": "lid", "lagername": "L"}
-        mock_db.find_inventar_entry.return_value = None
+        mock_db.find_inventory_entry.return_value = None
 
         inventory_service.add_product("lid", "pid", 3, performed_by="Anna Schmidt")
 

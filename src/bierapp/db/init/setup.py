@@ -16,7 +16,7 @@ Or import and call :func:`setup_database` from application startup code.
 from os import environ
 from sys import exit, stderr
 
-import pymongo
+from pymongo import ASCENDING, MongoClient
 
 COLLECTION_PRODUKTE = "produkte"
 COLLECTION_LAGER = "lager"
@@ -46,7 +46,7 @@ def setup_database() -> None:
     uri = _build_uri()
     db_name = environ.get("MONGO_DB", "bierapp")
 
-    client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=5_000)
+    client = MongoClient(uri, serverSelectionTimeoutMS=5_000)
     db = client[db_name]
 
     existing = db.list_collection_names()
@@ -72,7 +72,7 @@ def setup_database() -> None:
         print(f"[setup] Created collection '{COLLECTION_INVENTAR}'.")
 
     db[COLLECTION_INVENTAR].create_index(
-        [("lager_id", pymongo.ASCENDING), ("produkt_id", pymongo.ASCENDING)],
+        [("lager_id", ASCENDING), ("produkt_id", ASCENDING)],
         unique=True,
         name="lager_produkt_unique",
     )

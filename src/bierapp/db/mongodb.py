@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 from bson import ObjectId
 from bson.errors import InvalidId
-import pymongo
+from pymongo import MongoClient
 
 from bierapp.contracts import DatabasePort
 
@@ -26,7 +26,7 @@ class MongoDBAdapter(DatabasePort):
 
     def __init__(self) -> None:
         """Read connection settings from environment variables."""
-        self._client: Optional[pymongo.MongoClient] = None
+        self._client: Optional[MongoClient] = None
         self._db = None
         self._host = environ.get("MONGO_HOST", "localhost")
         self._port = int(environ.get("MONGO_PORT", 27017))
@@ -41,7 +41,7 @@ class MongoDBAdapter(DatabasePort):
             ConnectionError: If the MongoDB server is not reachable within 5 s.
         """
         uri = f"mongodb://{self._user}:{self._password}@{self._host}:{self._port}/"
-        self._client = pymongo.MongoClient(uri, serverSelectionTimeoutMS=5_000)
+        self._client = MongoClient(uri, serverSelectionTimeoutMS=5_000)
         self._client.admin.command("ping")
         self._db = self._client[self._db_name]
 
@@ -126,32 +126,32 @@ class MongoDBAdapter(DatabasePort):
         result = self._db[collection].delete_one({"_id": oid})
         return result.deleted_count > 0
 
-    def find_inventar_by_lager(self, lager_id: str) -> List[Dict]:
-        """Return all inventar documents for a specific warehouse.
+    def find_inventory_by_warehouse(self, warehouse_id: str) -> List[Dict]:
+        """Return all inventory documents for a specific warehouse.
 
         Args:
-            lager_id (str): String form of the warehouse ObjectId.
+            warehouse_id (str): String form of the warehouse ObjectId.
 
         Returns:
             List[Dict]: All inventory entries belonging to that warehouse.
         """
         self._require_connection()
-        cursor = self._db[COLLECTION_INVENTAR].find({"lager_id": lager_id})
+        cursor = self._db[COLLECTION_INVENTAR].find({"lager_id": warehouse_id})
         return [self._serialize(doc) for doc in cursor]
 
-    def find_inventar_entry(self, lager_id: str, produkt_id: str) -> Optional[Dict]:
-        """Return a single inventar entry matching a warehouse/product pair.
+    def find_inventory_entry(self, warehouse_id: str, product_id: str) -> Optional[Dict]:
+        """Return a single inventory entry matching a warehouse/product pair.
 
         Args:
-            lager_id (str): String form of the warehouse ObjectId.
-            produkt_id (str): String form of the product ObjectId.
+            warehouse_id (str): String form of the warehouse ObjectId.
+            product_id (str): String form of the product ObjectId.
 
         Returns:
             Optional[Dict]: The matching inventory document, or None.
         """
         self._require_connection()
         doc = self._db[COLLECTION_INVENTAR].find_one(
-            {"lager_id": lager_id, "produkt_id": produkt_id}
+            {"lager_id": warehouse_id, "produkt_id": product_id}
         )
         return self._serialize(doc) if doc else None
 

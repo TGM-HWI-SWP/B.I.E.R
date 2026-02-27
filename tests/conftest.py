@@ -3,13 +3,12 @@
 from os import path
 from unittest.mock import MagicMock
 
-import pytest
-
 from bierapp.backend.services import InventoryService, ProductService, WarehouseService
 from bierapp.frontend.flask.gui import app as flask_app
+from pytest import fixture
 
 
-@pytest.fixture
+@fixture
 def mock_db():
     """Return a MagicMock that mimics MongoDBAdapter.
 
@@ -19,15 +18,15 @@ def mock_db():
     db = MagicMock()
     db.find_all.return_value = []
     db.find_by_id.return_value = None
-    db.find_inventar_entry.return_value = None
-    db.find_inventar_by_lager.return_value = []
+    db.find_inventory_entry.return_value = None
+    db.find_inventory_by_warehouse.return_value = []
     db.insert.return_value = "507f1f77bcf86cd799439011"
     db.update.return_value = True
     db.delete.return_value = True
     return db
 
 
-@pytest.fixture
+@fixture
 def product_service(mock_db):
     """Return a ProductService wired to the mock database.
 
@@ -40,7 +39,7 @@ def product_service(mock_db):
     return ProductService(mock_db)
 
 
-@pytest.fixture
+@fixture
 def warehouse_service(mock_db):
     """Return a WarehouseService wired to the mock database.
 
@@ -53,7 +52,7 @@ def warehouse_service(mock_db):
     return WarehouseService(mock_db)
 
 
-@pytest.fixture
+@fixture
 def inventory_service(mock_db):
     """Return an InventoryService wired to the mock database.
 
@@ -66,7 +65,7 @@ def inventory_service(mock_db):
     return InventoryService(mock_db)
 
 
-@pytest.fixture
+@fixture
 def flask_client(mock_db, monkeypatch):
     """Return a Flask test client with all services mocked.
 

@@ -6,7 +6,7 @@ All MongoDB calls are intercepted by a MagicMock so no real connection is
 required.
 """
 
-import pytest
+from pytest import raises
 
 from bierapp.db.mongodb import COLLECTION_INVENTAR
 
@@ -34,8 +34,7 @@ class TestProductAndInventoryInteraction:
             inventory_service (InventoryService): InventoryService under test.
             mock_db (MagicMock): Shared mock adapter (one insert per service call).
         """
-        # insert wird sowohl für Domänenobjekte als auch für Events verwendet.
-        # Wir geben für jede Collection eine passende ID zurück.
+        # insert is used for both domain objects and events; return a fitting ID per collection
         def insert_side_effect(collection, data):
             if collection == "produkte":
                 return FAKE_PRODUKT_ID
@@ -43,19 +42,18 @@ class TestProductAndInventoryInteraction:
                 return FAKE_LAGER_ID
             if collection == "inventar":
                 return FAKE_INVENTAR_ID
-            # Events oder andere Collections
+            # events and other collections
             return "event-id"
 
         mock_db.insert.side_effect = insert_side_effect
         mock_db.find_by_id.return_value = {"_id": FAKE_LAGER_ID, "lagername": "L"}
-        mock_db.find_inventar_entry.return_value = None
+        mock_db.find_inventory_entry.return_value = None
 
         produkt = product_service.create_product("Nagel", "Stahlnagel 50mm", 0.01)
         lager = warehouse_service.create_warehouse("Halle 1", "Linz", 200)
         inventory_service.add_product(lager["_id"], produkt["_id"], 100)
 
-        # Mindestens je ein Insert für Produkt, Lager und Inventar erwartet;
-        # zusätzliche Inserts (Events) sind erlaubt.
+        # at least one insert per domain type; additional event inserts are allowed
         assert mock_db.insert.call_count >= 3
 
     def test_add_product_merge_increases_total(
@@ -71,7 +69,7 @@ class TestProductAndInventoryInteraction:
         """
         existing_entry = {"_id": FAKE_INVENTAR_ID, "menge": 10}
         mock_db.find_by_id.return_value = {"_id": FAKE_LAGER_ID}
-        mock_db.find_inventar_entry.return_value = existing_entry
+        mock_db.find_inventory_entry.return_value = existing_entry
 
         inventory_service.add_product(FAKE_LAGER_ID, FAKE_PRODUKT_ID, 5)
 
@@ -91,7 +89,7 @@ class TestProductAndInventoryInteraction:
             mock_db (MagicMock): Mock adapter.
         """
         entry = {"_id": FAKE_INVENTAR_ID, "menge": 20}
-        mock_db.find_inventar_entry.return_value = entry
+        mock_db.find_inventory_entry.return_value = entry
 
         inventory_service.update_quantity(FAKE_LAGER_ID, FAKE_PRODUKT_ID, 50)
         inventory_service.remove_product(FAKE_LAGER_ID, FAKE_PRODUKT_ID)
@@ -115,7 +113,7 @@ class TestRemoveStock:
             mock_db (MagicMock): Mock adapter with a pre-existing inventar entry.
         """
         entry = {"_id": FAKE_INVENTAR_ID, "menge": 20}
-        mock_db.find_inventar_entry.return_value = entry
+        mock_db.find_inventory_entry.return_value = entry
 
         inventory_service.remove_stock(FAKE_LAGER_ID, FAKE_PRODUKT_ID, 7)
 
@@ -134,7 +132,7 @@ class TestRemoveStock:
             inventory_service (InventoryService): Service under test.
             mock_db (MagicMock): Mock adapter.
         """
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             inventory_service.remove_stock(FAKE_LAGER_ID, FAKE_PRODUKT_ID, 0)
 
     def test_remove_stock_negative_raises(
@@ -148,7 +146,7 @@ class TestRemoveStock:
             inventory_service (InventoryService): Service under test.
             mock_db (MagicMock): Mock adapter.
         """
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             inventory_service.remove_stock(FAKE_LAGER_ID, FAKE_PRODUKT_ID, -5)
 
     def test_remove_stock_insufficient_raises(
@@ -163,9 +161,9 @@ class TestRemoveStock:
             mock_db (MagicMock): Mock adapter with current menge of 5.
         """
         entry = {"_id": FAKE_INVENTAR_ID, "menge": 5}
-        mock_db.find_inventar_entry.return_value = entry
+        mock_db.find_inventory_entry.return_value = entry
 
-        with pytest.raises(ValueError, match="Unzureichender Bestand"):
+        with raises(ValueError, match="Unzureichender Bestand"):
             inventory_service.remove_stock(FAKE_LAGER_ID, FAKE_PRODUKT_ID, 10)
 
     def test_remove_stock_missing_entry_raises(
@@ -179,8 +177,8 @@ class TestRemoveStock:
             inventory_service (InventoryService): Service under test.
             mock_db (MagicMock): Mock adapter configured to return None.
         """
-        mock_db.find_inventar_entry.return_value = None
-        with pytest.raises(KeyError):
+        mock_db.find_inventory_entry.return_value = None
+        with raises(KeyError):
             inventory_service.remove_stock(FAKE_LAGER_ID, FAKE_PRODUKT_ID, 3)
 
     def test_remove_stock_exact_quantity_empties_entry(
@@ -195,7 +193,7 @@ class TestRemoveStock:
             mock_db (MagicMock): Mock adapter with current menge equal to removal amount.
         """
         entry = {"_id": FAKE_INVENTAR_ID, "menge": 10}
-        mock_db.find_inventar_entry.return_value = entry
+        mock_db.find_inventory_entry.return_value = entry
 
         inventory_service.remove_stock(FAKE_LAGER_ID, FAKE_PRODUKT_ID, 10)
 
@@ -214,7 +212,7 @@ class TestRemoveStock:
             mock_db (MagicMock): Mock adapter.
         """
         entry = {"_id": FAKE_INVENTAR_ID, "menge": 15}
-        mock_db.find_inventar_entry.return_value = entry
+        mock_db.find_inventory_entry.return_value = entry
 
         inventory_service.remove_stock(FAKE_LAGER_ID, FAKE_PRODUKT_ID, 5, performed_by="Max Mustermann")
 
@@ -245,7 +243,7 @@ class TestMoveProduct:
             return {"_id": doc_id, "lagername": "X", "name": "P"}
 
         mock_db.find_by_id.side_effect = find_by_id_side
-        mock_db.find_inventar_entry.side_effect = [source_entry, target_entry]
+        mock_db.find_inventory_entry.side_effect = [source_entry, target_entry]
 
         TARGET_LAGER_ID = "target_lager_000000000001"
         inventory_service.move_product(FAKE_LAGER_ID, TARGET_LAGER_ID, FAKE_PRODUKT_ID, 8)
@@ -275,7 +273,7 @@ class TestMoveProduct:
 
         mock_db.find_by_id.side_effect = find_by_id_side
         # First call = source entry exists, second call = target has none
-        mock_db.find_inventar_entry.side_effect = [source_entry, None]
+        mock_db.find_inventory_entry.side_effect = [source_entry, None]
 
         TARGET_LAGER_ID = "target_lager_000000000002"
         inventory_service.move_product(FAKE_LAGER_ID, TARGET_LAGER_ID, FAKE_PRODUKT_ID, 10)
@@ -301,7 +299,7 @@ class TestMoveProduct:
             inventory_service (InventoryService): Service under test.
             mock_db (MagicMock): Mock adapter.
         """
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             inventory_service.move_product(FAKE_LAGER_ID, "other", FAKE_PRODUKT_ID, 0)
 
     def test_move_product_exceeds_stock_raises(
@@ -320,9 +318,9 @@ class TestMoveProduct:
 
         mock_db.find_by_id.side_effect = find_by_id_side
         source_entry = {"_id": FAKE_INVENTAR_ID, "menge": 3}
-        mock_db.find_inventar_entry.return_value = source_entry
+        mock_db.find_inventory_entry.return_value = source_entry
 
-        with pytest.raises(ValueError):
+        with raises(ValueError):
             inventory_service.move_product(FAKE_LAGER_ID, "other_lager", FAKE_PRODUKT_ID, 10)
 
     def test_move_product_missing_source_lager_raises(
@@ -337,7 +335,7 @@ class TestMoveProduct:
             mock_db (MagicMock): Mock adapter returning None for the source warehouse.
         """
         mock_db.find_by_id.return_value = None
-        with pytest.raises(KeyError, match="Quelllager"):
+        with raises(KeyError, match="Quelllager"):
             inventory_service.move_product("bad_source", "target", FAKE_PRODUKT_ID, 5)
 
     def test_list_inventory_includes_product_details(
@@ -356,7 +354,7 @@ class TestMoveProduct:
         entry = {"_id": FAKE_INVENTAR_ID, "produkt_id": FAKE_PRODUKT_ID, "menge": 7}
 
         mock_db.find_by_id.side_effect = [lager_doc, produkt_doc]
-        mock_db.find_inventar_by_lager.return_value = [entry]
+        mock_db.find_inventory_by_warehouse.return_value = [entry]
 
         result = inventory_service.list_inventory(FAKE_LAGER_ID)
 

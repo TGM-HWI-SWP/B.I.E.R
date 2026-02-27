@@ -4,9 +4,9 @@ Run these with ``pytest -m live`` after ``docker-compose up``.
 They are skipped automatically in offline / CI environments.
 """
 
-import pymongo
-import pytest
-import requests
+from pymongo import MongoClient
+from pytest import mark
+from requests import get
 
 
 def _mongodb_available() -> bool:
@@ -16,7 +16,7 @@ def _mongodb_available() -> bool:
         bool: True if MongoDB responds to a ping within 1 second.
     """
     try:
-        client = pymongo.MongoClient(
+        client = MongoClient(
             "mongodb://admin:secret@localhost:27017/",
             serverSelectionTimeoutMS=1000,
         )
@@ -26,7 +26,7 @@ def _mongodb_available() -> bool:
         return False
 
 
-requires_mongo = pytest.mark.skipif(
+requires_mongo = mark.skipif(
     not _mongodb_available(),
     reason="MongoDB not reachable – start Docker stack first",
 )
@@ -34,19 +34,19 @@ requires_mongo = pytest.mark.skipif(
 
 @requires_mongo
 def test_mongodb_ping():
-    """MongoDB ist direkt über Port 27017 erreichbar."""
-    client = pymongo.MongoClient(
+    """MongoDB is reachable directly on port 27017."""
+    client = MongoClient(
         "mongodb://admin:secret@localhost:27017/",
         serverSelectionTimeoutMS=3000,
     )
     assert client.admin.command("ping")["ok"] == 1
 
 
-@pytest.mark.skipif(
+@mark.skipif(
     True,
     reason="Mongo Express reachability – start Docker stack first",
 )
 def test_mongo_express_reachable():
-    """Mongo Express Web-UI ist über Port 8081 per HTTP erreichbar."""
-    response = requests.get("http://localhost:8081", timeout=5)
+    """Mongo Express web UI is reachable on port 8081 via HTTP."""
+    response = get("http://localhost:8081", timeout=5)
     assert response.status_code == 200
