@@ -49,11 +49,13 @@ class StatisticsReport(ReportPort):
 
         # Build lookup tables
         gewicht_by_id = {p["_id"]: float(p.get("gewicht", 0.0)) for p in produkte}
+        preis_by_id   = {p["_id"]: float(p.get("preis",   0.0)) for p in produkte}
         capacity_by_lager = {w["_id"]: int(w.get("max_plaetze", 0)) for w in lager}
         lagername_by_id = {w["_id"]: w.get("lagername", "") for w in lager}
 
         total_units = 0
         total_weight = 0.0
+        total_value = 0.0
         used_capacity_by_lager: Dict[str, int] = {lid: 0 for lid in capacity_by_lager}
 
         for entry in inventar:
@@ -64,6 +66,8 @@ class StatisticsReport(ReportPort):
             total_units += menge
             gewicht = gewicht_by_id.get(produkt_id, 0.0)
             total_weight += menge * gewicht
+            preis = preis_by_id.get(produkt_id, 0.0)
+            total_value += menge * preis
 
             if lager_id in used_capacity_by_lager and menge > 0:
                 used_capacity_by_lager[lager_id] += 1
@@ -82,6 +86,7 @@ class StatisticsReport(ReportPort):
             "total_warehouses": total_warehouses,
             "total_units": total_units,
             "total_weight": total_weight,
+            "total_value": total_value,
             "capacity_usage": {
                 lagername_by_id.get(lager_id, lager_id): usage
                 for lager_id, usage in capacity_usage_by_lager.items()
@@ -111,6 +116,7 @@ class StatisticsReport(ReportPort):
         lines.append(f"Gesamtzahl Lager:      {int(stats['total_warehouses'])}")
         lines.append(f"Gesamtbestand (Stk.):  {int(stats['total_units'])}")
         lines.append(f"Gesamtgewicht (kg):    {stats['total_weight']:.3f}")
+        lines.append(f"Gesamtwert (€):        {stats['total_value']:.2f}")
         lines.append("")
         lines.append("Kapazitätsauslastung pro Lager:")
         capacity = stats.get("capacity_usage", {})

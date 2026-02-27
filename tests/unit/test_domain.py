@@ -42,14 +42,38 @@ class TestProductService:
         with pytest.raises(ValueError, match="leer"):
             product_service.create_product("   ", "", 1.0)
 
-    def test_create_product_negative_weight_raises(self, product_service):
-        """create_product raises ValueError when gewicht is negative.
+    def test_create_product_negative_price_raises(self, product_service):
+        """create_product raises ValueError when preis is negative.
 
         Args:
             product_service (ProductService): Service under test.
         """
-        with pytest.raises(ValueError, match="Gewicht"):
-            product_service.create_product("Regal", "", -1.0)
+        with pytest.raises(ValueError, match="Preis"):
+            product_service.create_product("Regal", "", 1.0, preis=-5.0)
+
+    def test_create_product_stores_preis(self, product_service, mock_db):
+        """create_product persists the preis field in the product document.
+
+        Args:
+            product_service (ProductService): Service under test.
+            mock_db (MagicMock): Mock adapter.
+        """
+        result = product_service.create_product("Stuhl", "Bürostuhl", 8.5, preis=129.99)
+        # The doc inserted into the DB must contain preis
+        inserted_doc = mock_db.insert.call_args_list[0][0][1]
+        assert inserted_doc["preis"] == 129.99
+        assert result["preis"] == 129.99
+
+    def test_create_product_default_preis_is_zero(self, product_service, mock_db):
+        """create_product defaults preis to 0.0 when not specified.
+
+        Args:
+            product_service (ProductService): Service under test.
+            mock_db (MagicMock): Mock adapter.
+        """
+        result = product_service.create_product("Haken", "", 0.1)
+        assert result["preis"] == 0.0
+
 
     def test_get_product_delegates_to_db(self, product_service, mock_db):
         """get_product forwards the call to find_by_id.
@@ -296,3 +320,54 @@ class TestInventoryService:
         assert len(result) == 1
         assert result[0]["produkt_name"] == "Stift"
         assert result[0]["menge"] == 7
+
+    def test_get_total_inventory_value_sums_preis_times_menge(self, inventory_service, mock_db):
+        """get_total_inventory_value multiplies preis by menge for each entry and sums.
+
+        Args:
+            inventory_service (InventoryService): Service under test.
+            mock_db (MagicMock): Mock adapter returning two inventory entries.
+        """
+        mock_db.find_all.return_value = [
+            {"produkt_id": "p1", "menge": 10},
+            {"produkt_id": "p2", "menge": 5},
+        ]
+        mock_db.find_by_id.side_effect = [
+            {"_id": "p1", "preis": 20.0},
+            {"_id": "p2", "preis": 50.0},
+        ]
+
+        total = inventory_service.get_total_inventory_value()
+        # 10 * 20.0 + 5 * 50.0 = 200 + 250 = 450
+        assert abs(total - 450.0) < 1e-9
+
+    def test_get_total_inventory_value_missing_preis_counts_zero(self, inventory_service, mock_db):
+        """get_total_inventory_value treats products without preis as 0 contribution.
+
+        Args:
+            inventory_service (InventoryService): Service under test.
+            mock_db (MagicMock): Mock adapter returning a product without preis field.
+        """
+        mock_db.find_all.return_value = [
+            {"produkt_id": "p1", "menge": 100},
+        ]
+        mock_db.find_by_id.return_value = {"_id": "p1", "name": "OhnePreis"}
+
+        total = inventory_service.get_total_inventory_value()
+        assert total == 0.0
+
+    def test_add_product_stores_performed_by_in_event(self, inventory_service, mock_db):
+        """add_product stores the performed_by value in the history event.
+
+        Args:
+            inventory_service (InventoryService): Service under test.
+            mock_db (MagicMock): Mock adapter.
+        """
+        mock_db.find_by_id.return_value = {"_id": "lid", "lagername": "L"}
+        mock_db.find_inventar_entry.return_value = None
+
+        inventory_service.add_product("lid", "pid", 3, performed_by="Anna Schmidt")
+
+        event_call = mock_db.insert.call_args_list[-1]
+        assert event_call[0][0] == "events"
+        assert event_call[0][1]["performed_by"] == "Anna Schmidt"

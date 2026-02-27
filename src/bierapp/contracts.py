@@ -84,6 +84,31 @@ class DatabasePort(ABC):
         """
         ...
 
+    @abstractmethod
+    def find_inventar_by_lager(self, lager_id: str) -> List[Dict]:
+        """Return all inventar documents for a specific warehouse.
+
+        Args:
+            lager_id (str): Unique warehouse identifier.
+
+        Returns:
+            List[Dict]: All inventory entries belonging to that warehouse.
+        """
+        ...
+
+    @abstractmethod
+    def find_inventar_entry(self, lager_id: str, produkt_id: str) -> Optional[Dict]:
+        """Return a single inventar entry matching a warehouse/product pair.
+
+        Args:
+            lager_id (str): Unique warehouse identifier.
+            produkt_id (str): Unique product identifier.
+
+        Returns:
+            Optional[Dict]: The matching inventory document, or None.
+        """
+        ...
+
 # ============================================================
 # Product Service Port
 # ============================================================
@@ -92,13 +117,14 @@ class ProductServicePort(ABC):
     """Abstract interface for product-related business logic."""
 
     @abstractmethod
-    def create_product(self, name: str, beschreibung: str, gewicht: float) -> Dict:
+    def create_product(self, name: str, beschreibung: str, gewicht: float, preis: float = 0.0) -> Dict:
         """Create a new product and persist it.
 
         Args:
             name (str): Human-readable product name.
             beschreibung (str): Short description of the product.
             gewicht (float): Weight of the product in kilograms.
+            preis (float): Unit price of the product in the configured currency. Must be >= 0.
 
         Returns:
             Dict: Representation of the newly created product.
@@ -240,13 +266,14 @@ class InventoryServicePort(ABC):
     """Abstract interface for warehouse inventory management."""
 
     @abstractmethod
-    def add_product(self, lager_id: str, produkt_id: str, menge: int) -> None:
+    def add_product(self, lager_id: str, produkt_id: str, menge: int, performed_by: str = "system") -> None:
         """Add a product entry to a warehouse inventory.
 
         Args:
             lager_id (str): Unique warehouse identifier.
             produkt_id (str): Unique product identifier.
             menge (int): Initial quantity to stock.
+            performed_by (str): Name or identifier of the user performing the action.
 
         Raises:
             KeyError: If the warehouse or product does not exist.
@@ -255,13 +282,14 @@ class InventoryServicePort(ABC):
         ...
 
     @abstractmethod
-    def update_quantity(self, lager_id: str, produkt_id: str, menge: int) -> None:
+    def update_quantity(self, lager_id: str, produkt_id: str, menge: int, performed_by: str = "system") -> None:
         """Update the stocked quantity of a product in a warehouse.
 
         Args:
             lager_id (str): Unique warehouse identifier.
             produkt_id (str): Unique product identifier.
             menge (int): New absolute quantity value.
+            performed_by (str): Name or identifier of the user performing the action.
 
         Raises:
             KeyError: If the warehouse or the product entry does not exist.
@@ -270,15 +298,43 @@ class InventoryServicePort(ABC):
         ...
 
     @abstractmethod
-    def remove_product(self, lager_id: str, produkt_id: str) -> None:
+    def remove_product(self, lager_id: str, produkt_id: str, performed_by: str = "system") -> None:
         """Remove a product entry from a warehouse inventory.
 
         Args:
             lager_id (str): Unique warehouse identifier.
             produkt_id (str): Unique product identifier.
+            performed_by (str): Name or identifier of the user performing the action.
 
         Raises:
             KeyError: If the warehouse or the product entry does not exist.
+        """
+        ...
+
+    @abstractmethod
+    def remove_stock(self, lager_id: str, produkt_id: str, menge: int, performed_by: str = "system") -> None:
+        """Reduce the stocked quantity of a product in a warehouse by a relative delta.
+
+        Args:
+            lager_id (str): Unique warehouse identifier.
+            produkt_id (str): Unique product identifier.
+            menge (int): Number of units to remove. Must be > 0.
+            performed_by (str): Name or identifier of the user performing the action.
+
+        Raises:
+            KeyError: If no inventory entry exists for the given pair.
+            ValueError: If menge <= 0 or greater than the current stock level.
+        """
+        ...
+
+    @abstractmethod
+    def get_total_inventory_value(self) -> float:
+        """Calculate the total monetary value of all inventory across all warehouses.
+
+        Multiplies each product's preis by its stocked menge and sums the results.
+
+        Returns:
+            float: Total inventory value in the currency stored on the products.
         """
         ...
 
@@ -295,6 +351,22 @@ class InventoryServicePort(ABC):
 
         Raises:
             KeyError: If no warehouse with the given ID exists.
+        """
+        ...
+
+    @abstractmethod
+    def move_product(self, source_lager_id: str, target_lager_id: str, produkt_id: str, menge: int) -> None:
+        """Move a quantity of a product from one warehouse to another.
+
+        Args:
+            source_lager_id (str): ID of the warehouse to move stock from.
+            target_lager_id (str): ID of the destination warehouse.
+            produkt_id (str): Unique product identifier.
+            menge (int): Quantity to move. Must be > 0.
+
+        Raises:
+            ValueError: If menge <= 0 or greater than available stock.
+            KeyError: If source entry, warehouses or product do not exist.
         """
         ...
 

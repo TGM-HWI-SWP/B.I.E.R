@@ -178,6 +178,11 @@
         <div class="stat-label">Höchster Einzelbestand</div>
       {% endif %}
     </div>
+    <div class="stat-card">
+      <i class="bi bi-currency-euro stat-icon"></i>
+      <div class="stat-value">{{ "%.2f"|format(total_value) }} €</div>
+      <div class="stat-label">Gesamtwert Lager</div>
+    </div>
   </div>
 
   <!-- ─── Charts (2-column) ────────────────────────────── -->
@@ -223,6 +228,16 @@
       </div>
     </div>
 
+    <!-- Left: Value per warehouse -->
+    <div class="chart-card">
+      <div class="chart-title">
+        <i class="bi bi-currency-euro"></i> Gesamtwert je Lager (&euro;)
+      </div>
+      <div class="chart-container">
+        <canvas id="wertChart"></canvas>
+      </div>
+    </div>
+
   </div>
 
   <!-- ─── Top Products Info Section ────────────────────── -->
@@ -241,7 +256,7 @@
 
 {% block extra_scripts %}
 <script>
-  let donutChart, barChart, ausChart, katChart;
+  let donutChart, barChart, ausChart, katChart, wertChart;
 
   // ── Theme-aware colours (red/white) ─────────────────────
   const isLight = document.documentElement.getAttribute('data-theme') === 'light';
@@ -281,6 +296,7 @@
   Chart.defaults.borderColor = borderCol;
 
   // ── Data from Flask ────────────────────────────────────
+  const wertData    = {{ lager_werte | tojson }};
   const donutLabels = {{ lager_labels | tojson }};
   const donutData   = {{ lager_mengen | tojson }};
   const globalTopLabels = {{ top10_labels | tojson }};
@@ -296,6 +312,7 @@
 
   // Basisfarben für Filter-Highlighting
   const donutBaseColors = donutLabels.map((_, i) => palette[i % palette.length]);
+  const wertBaseColors  = donutLabels.map((_, i) => palette[i % palette.length]);
   const ausBaseColors   = ausData.map(v =>
     v >= 90 ? '#b91c1ccc' : v >= 70 ? '#f97316cc' : '#22c55ecc'
   );
@@ -386,6 +403,38 @@
       maintainAspectRatio: false,
     }
   });
+
+  // ── Gesamtwert je Lager donut ─────────────────────────
+  wertChart = new Chart(document.getElementById('wertChart'), {
+    type: 'doughnut',
+    data: {
+      labels: donutLabels,
+      datasets: [{
+        data: wertData,
+        backgroundColor: wertBaseColors,
+        borderColor: surfaceBg,
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      cutout: '65%',
+      maintainAspectRatio: false,
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: {
+          ...chartDefaults.plugins.tooltip,
+          callbacks: {
+            label: function(ctx) {
+              const val = ctx.parsed || 0;
+              return ' ' + val.toLocaleString('de-AT', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' €';
+            }
+          }
+        }
+      }
+    }
+  });
   function renderTopList(labels, values) {
     const container = document.getElementById('topListContainer');
     if (!container) return;
@@ -455,7 +504,7 @@
   // ── Filter (client-side) ──────────────────────────────
   function applyFilter() {
     const select = document.getElementById('filterLager');
-    if (!select || !donutChart || !ausChart || !barChart) return;
+    if (!select || !donutChart || !ausChart || !barChart || !wertChart) return;
 
     const val = select.value;
     const idx = val === '' ? -1 : parseInt(val, 10);
@@ -465,6 +514,12 @@
       idx === -1 || i === idx ? c : 'rgba(148,163,184,0.25)'
     );
     donutChart.update();
+
+    // Wert-Donut: ausgewähltes Lager hervorheben
+    wertChart.data.datasets[0].backgroundColor = wertBaseColors.map((c, i) =>
+      idx === -1 || i === idx ? c : 'rgba(148,163,184,0.25)'
+    );
+    wertChart.update();
 
     // Auslastung: ausgewählte Bar hervorheben
     ausChart.data.datasets[0].backgroundColor = ausBaseColors.map((c, i) =>

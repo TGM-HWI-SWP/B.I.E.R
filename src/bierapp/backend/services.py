@@ -34,19 +34,20 @@ class ProductService(ProductServicePort):
         """
         self._db = db
 
-    def create_product(self, name: str, beschreibung: str, gewicht: float) -> Dict:
+    def create_product(self, name: str, beschreibung: str, gewicht: float, preis: float = 0.0) -> Dict:
         """Validate inputs and persist a new product document.
 
         Args:
             name (str): Human-readable product name. Must not be empty.
             beschreibung (str): Short description of the product.
             gewicht (float): Weight of the product in kilograms. Must be >= 0.
+            preis (float): Unit price of the product. Must be >= 0. Defaults to 0.0.
 
         Returns:
             Dict: Representation of the newly created product including its _id.
 
         Raises:
-            ValueError: If name is empty or gewicht is negative.
+            ValueError: If name is empty, gewicht is negative, or preis is negative.
         """
         name = name.strip()
         beschreibung = beschreibung.strip()
@@ -54,8 +55,10 @@ class ProductService(ProductServicePort):
             raise ValueError("Produktname darf nicht leer sein.")
         if gewicht < 0:
             raise ValueError("Gewicht muss >= 0 sein.")
+        if preis < 0:
+            raise ValueError("Preis muss >= 0 sein.")
 
-        doc = {"name": name, "beschreibung": beschreibung, "gewicht": float(gewicht)}
+        doc = {"name": name, "beschreibung": beschreibung, "gewicht": float(gewicht), "preis": float(preis)}
         doc_id = self._db.insert(COLLECTION_PRODUKTE, doc)
         doc["_id"] = doc_id
 
@@ -264,6 +267,14 @@ class WarehouseService(WarehouseServicePort):
             mp = int(data["max_plaetze"])
             if mp <= 0:
                 raise ValueError("max_plaetze muss eine positive ganze Zahl sein.")
+            # Count distinct products currently stored in this warehouse
+            inventory_entries = self._db.find_inventar_by_lager(lager_id)
+            current_product_count = len({e.get("produkt_id") for e in inventory_entries if e.get("produkt_id")})
+            if mp < current_product_count:
+                raise ValueError(
+                    f"Maximale Plätze ({mp}) darf nicht kleiner sein als die Anzahl der "
+                    f"bereits eingelagerten Produkte ({current_product_count})."
+                )
             allowed["max_plaetze"] = mp
 
         self._db.update(COLLECTION_LAGER, lager_id, allowed)
@@ -320,13 +331,14 @@ class InventoryService(InventoryServicePort):
         """
         self._db = db
 
-    def add_product(self, lager_id: str, produkt_id: str, menge: int) -> None:
+    def add_product(self, lager_id: str, produkt_id: str, menge: int, performed_by: str = "system") -> None:
         """Add a product to a warehouse inventory, merging quantities if it already exists.
 
         Args:
             lager_id (str): Unique warehouse identifier.
             produkt_id (str): Unique product identifier.
             menge (int): Quantity to add. Must be >= 0.
+            performed_by (str): Name or identifier of the user performing the action.
 
         Raises:
             ValueError: If menge is negative or not an integer.
@@ -360,17 +372,19 @@ class InventoryService(InventoryServicePort):
                 "entity_type": "inventar",
                 "action": "stock_add",
                 "entity_id": f"{lager_id}:{produkt_id}",
+                "performed_by": performed_by,
                 "summary": f"Bestand: {menge}x '{produkt.get('name', produkt_id)}' zu Lager '{lager.get('lagername', lager_id)}' hinzugefügt.",
             },
         )
 
-    def update_quantity(self, lager_id: str, produkt_id: str, menge: int) -> None:
+    def update_quantity(self, lager_id: str, produkt_id: str, menge: int, performed_by: str = "system") -> None:
         """Set the absolute stock quantity for a product in a warehouse.
 
         Args:
             lager_id (str): Unique warehouse identifier.
             produkt_id (str): Unique product identifier.
             menge (int): New absolute quantity. Must be >= 0.
+            performed_by (str): Name or identifier of the user performing the action.
 
         Raises:
             ValueError: If menge is negative.
@@ -395,16 +409,18 @@ class InventoryService(InventoryServicePort):
                 "entity_type": "inventar",
                 "action": "stock_update",
                 "entity_id": f"{lager_id}:{produkt_id}",
+                "performed_by": performed_by,
                 "summary": f"Bestand von '{produkt.get('name', produkt_id)}' in Lager '{lager.get('lagername', lager_id)}' auf {menge} gesetzt.",
             },
         )
 
-    def remove_product(self, lager_id: str, produkt_id: str) -> None:
+    def remove_product(self, lager_id: str, produkt_id: str, performed_by: str = "system") -> None:
         """Remove a product entry from a warehouse inventory.
 
         Args:
             lager_id (str): Unique warehouse identifier.
             produkt_id (str): Unique product identifier.
+            performed_by (str): Name or identifier of the user performing the action.
 
         Raises:
             KeyError: If no inventory entry exists for the given pair.
@@ -426,9 +442,83 @@ class InventoryService(InventoryServicePort):
                 "entity_type": "inventar",
                 "action": "stock_remove",
                 "entity_id": f"{lager_id}:{produkt_id}",
+                "performed_by": performed_by,
                 "summary": f"Bestandseintrag von '{produkt.get('name', produkt_id)}' in Lager '{lager.get('lagername', lager_id)}' entfernt.",
             },
         )
+
+    def remove_stock(self, lager_id: str, produkt_id: str, menge: int, performed_by: str = "system") -> None:
+        """Reduce the stocked quantity by a relative delta (OUT-Buchung).
+
+        Unlike :meth:`update_quantity` which sets an absolute value, this method
+        subtracts *menge* from the current stock level. If the resulting quantity
+        would be negative a :exc:`ValueError` is raised.
+
+        Args:
+            lager_id (str): Unique warehouse identifier.
+            produkt_id (str): Unique product identifier.
+            menge (int): Number of units to remove. Must be > 0.
+            performed_by (str): Name or identifier of the user performing the action.
+
+        Raises:
+            ValueError: If menge <= 0 or greater than the current stock level
+                (Unzureichender Bestand).
+            KeyError: If no inventory entry exists for the given pair.
+        """
+        if not isinstance(menge, int) or menge <= 0:
+            raise ValueError("Menge zum Entnehmen muss eine positive ganze Zahl sein.")
+
+        entry = self._db.find_inventar_entry(lager_id, produkt_id)
+        if not entry:
+            raise KeyError(
+                f"Kein Inventareintrag für Lager '{lager_id}' / Produkt '{produkt_id}'."
+            )
+        current = int(entry.get("menge", 0))
+        if menge > current:
+            raise ValueError(
+                f"Unzureichender Bestand. Verfügbar: {current}, Angefordert: {menge}."
+            )
+
+        new_menge = current - menge
+        self._db.update(COLLECTION_INVENTAR, entry["_id"], {"menge": new_menge})
+
+        produkt = self._db.find_by_id(COLLECTION_PRODUKTE, produkt_id) or {}
+        lager = self._db.find_by_id(COLLECTION_LAGER, lager_id) or {}
+        self._db.insert(
+            COLLECTION_EVENTS,
+            {
+                "timestamp": _now_iso(),
+                "entity_type": "inventar",
+                "action": "stock_out",
+                "entity_id": f"{lager_id}:{produkt_id}",
+                "performed_by": performed_by,
+                "summary": (
+                    f"{menge}x '{produkt.get('name', produkt_id)}' aus Lager "
+                    f"'{lager.get('lagername', lager_id)}' entnommen "
+                    f"(Restbestand: {new_menge})."
+                ),
+            },
+        )
+
+    def get_total_inventory_value(self) -> float:
+        """Calculate the total monetary value of all stocked products across all warehouses.
+
+        For each inventory entry, looks up the product's ``preis`` field and
+        multiplies it by the stocked ``menge``. Products without a ``preis``
+        field contribute 0.0 to the total.
+
+        Returns:
+            float: Sum of (preis × menge) for every inventory entry.
+        """
+        inventar = self._db.find_all(COLLECTION_INVENTAR)
+        total = 0.0
+        for entry in inventar:
+            produkt_id = entry.get("produkt_id", "")
+            menge = int(entry.get("menge", 0))
+            produkt = self._db.find_by_id(COLLECTION_PRODUKTE, produkt_id) or {}
+            preis = float(produkt.get("preis", 0.0))
+            total += preis * menge
+        return total
 
     def move_product(self, source_lager_id: str, target_lager_id: str, produkt_id: str, menge: int) -> None:
         """Move a quantity of a product from one warehouse to another.
@@ -492,6 +582,7 @@ class InventoryService(InventoryServicePort):
                 "entity_type": "inventar",
                 "action": "stock_move",
                 "entity_id": produkt_id,
+                "performed_by": "system",
                 "summary": (
                     f"{menge}x '{produkt.get('name', produkt_id)}' von Lager "
                     f"'{source.get('lagername', source_lager_id)}' nach "

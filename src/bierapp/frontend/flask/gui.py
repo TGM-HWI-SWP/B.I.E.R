@@ -7,6 +7,13 @@ from typing import Optional
 from flask import Flask, flash, redirect, render_template, request, send_from_directory, url_for, Response
 
 from bierapp.backend.services import InventoryService, ProductService, WarehouseService
+from bierapp.contracts import (
+    DatabasePort,
+    HttpResponsePort,
+    InventoryServicePort,
+    ProductServicePort,
+    WarehouseServicePort,
+)
 from bierapp.db.mongodb import (
     COLLECTION_EVENTS,
     COLLECTION_INVENTAR,
@@ -25,6 +32,17 @@ TEMPLATES_DIR = path.join(_RESOURCES_BASE, "templates")
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
 app.secret_key = environ.get("FLASK_SECRET", "bier-dev-secret")
 
+
+class FlaskHttpAdapter(HttpResponsePort):
+    """Concrete implementation of HttpResponsePort for Flask JSON responses."""
+
+    def success(self, data: dict, status: int = 200) -> tuple[dict, int]:
+        return {"status": "ok", "data": data}, status
+
+    def error(self, message: str, status: int = 400) -> tuple[dict, int]:
+        return {"status": "error", "message": message}, status
+
+
 _db: Optional[MongoDBAdapter] = None
 
 
@@ -41,29 +59,29 @@ def get_db() -> MongoDBAdapter:
     return _db
 
 
-def get_product_service() -> ProductService:
+def get_product_service() -> ProductServicePort:
     """Create a ProductService bound to the shared database adapter.
 
     Returns:
-        ProductService: A ready-to-use product service instance.
+        ProductServicePort: A ready-to-use product service instance.
     """
     return ProductService(get_db())
 
 
-def get_warehouse_service() -> WarehouseService:
+def get_warehouse_service() -> WarehouseServicePort:
     """Create a WarehouseService bound to the shared database adapter.
 
     Returns:
-        WarehouseService: A ready-to-use warehouse service instance.
+        WarehouseServicePort: A ready-to-use warehouse service instance.
     """
     return WarehouseService(get_db())
 
 
-def get_inventory_service() -> InventoryService:
+def get_inventory_service() -> InventoryServicePort:
     """Create an InventoryService bound to the shared database adapter.
 
     Returns:
-        InventoryService: A ready-to-use inventory service instance.
+        InventoryServicePort: A ready-to-use inventory service instance.
     """
     return InventoryService(get_db())
 
@@ -1047,15 +1065,28 @@ def page4_statistics():
 
     total_menge = sum(menge_per_lager.values())
 
+    preis_by_id: dict = {p["_id"]: float(p.get("preis", 0.0)) for p in produkte}
+    value_per_lager: dict = defaultdict(float)
+    for e in inventar:
+        lid = e.get("lager_id", "")
+        menge = int(e.get("menge", 0))
+        preis = preis_by_id.get(e.get("produkt_id", ""), 0.0)
+        value_per_lager[lid] += menge * preis
+
+    lager_werte = [round(value_per_lager.get(l["_id"], 0.0), 2) for l in lager_list]
+    total_value = sum(lager_werte)
+
     return render_template(
         "page4_statistics.html",
         active_page=4,
         num_produkte=len(produkte),
         num_lager=len(lager_list),
         total_menge=total_menge,
+        total_value=total_value,
         num_inventar=len(inventar),
         lager_stats=lager_stats,
         lager_labels=lager_labels,
+        lager_werte=lager_werte,
         lager_mengen=lager_mengen,
         kat_labels=kat_labels,
         kat_counts=kat_counts,
