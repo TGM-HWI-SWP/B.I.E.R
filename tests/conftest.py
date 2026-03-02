@@ -7,7 +7,6 @@ from bierapp.backend.services import InventoryService, ProductService, Warehouse
 from bierapp.frontend.flask.gui import app as flask_app
 from pytest import fixture
 
-
 @fixture
 def mock_db():
     """Return a MagicMock that mimics MongoDBAdapter.
@@ -25,7 +24,6 @@ def mock_db():
     db.delete.return_value = True
     return db
 
-
 @fixture
 def product_service(mock_db):
     """Return a ProductService wired to the mock database.
@@ -37,7 +35,6 @@ def product_service(mock_db):
         ProductService: Service under test.
     """
     return ProductService(mock_db)
-
 
 @fixture
 def warehouse_service(mock_db):
@@ -51,7 +48,6 @@ def warehouse_service(mock_db):
     """
     return WarehouseService(mock_db)
 
-
 @fixture
 def inventory_service(mock_db):
     """Return an InventoryService wired to the mock database.
@@ -63,7 +59,6 @@ def inventory_service(mock_db):
         InventoryService: Service under test.
     """
     return InventoryService(mock_db)
-
 
 @fixture
 def flask_client(mock_db, monkeypatch):

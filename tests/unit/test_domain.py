@@ -6,7 +6,6 @@ connection is required.
 
 from pytest import raises
 
-
 class TestProductService:
     """Tests for ProductService business logic."""
 
@@ -73,7 +72,6 @@ class TestProductService:
         """
         result = product_service.create_product("Haken", "", 0.1)
         assert result["preis"] == 0.0
-
 
     def test_get_product_delegates_to_db(self, product_service, mock_db):
         """get_product forwards the call to find_by_id.
@@ -142,7 +140,6 @@ class TestProductService:
         with raises(KeyError):
             product_service.delete_product("gone")
 
-
 class TestWarehouseService:
     """Tests for WarehouseService business logic."""
 
@@ -206,7 +203,6 @@ class TestWarehouseService:
         mock_db.find_by_id.return_value = None
         with raises(KeyError):
             warehouse_service.delete_warehouse("missing")
-
 
 class TestInventoryService:
     """Tests for InventoryService business logic."""

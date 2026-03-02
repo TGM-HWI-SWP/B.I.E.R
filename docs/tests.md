@@ -5,7 +5,7 @@
 Dieses Dokument beschreibt die Test-Strategie und Test-Struktur des B.I.E.R-Projekts.
 
 **Test-Framework:** pytest 9+  
-**Test-Ergebnis (Stand 2026-02-26):** 59 passed, 2 skipped (ca. 1.3 s)
+**Test-Ergebnis (Stand 2026-03-02):** 80 passed, 2 skipped (ca. 1.4 s)
 
 ---
 
@@ -102,16 +102,16 @@ Der `flask_client`-Fixture monkeypatcht `bierapp.frontend.flask.gui._db` auf das
 - `test_index_contains_stat_cards` – Response enthält Schlüsselwort "Produkte"
 
 ### TestProdukte (6 Tests)
-- `test_list_returns_200` – GET `/produkte` gibt 200 zurück
-- `test_create_valid_redirects` – POST mit gültigen Daten → 302, `insert` wird aufgerufen
+- `test_list_returns_200` – GET `/ui/produkte` gibt 200 zurück
+- `test_create_valid_redirects` – POST `/ui/produkt/neu` mit gültigen Daten → 302, `insert` wird aufgerufen
 - `test_create_empty_name_redirects_with_flash` – Leerer Name → 302, kein `insert`
 - `test_create_negative_weight_redirects_with_flash` – Negatives Gewicht → 302, kein `insert`
-- `test_update_missing_redirects` – Update bei fehlendem Dokument → 302 (kein Crash)
-- `test_delete_missing_redirects` – Löschen bei fehlendem Dokument → 302
+- `test_update_missing_redirects` – POST `/ui/produkt/<id>/speichern` bei fehlendem Dokument → 302
+- `test_delete_missing_redirects` – POST `/ui/produkt/<id>/loeschen` bei fehlendem Dokument → 302
 
 ### TestLager (4 Tests)
-- `test_list_returns_200` – GET `/lager` gibt 200 zurück
-- `test_create_valid_redirects` – Gültiges POST → 302, `insert` aufgerufen
+- `test_list_returns_200` – GET `/ui/lager` gibt 200 zurück
+- `test_create_valid_redirects` – POST `/ui/lager/neu` → 302, `insert` aufgerufen
 - `test_create_empty_name_redirects_without_insert` – Leerer Name → kein `insert`
 - `test_create_zero_plaetze_redirects_without_insert` – `max_plaetze=0` → kein `insert`
 
@@ -124,9 +124,7 @@ Der `flask_client`-Fixture monkeypatcht `bierapp.frontend.flask.gui._db` auf das
 - `test_inventar_update_quantity_redirects` – Menge ändern → 302, `update` aufgerufen
 - `test_inventar_remove_redirects` – Ausbuchen → 302, `delete` aufgerufen
 
-### TestNewUIRoutes (Neue UI mit 5 Seiten)
-
-Die neuen UI-Routen verwenden die gleichen Services wie die Legacy-UI. Zusätzlich existieren explizite Tests für zentrale Screens und Workflows:
+### TestNewUIRoutes (5-Seiten UI)
 
 | Test | Prüft |
 |---|---|
@@ -140,8 +138,7 @@ Die neuen UI-Routen verwenden die gleichen Services wie die Legacy-UI. Zusätzli
 | `test_page3_delete_warehouse_redirects` | POST `/ui/lager/<id>/loeschen` löscht Lager und redirectet |
 | `test_page4_statistics_returns_200` | GET `/ui/statistik` rendert Statistik-Dashboard |
 | `test_page4_statistics_contains_charts` | Response enthält alle Chart-Canvas-Elemente (Chart.js) |
-
-Weitere Tests für Multi-Lager-Filter und Historienseite werden nachgezogen, sobald das UI final stabil ist.
+| `test_page5_history_returns_200` | GET `/ui/historie` rendert die Historienseite |
 
 ---
 
@@ -191,25 +188,14 @@ Beispiele:
 
 ---
 
-## Test-Abdeckung für Neue UI
-
-Die neue 4-Seiten UI verwendet die gleichen Backend-Services wie die Legacy-UI. Die vorhandenen Tests für `ProductService`, `WarehouseService` und `InventoryService` decken daher auch die Funktionalität der neuen UI ab.
-
-**Neue UI Routen (Kurzüberblick):**
-- `/ui/produkte` – Page 1: Produktverwaltung (inkl. Lager-Filter und Verschieben-Dialog)
-- `/ui/produkt/neu` – Page 2: Neues Produkt erstellen (inkl. initialen Lagerzuordnungen)
-- `/ui/produkt/<id>/bearbeiten` – Page 2: Produkt bearbeiten (inkl. Multi-Lager-Beständen)
-- `/ui/lager` – Page 3: Lagerliste
-- `/ui/statistik` – Page 4: Statistik-Dashboard
-- `/ui/historie` – Page 5: Historie aller Änderungen
-
-**Getestete Funktionalität (Stand v1.1):**
-- Produkt erstellen, bearbeiten, löschen (Legacy- und neue UI)
+**Getestete Funktionalität (Stand v1.2):**
+- Produkt erstellen, bearbeiten, löschen
 - Lager erstellen, bearbeiten, löschen
-- Inventar-Verwaltung (einbuchen, ausbuchen, Menge ändern)
+- Inventar-Verwaltung: einbuchen, ausbuchen, Menge ändern, Bestand entfernen
+- Service-Interaktion: `remove_stock`, `move_product`, Lifecycle-Tests
 - Statistik-Berechnung (Basis-Szenario, Chart-Rendering)
-- Grundlegendes Rendering aller neuen UI-Seiten
+- Grundlegendes Rendering aller 5 UI-Seiten
 
 ---
 
-**Letzte Aktualisierung:** 2026-02-26
+**Letzte Aktualisierung:** 2026-03-02

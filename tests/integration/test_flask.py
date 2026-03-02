@@ -6,9 +6,7 @@ database is required to run these tests.
 
 from unittest.mock import call
 
-
 FAKE_ID = "507f1f77bcf86cd799439011"
-
 
 class TestStaticAndDashboard:
     """Tests for the root / and static-file routes."""
@@ -36,66 +34,68 @@ class TestStaticAndDashboard:
         body = response.data.decode("utf-8")
         assert "Produkte" in body or "produkte" in body
 
-
 class TestProdukte:
-    """Tests for the /produkte endpoints."""
+    """Tests for the /ui/produkt* endpoints."""
 
-    def test_list_returns_200(self, flask_client):
-        """GET /produkte renders the product list page.
+    def test_list_returns_200(self, flask_client, mock_db):
+        """GET /ui/produkte renders the product list page.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
+            mock_db (MagicMock): find_all returns empty list.
         """
-        response = flask_client.get("/produkte")
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/produkte")
         assert response.status_code == 200
 
     def test_create_valid_redirects(self, flask_client, mock_db):
-        """POST /produkte/neu with valid data redirects to the list page.
+        """POST /ui/produkt/neu with valid data redirects to the product list.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
             mock_db (MagicMock): Mock adapter; insert is called once.
         """
         mock_db.insert.return_value = FAKE_ID
+        mock_db.find_all.return_value = []
         response = flask_client.post(
-            "/produkte/neu",
-            data={"name": "Schraube", "beschreibung": "M6", "gewicht": "0.05"},
+            "/ui/produkt/neu",
+            data={"name": "Schraube", "beschreibung": "M6", "gewicht": "0.05", "preis": "1.99"},
         )
         assert response.status_code == 302
-        assert "/produkte" in response.headers["Location"]
+        assert "/ui/produkte" in response.headers["Location"]
         # First insert must target the "produkte" collection (product creation).
         assert mock_db.insert.call_args_list[0][0][0] == "produkte"
 
     def test_create_empty_name_redirects_with_flash(self, flask_client, mock_db):
-        """POST /produkte/neu with an empty name does not insert and redirects.
+        """POST /ui/produkt/neu with an empty name does not insert and redirects.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
             mock_db (MagicMock): Mock adapter; insert must not be called.
         """
         response = flask_client.post(
-            "/produkte/neu",
-            data={"name": "   ", "beschreibung": "", "gewicht": "1.0"},
+            "/ui/produkt/neu",
+            data={"name": "   ", "beschreibung": "", "gewicht": "1.0", "preis": "1.00"},
         )
         assert response.status_code == 302
         mock_db.insert.assert_not_called()
 
     def test_create_negative_weight_redirects_with_flash(self, flask_client, mock_db):
-        """POST /produkte/neu with negative gewicht does not insert.
+        """POST /ui/produkt/neu with negative gewicht does not insert.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
             mock_db (MagicMock): Mock adapter; insert must not be called.
         """
         response = flask_client.post(
-            "/produkte/neu",
-            data={"name": "Test", "beschreibung": "", "gewicht": "-5"},
+            "/ui/produkt/neu",
+            data={"name": "Test", "beschreibung": "", "gewicht": "-5", "preis": ""},
         )
         assert response.status_code == 302
         mock_db.insert.assert_not_called()
 
     def test_update_missing_redirects(self, flask_client, mock_db):
-        """POST /produkte/<id>/bearbeiten for unknown id does not crash.
+        """POST /ui/produkt/<id>/speichern for unknown id does not crash.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
@@ -103,80 +103,82 @@ class TestProdukte:
         """
         mock_db.find_by_id.return_value = None
         response = flask_client.post(
-            f"/produkte/{FAKE_ID}/bearbeiten",
+            f"/ui/produkt/{FAKE_ID}/speichern",
             data={"name": "X", "beschreibung": "", "gewicht": "1"},
         )
         assert response.status_code == 302
 
     def test_delete_missing_redirects(self, flask_client, mock_db):
-        """POST /produkte/<id>/loeschen for unknown id redirects gracefully.
+        """POST /ui/produkt/<id>/loeschen for unknown id redirects gracefully.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
             mock_db (MagicMock): Mock adapter returning None for find_by_id.
         """
         mock_db.find_by_id.return_value = None
-        response = flask_client.post(f"/produkte/{FAKE_ID}/loeschen")
+        mock_db.find_all.return_value = []
+        response = flask_client.post(f"/ui/produkt/{FAKE_ID}/loeschen")
         assert response.status_code == 302
 
-
 class TestLager:
-    """Tests for the /lager endpoints."""
+    """Tests for the /ui/lager* endpoints."""
 
-    def test_list_returns_200(self, flask_client):
-        """GET /lager renders the warehouse list page.
+    def test_list_returns_200(self, flask_client, mock_db):
+        """GET /ui/lager renders the warehouse list page.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
+            mock_db (MagicMock): find_all returns empty list.
         """
-        response = flask_client.get("/lager")
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/lager")
         assert response.status_code == 200
 
     def test_create_valid_redirects(self, flask_client, mock_db):
-        """POST /lager/neu with valid data redirects to the list page.
+        """POST /ui/lager/neu with valid data redirects to the list page.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
             mock_db (MagicMock): Mock adapter; insert is called once.
         """
         mock_db.insert.return_value = FAKE_ID
+        mock_db.find_all.return_value = []
         response = flask_client.post(
-            "/lager/neu",
+            "/ui/lager/neu",
             data={"lagername": "Lager West", "adresse": "Wien", "max_plaetze": "100"},
         )
         assert response.status_code == 302
-        assert "/lager" in response.headers["Location"]
+        assert "/ui/lager" in response.headers["Location"]
         # First insert must target the "lager" collection.
         assert mock_db.insert.call_args_list[0][0][0] == "lager"
 
     def test_create_empty_name_redirects_without_insert(self, flask_client, mock_db):
-        """POST /lager/neu with empty lagername does not insert.
+        """POST /ui/lager/neu with empty lagername does not insert.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
             mock_db (MagicMock): insert must not be called.
         """
         response = flask_client.post(
-            "/lager/neu",
+            "/ui/lager/neu",
             data={"lagername": "  ", "adresse": "", "max_plaetze": "10"},
         )
         assert response.status_code == 302
         mock_db.insert.assert_not_called()
 
     def test_create_zero_plaetze_redirects_without_insert(self, flask_client, mock_db):
-        """POST /lager/neu with max_plaetze=0 does not insert.
+        """POST /ui/lager/neu with max_plaetze=0 does not insert.
 
         Args:
             flask_client (FlaskClient): Test client with mocked DB.
             mock_db (MagicMock): insert must not be called.
         """
         response = flask_client.post(
-            "/lager/neu",
+            "/ui/lager/neu",
             data={"lagername": "Lager X", "adresse": "", "max_plaetze": "0"},
         )
         assert response.status_code == 302
         mock_db.insert.assert_not_called()
-
 
 class TestInventar:
     """Tests for the /inventar endpoints."""
@@ -272,7 +274,6 @@ class TestInventar:
         response = flask_client.post(f"/inventar/{FAKE_ID}/pid123/entfernen")
         assert response.status_code == 302
         mock_db.delete.assert_called_once()
-
 
 class TestNewUIRoutes:
     """Tests for the new 4-page UI routes (/ui/*)."""

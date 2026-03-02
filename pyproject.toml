@@ -31,6 +31,7 @@ package-dir = {"" = "src"}
 packages = [
     "bierapp",
     "bierapp.backend",
+    "bierapp.contracts",
     "bierapp.db",
     "bierapp.db.init",
     "bierapp.frontend",

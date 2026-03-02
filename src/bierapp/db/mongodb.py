@@ -1,4 +1,8 @@
-"""MongoDB adapter – concrete implementation of DatabasePort."""
+"""MongoDB adapter – concrete implementation of DatabasePort.
+
+All database operations are routed through this single adapter class so
+that the rest of the application never depends on pymongo directly.
+"""
 
 from os import environ
 from typing import Dict, List, Optional
@@ -9,11 +13,11 @@ from pymongo import MongoClient
 
 from bierapp.contracts import DatabasePort
 
+# Collection name constants shared across the application
 COLLECTION_PRODUKTE = "produkte"
 COLLECTION_LAGER = "lager"
 COLLECTION_INVENTAR = "inventar"
 COLLECTION_EVENTS = "events"
-
 
 class MongoDBAdapter(DatabasePort):
     """Concrete MongoDB adapter that implements DatabasePort.
@@ -25,7 +29,11 @@ class MongoDBAdapter(DatabasePort):
     """
 
     def __init__(self) -> None:
-        """Read connection settings from environment variables."""
+        """Read connection settings from environment variables.
+
+        Supported environment variables: MONGO_HOST, MONGO_PORT, MONGO_DB,
+        MONGO_USER, MONGO_PASS.
+        """
         self._client: Optional[MongoClient] = None
         self._db = None
         self._host = environ.get("MONGO_HOST", "localhost")
@@ -34,13 +42,24 @@ class MongoDBAdapter(DatabasePort):
         self._user = environ.get("MONGO_USER", "admin")
         self._password = environ.get("MONGO_PASS", "secret")
 
+    def _build_uri(self) -> str:
+        """Build the MongoDB connection URI from stored credentials.
+
+        Returns:
+            A fully qualified mongodb:// URI string.
+        """
+        return f"mongodb://{self._user}:{self._password}@{self._host}:{self._port}/"
+
     def connect(self) -> None:
         """Establish a connection to MongoDB and select the target database.
+
+        Sends a ping command to verify the connection is live before
+        returning. The selected database is stored for later use.
 
         Raises:
             ConnectionError: If the MongoDB server is not reachable within 5 s.
         """
-        uri = f"mongodb://{self._user}:{self._password}@{self._host}:{self._port}/"
+        uri = self._build_uri()
         self._client = MongoClient(uri, serverSelectionTimeoutMS=5_000)
         self._client.admin.command("ping")
         self._db = self._client[self._db_name]

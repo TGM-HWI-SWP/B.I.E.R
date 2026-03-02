@@ -21,7 +21,6 @@ from bierapp.db.mongodb import (
     MongoDBAdapter,
 )
 
-
 class StatisticsReport(ReportPort):
     """Calculate global statistics across all warehouses and products."""
 
@@ -140,7 +139,6 @@ class StatisticsReport(ReportPort):
 
         file_path.write_text("\n".join(lines), encoding="utf-8")
         return file_path
-
 
 if __name__ == "__main__":  # pragma: no cover - simple CLI helper
     db = MongoDBAdapter()

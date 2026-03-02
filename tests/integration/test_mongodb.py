@@ -8,7 +8,6 @@ from pymongo import MongoClient
 from pytest import mark
 from requests import get
 
-
 def _mongodb_available() -> bool:
     """Return True when a local MongoDB instance is reachable.
 
@@ -25,12 +24,10 @@ def _mongodb_available() -> bool:
     except Exception:
         return False
 
-
 requires_mongo = mark.skipif(
     not _mongodb_available(),
     reason="MongoDB not reachable – start Docker stack first",
 )
-
 
 @requires_mongo
 def test_mongodb_ping():
@@ -40,7 +37,6 @@ def test_mongodb_ping():
         serverSelectionTimeoutMS=3000,
     )
     assert client.admin.command("ping")["ok"] == 1
-
 
 @mark.skipif(
     True,

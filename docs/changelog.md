@@ -4,6 +4,61 @@ Alle nennenswerten Änderungen am Projekt werden in dieser Datei dokumentiert.
 
 ---
 
+## [v1.3] – 2026-03-02
+
+### Refactoring: Domain-Dataclasses eingeführt
+
+- **`backend/models.py` (neu)** – zentrale Dataclass-Definitionen für alle Domainobjekte:
+  - `Product` – Felder `name`, `description`, `weight`, `price`; Validierung in `__post_init__` (nicht-leerer Name, Gewicht ≥ 0, Preis ≥ 0); `to_doc()` liefert MongoDB-Dict
+  - `Warehouse` – Felder `name`, `address`, `max_slots`; Validierung in `__post_init__` (nicht-leerer Name, `max_slots` > 0); `to_doc()` liefert MongoDB-Dict
+  - `InventoryEntry` – Felder `warehouse_id`, `product_id`, `quantity`; Validierung in `__post_init__` (Menge ≥ 0); `to_doc()` liefert MongoDB-Dict
+  - `Event` – Felder `timestamp`, `entity_type`, `action`, `entity_id`, `summary`, `performed_by`; `to_doc()` liefert MongoDB-Dict
+- **`product_service.py`** – `create_product`, `update_product` und `delete_product` verwenden `Product`- bzw. `Event`-Dataclass statt roher Dicts
+- **`warehouse_service.py`** – `create_warehouse`, `update_warehouse` und `delete_warehouse` verwenden `Warehouse`- bzw. `Event`-Dataclass statt roher Dicts
+- **`inventory_service.py`** – `add_product`, `update_quantity`, `remove_product`, `remove_stock` und `move_product` verwenden `InventoryEntry`- und `Event`-Dataclass statt roher Dicts
+- Validierungslogik aus allen Service-Methoden in die `__post_init__`-Methoden der Dataclasses verschoben (DRY-Prinzip)
+- Alle 33 Unit-Tests weiterhin grün
+
+---
+
+## [v1.2] – 2026-03-02
+
+### Refactoring: Codestruktur & Bereinigung
+
+- **`contracts/` Package** – `contracts.py` durch ein Package ersetzt; jeder Port hat eine eigene Datei (`database_port.py`, `product_port.py`, `warehouse_port.py`, `inventory_port.py`, `report_port.py`, `http_port.py`); `contracts/__init__.py` re-exportiert alle Ports für nahtlose Rückwärtskompatibilität
+- **Service-Schicht aufgeteilt** – `services.py` (615 Zeilen) aufgeteilt in:
+  - `backend/product_service.py` – `ProductService`
+  - `backend/warehouse_service.py` – `WarehouseService`
+  - `backend/inventory_service.py` – `InventoryService`
+  - `backend/utils.py` – `get_current_timestamp()` (timezone-aware UTC, kein `utcnow()`)
+  - `backend/services.py` – schlanker Aggregator (re-exportiert alle drei Services)
+- **Flask-Schicht aufgeteilt** – aus `gui.py` extrahiert:
+  - `frontend/flask/helpers.py` – 8 Statistik- und Anreicherungsfunktionen
+  - `frontend/flask/http_adapter.py` – `FlaskHttpAdapter(HttpResponsePort)`
+- **`db/init/seed.py` vereinfacht** – `_gen_products()` aufgeteilt in 12 benannte Funktionen (eine pro Produktkategorie)
+- **`db/mongodb.py`** – `_build_uri()` aus `connect()` extrahiert
+
+### Legacy-Routen entfernt
+
+- **Gelöscht:** `/produkte`, `/produkte/neu`, `/produkte/<id>/bearbeiten`, `/produkte/<id>/loeschen`
+- **Gelöscht:** `/lager`, `/lager/neu`, `/lager/<id>/bearbeiten`, `/lager/<id>/loeschen`
+- **Vereinfacht:** `/logo/<variant>` → `/logo` (Parameter entfernt)
+- Alle Funktionalität ist vollständig über die `/ui/`-Routen erreichbar
+
+### Code-Qualität
+
+- Alle List-Comprehensions, Set-Comprehensions und `lambda`-Sorts durch explizite `for`-Schleifen ersetzt
+- Maximal eine Leerzeile zwischen Code-Abschnitten (keine doppelten Leerzeilen)
+- `datetime.utcnow()` (deprecated) durch `datetime.now(timezone.utc)` ersetzt
+
+### Tests
+
+- `TestProdukte` und `TestLager` auf `/ui/`-Routen umgestellt (kein Legacy mehr)
+- `test_page5_history_returns_200` ergänzt
+- **Ergebnis:** 80 passed, 2 skipped (vorher 59 passed)
+
+---
+
 ## [v1.1] – 2026-02-26
 
 ### Implementiert
@@ -146,4 +201,4 @@ Alle nennenswerten Änderungen am Projekt werden in dieser Datei dokumentiert.
 
 ---
 
-**Letzte Aktualisierung:** 2026-02-26
+**Letzte Aktualisierung:** 2026-03-02

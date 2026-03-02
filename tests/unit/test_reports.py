@@ -15,7 +15,6 @@ from bierapp.db.mongodb import (
 from bierapp.reports.inventory_report import InventoryReport
 from bierapp.reports.statistics_report import StatisticsReport
 
-
 class InMemoryDb:
     """Simple in-memory stub implementing the minimal MongoDBAdapter API used by reports."""
 
@@ -107,7 +106,6 @@ class InMemoryDb:
             if d.get("lager_id") == warehouse_id
         ]
 
-
 class TestInventoryReport:
     def test_inventory_report_returns_sorted_entries_for_warehouse(self) -> None:
         """inventory_report returns entries sorted by product name for a valid warehouse."""
@@ -138,7 +136,6 @@ class TestInventoryReport:
             pass
         else:
             raise AssertionError("Expected KeyError for unknown warehouse")
-
 
 class TestStatisticsReport:
     def test_statistics_report_computes_basic_kpis(self) -> None:

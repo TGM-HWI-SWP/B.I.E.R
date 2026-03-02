@@ -22,7 +22,6 @@ from bierapp.db.mongodb import (
     MongoDBAdapter,
 )
 
-
 class InventoryReport(ReportPort):
     """Generate an inventory report for a single warehouse.
 
@@ -171,7 +170,6 @@ class InventoryReport(ReportPort):
         """
 
         raise NotImplementedError("InventoryReport does not provide statistics_report().")
-
 
 if __name__ == "__main__":  # pragma: no cover - simple CLI helper
     db = MongoDBAdapter()

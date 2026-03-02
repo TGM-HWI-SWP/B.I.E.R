@@ -10,11 +10,9 @@ from pytest import raises
 
 from bierapp.db.mongodb import COLLECTION_INVENTAR
 
-
 FAKE_LAGER_ID = "aaa000000000000000000001"
 FAKE_PRODUKT_ID = "bbb000000000000000000002"
 FAKE_INVENTAR_ID = "ccc000000000000000000003"
-
 
 class TestProductAndInventoryInteraction:
     """Tests covering the workflow of creating a product and adding it to a warehouse."""
@@ -96,7 +94,6 @@ class TestProductAndInventoryInteraction:
 
         assert mock_db.update.call_count == 1
         assert mock_db.delete.call_count == 1
-
 
 class TestRemoveStock:
     """Tests for the delta-based InventoryService.remove_stock() method."""
@@ -220,7 +217,6 @@ class TestRemoveStock:
         event_call = mock_db.insert.call_args_list[-1]
         assert event_call[0][0] == "events"
         assert event_call[0][1]["performed_by"] == "Max Mustermann"
-
 
 class TestMoveProduct:
     """Tests for InventoryService.move_product()."""
@@ -361,7 +357,6 @@ class TestMoveProduct:
         assert len(result) == 1
         assert result[0]["produkt_name"] == "Schraube"
         assert result[0]["menge"] == 7
-
 
 class TestWarehouseValidation:
     """Cross-service tests for warehouse validation edge-cases."""

@@ -22,7 +22,6 @@ COLLECTION_PRODUKTE = "produkte"
 COLLECTION_LAGER = "lager"
 COLLECTION_INVENTAR = "inventar"
 
-
 def _build_uri() -> str:
     """Construct a MongoDB connection URI from environment variables.
 
@@ -34,7 +33,6 @@ def _build_uri() -> str:
     host = environ.get("MONGO_HOST", "localhost")
     port = int(environ.get("MONGO_PORT", 27017))
     return f"mongodb://{user}:{password}@{host}:{port}/"
-
 
 def setup_database() -> None:
     """Connect to MongoDB and ensure all required collections and indexes exist.
@@ -58,14 +56,12 @@ def setup_database() -> None:
     db[COLLECTION_PRODUKTE].create_index("name", unique=False)
     print(f"[setup] Index on '{COLLECTION_PRODUKTE}.name' ensured.")
 
-
     if COLLECTION_LAGER not in existing:
         db.create_collection(COLLECTION_LAGER)
         print(f"[setup] Created collection '{COLLECTION_LAGER}'.")
 
     db[COLLECTION_LAGER].create_index("lagername", unique=True)
     print(f"[setup] Unique index on '{COLLECTION_LAGER}.lagername' ensured.")
-
 
     if COLLECTION_INVENTAR not in existing:
         db.create_collection(COLLECTION_INVENTAR)
@@ -83,7 +79,6 @@ def setup_database() -> None:
 
     client.close()
     print("[setup] Database initialization complete.")
-
 
 if __name__ == "__main__":
     try:

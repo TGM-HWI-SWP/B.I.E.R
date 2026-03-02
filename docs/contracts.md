@@ -2,14 +2,16 @@
 
 ## Übersicht
 
-Diese Datei dokumentiert alle abstrakten Ports des Projekts (`src/bierapp/contracts.py`).
-Sie wird von Rolle 1 (Contract Owner) gepflegt und bei jeder Änderung aktualisiert.
+Diese Datei dokumentiert alle abstrakten Ports des Projekts (`src/bierapp/contracts/`).
+Jeder Port ist in einer eigenen Datei definiert; `contracts/__init__.py` re-exportiert alle für bequeme Imports.
+Sie wird bei jeder Änderung aktualisiert.
 
 ---
 
 ## 1. DatabasePort
 
 **Klasse:** `DatabasePort(ABC)`  
+**Datei:** `contracts/database_port.py`  
 **Schicht:** MongoDB-Adapter-Schicht
 
 ### Beschreibung
@@ -88,6 +90,7 @@ Löscht ein Dokument aus einer Collection.
 ## 2. ProductServicePort
 
 **Klasse:** `ProductServicePort(ABC)`  
+**Datei:** `contracts/product_port.py`  
 **Schicht:** Service-Schicht (Businesslogik)
 
 ### Beschreibung
@@ -95,13 +98,13 @@ Abstrakte Schnittstelle für produktbezogene Geschäftslogik.
 
 ### Methoden
 
-#### `create_product(name: str, beschreibung: str, gewicht: float) -> Dict`
+#### `create_product(name: str, description: str, weight: float) -> Dict`
 Erstellt ein neues Produkt und persistiert es.
 
 **Parameter:**
 - `name (str)`: Lesbarer Produktname.
-- `beschreibung (str)`: Kurzbeschreibung des Produkts.
-- `gewicht (float)`: Gewicht des Produkts in Kilogramm.
+- `description (str)`: Kurzbeschreibung des Produkts.
+- `weight (float)`: Gewicht des Produkts in Kilogramm.
 
 **Return:**
 - `Dict`: Repräsentation des neu erstellten Produkts.
@@ -160,6 +163,7 @@ Löscht ein Produkt dauerhaft.
 ## 3. WarehouseServicePort
 
 **Klasse:** `WarehouseServicePort(ABC)`  
+**Datei:** `contracts/warehouse_port.py`  
 **Schicht:** Service-Schicht (Businesslogik)
 
 ### Beschreibung
@@ -167,13 +171,13 @@ Abstrakte Schnittstelle für lagerbezogene Geschäftslogik.
 
 ### Methoden
 
-#### `create_warehouse(lagername: str, adresse: str, max_plaetze: int) -> Dict`
+#### `create_warehouse(warehouse_name: str, address: str, max_slots: int) -> Dict`
 Erstellt ein neues Lager und persistiert es.
 
 **Parameter:**
-- `lagername (str)`: Lesbarer Lagername.
-- `adresse (str)`: Physische Adresse des Lagers.
-- `max_plaetze (int)`: Maximale Anzahl an Lagerplätzen.
+- `warehouse_name (str)`: Lesbarer Lagername.
+- `address (str)`: Physische Adresse des Lagers.
+- `max_slots (int)`: Maximale Anzahl an Lagerplätzen.
 
 **Return:**
 - `Dict`: Repräsentation des neu erstellten Lagers.
@@ -232,6 +236,7 @@ Löscht ein Lager dauerhaft.
 ## 4. InventoryServicePort
 
 **Klasse:** `InventoryServicePort(ABC)`  
+**Datei:** `contracts/inventory_port.py`  
 **Schicht:** Service-Schicht (Businesslogik)
 
 ### Beschreibung
@@ -239,54 +244,94 @@ Abstrakte Schnittstelle für die Verwaltung des Lagerbestands (welches Produkt l
 
 ### Methoden
 
-#### `add_product(lager_id: str, produkt_id: str, menge: int) -> None`
+#### `add_product(warehouse_id: str, product_id: str, quantity: int) -> None`
 Fügt einen Produkteintrag zum Lagerbestand hinzu.
 
 **Parameter:**
-- `lager_id (str)`: Eindeutiger Lagerbezeichner.
-- `produkt_id (str)`: Eindeutiger Produktbezeichner.
-- `menge (int)`: Anfängliche einzulagernde Menge.
+- `warehouse_id (str)`: Eindeutiger Lagerbezeichner.
+- `product_id (str)`: Eindeutiger Produktbezeichner.
+- `quantity (int)`: Anfängliche einzulagernde Menge.
 
 **Exceptions:**
 - `KeyError`: Wenn das Lager oder Produkt nicht existiert.
-- `ValueError`: Wenn `menge` keine positive ganze Zahl ist.
+- `ValueError`: Wenn `quantity` keine positive ganze Zahl ist.
 
 ---
 
-#### `update_quantity(lager_id: str, produkt_id: str, menge: int) -> None`
+#### `update_quantity(warehouse_id: str, product_id: str, quantity: int) -> None`
 Aktualisiert die gelagerte Menge eines Produkts in einem Lager.
 
 **Parameter:**
-- `lager_id (str)`: Eindeutiger Lagerbezeichner.
-- `produkt_id (str)`: Eindeutiger Produktbezeichner.
-- `menge (int)`: Neuer absoluter Mengenwert.
+- `warehouse_id (str)`: Eindeutiger Lagerbezeichner.
+- `product_id (str)`: Eindeutiger Produktbezeichner.
+- `quantity (int)`: Neuer absoluter Mengenwert.
 
 **Exceptions:**
-- `KeyError`: Wenn das Lager oder der Produkteintrag nicht existiert.
-- `ValueError`: Wenn `menge` negativ ist.
+- `KeyError`: Wenn der Inventar-Eintrag nicht existiert.
+- `ValueError`: Wenn `quantity` negativ ist.
 
 ---
 
-#### `remove_product(lager_id: str, produkt_id: str) -> None`
-Entfernt einen Produkteintrag aus dem Lagerbestand.
+#### `remove_product(warehouse_id: str, product_id: str) -> None`
+Entfernt einen Produkteintrag vollständig aus dem Lagerbestand.
 
 **Parameter:**
-- `lager_id (str)`: Eindeutiger Lagerbezeichner.
-- `produkt_id (str)`: Eindeutiger Produktbezeichner.
+- `warehouse_id (str)`: Eindeutiger Lagerbezeichner.
+- `product_id (str)`: Eindeutiger Produktbezeichner.
 
 **Exceptions:**
-- `KeyError`: Wenn das Lager oder der Produkteintrag nicht existiert.
+- `KeyError`: Wenn der Eintrag nicht existiert.
 
 ---
 
-#### `list_inventory(lager_id: str) -> List[Dict]`
+#### `remove_stock(warehouse_id: str, product_id: str, quantity: int) -> None`
+Reduziert die Menge eines Produkts in einem Lager. Löscht den Eintrag wenn Menge auf 0 fällt.
+
+**Parameter:**
+- `warehouse_id (str)`: Eindeutiger Lagerbezeichner.
+- `product_id (str)`: Eindeutiger Produktbezeichner.
+- `quantity (int)`: Zu entnehmende Menge (muss positiv sein und ≤ Lagerbestand).
+
+**Exceptions:**
+- `KeyError`: Wenn der Eintrag nicht existiert.
+- `ValueError`: Wenn `quantity` ≤ 0 oder größer als der Bestand ist.
+
+---
+
+#### `move_product(source_warehouse_id: str, target_warehouse_id: str, product_id: str, quantity: int) -> None`
+Verschiebt eine Menge von einem Quelllager in ein Ziellager.
+
+**Parameter:**
+- `source_warehouse_id (str)`: Quell-Lager.
+- `target_warehouse_id (str)`: Ziel-Lager.
+- `product_id (str)`: Eindeutiger Produktbezeichner.
+- `quantity (int)`: Zu verschiebende Menge.
+
+**Exceptions:**
+- `KeyError`: Wenn ein Lager oder der Quell-Eintrag nicht existiert.
+- `ValueError`: Wenn `quantity` ≤ 0 oder größer als der Quellbestand ist.
+
+---
+
+#### `get_total_inventory_value(warehouse_id: str) -> float`
+Berechnet den Gesamtwert (Preis × Menge) aller Bestände eines Lagers.
+
+**Parameter:**
+- `warehouse_id (str)`: Eindeutiger Lagerbezeichner.
+
+**Return:**
+- `float`: Summe aller (Preis × Menge)-Werte für das Lager.
+
+---
+
+#### `list_inventory(warehouse_id: str) -> List[Dict]`
 Listet alle im Lager eingelagerten Produkteinträge auf.
 
 **Parameter:**
-- `lager_id (str)`: Eindeutiger Lagerbezeichner.
+- `warehouse_id (str)`: Eindeutiger Lagerbezeichner.
 
 **Return:**
-- `List[Dict]`: Liste der Bestandseinträge, jeweils mit `produkt_id` und `menge`.
+- `List[Dict]`: Liste der Bestandseinträge, angereichert mit Produktname und -beschreibung.
 
 **Exceptions:**
 - `KeyError`: Wenn kein Lager mit der angegebenen ID existiert.
@@ -296,6 +341,7 @@ Listet alle im Lager eingelagerten Produkteinträge auf.
 ## 5. ReportPort
 
 **Klasse:** `ReportPort(ABC)`  
+**Datei:** `contracts/report_port.py`  
 **Schicht:** Report-Schicht
 
 ### Beschreibung
@@ -328,6 +374,7 @@ Generiert globale Statistiken über alle Lager und Produkte hinweg.
 ## 6. HttpResponsePort
 
 **Klasse:** `HttpResponsePort(ABC)`  
+**Datei:** `contracts/http_port.py`  
 **Schicht:** Flask-Adapter (Frontend-Grenze)
 
 ### Beschreibung
@@ -360,6 +407,12 @@ Erstellt eine Fehler-HTTP-JSON-Antwort.
 ---
 
 ## Versionshistorie der Contracts
+
+### v0.2.0 (2026-03-02)
+- Contracts in eigenes Package `contracts/` aufgeteilt (eine Datei pro Port)
+- `InventoryServicePort`: `remove_stock()`, `move_product()`, `get_total_inventory_value()` ergänzt
+- Parameternamen englischsprachig vereinheitlicht (`warehouse_id`, `product_id`, `quantity` usw.)
+- `contracts/__init__.py` re-exportiert alle Ports für nahtlose Rückwärtskompatibilität
 
 ### v0.1.1 (2026-02-25)
 - `DatabasePort`: MongoDB CRUD-Operationen (connect, insert, find_by_id, find_all, update, delete)

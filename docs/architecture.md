@@ -2,7 +2,7 @@
 
 ## Übersicht
 
-B.I.E.R folgt der **Hexagonalen Architektur** (Ports & Adapters). Jede Schicht kommuniziert ausschließlich über abstrakte Schnittstellen (`contracts.py`), was Testbarkeit, Austauschbarkeit und klare Verantwortlichkeiten garantiert.
+B.I.E.R folgt der **Hexagonalen Architektur** (Ports & Adapters). Jede Schicht kommuniziert ausschließlich über abstrakte Schnittstellen (`contracts/`), was Testbarkeit, Austauschbarkeit und klare Verantwortlichkeiten garantiert.
 
 ---
 
@@ -42,16 +42,31 @@ B.I.E.R folgt der **Hexagonalen Architektur** (Ports & Adapters). Jede Schicht k
 
 ```
 src/bierapp/
-├── contracts.py              # Abstrakte Ports (ABC-Klassen)
+├── contracts/
+│   ├── __init__.py           # Re-exportiert alle 6 Ports
+│   ├── database_port.py      # DatabasePort (ABC)
+│   ├── product_port.py       # ProductServicePort (ABC)
+│   ├── warehouse_port.py     # WarehouseServicePort (ABC)
+│   ├── inventory_port.py     # InventoryServicePort (ABC)
+│   ├── report_port.py        # ReportPort (ABC)
+│   └── http_port.py          # HttpResponsePort (ABC)
 ├── backend/
-│   └── services.py           # ProductService, WarehouseService, InventoryService
+│   ├── models.py             # Domain-Dataclasses: Product, Warehouse, InventoryEntry, Event
+│   ├── utils.py              # get_current_timestamp() – gemeinsame Hilfsfunktion
+│   ├── product_service.py    # ProductService
+│   ├── warehouse_service.py  # WarehouseService
+│   ├── inventory_service.py  # InventoryService
+│   └── services.py           # Aggregator-Modul (re-exportiert alle drei Services)
 ├── db/
 │   ├── mongodb.py            # MongoDBAdapter (implementiert DatabasePort)
 │   └── init/
-│       └── setup.py          # Idempotentes DB-Setup-Script
+│       ├── setup.py          # Idempotentes DB-Setup-Script
+│       └── seed.py           # Seed-Testdaten
 └── frontend/
     └── flask/
-        └── gui.py            # Flask-App, Routen, Template-Rendering
+        ├── gui.py            # Flask-App, Routen, Template-Rendering
+        ├── helpers.py        # Statistik- und Anreicherungsberechnungen
+        └── http_adapter.py   # FlaskHttpAdapter (implementiert HttpResponsePort)
 
 src/resources/
 ├── pictures/                 # Statische Bilddateien (BIER ICONS, Logos)
@@ -77,16 +92,18 @@ tests/
 
 ## Komponenten im Detail
 
-### 1. Contracts (`src/bierapp/contracts.py`)
+### 1. Contracts (`src/bierapp/contracts/`)
 
-Definiert vier abstrakte Ports (ABCs):
+Jeder Port ist in einer eigenen Datei definiert; `contracts/__init__.py` re-exportiert alle für bequeme Importe:
 
-| Port | Zweck |
-|---|---|
-| `DatabasePort` | MongoDB-Operationen (CRUD + Suche) |
-| `ProductServicePort` | Produkt-Geschäftslogik |
-| `WarehouseServicePort` | Lager-Geschäftslogik |
-| `InventoryServicePort` | Bestandsverwaltungs-Logik |
+| Port | Datei | Zweck |
+|---|---|---|
+| `DatabasePort` | `database_port.py` | MongoDB-Operationen (CRUD + Suche) |
+| `ProductServicePort` | `product_port.py` | Produkt-Geschäftslogik |
+| `WarehouseServicePort` | `warehouse_port.py` | Lager-Geschäftslogik |
+| `InventoryServicePort` | `inventory_port.py` | Bestandsverwaltungs-Logik |
+| `ReportPort` | `report_port.py` | Report-Generierung |
+| `HttpResponsePort` | `http_port.py` | Flask HTTP-Adapter |
 
 Alle anderen Schichten importieren nur diese Interfaces — nie konkrete Klassen.
 
@@ -112,63 +129,74 @@ Alle anderen Schichten importieren nur diese Interfaces — nie konkrete Klassen
 - Befüllt jedes Lager mit einem zufälligen Teil der Produkte und zufälligen Mengen
 - Ausführbar als `python -m bierapp.db.init.setup`
 
-### 3. Service-Layer (`src/bierapp/backend/services.py`)
+### 3. Service-Layer (`src/bierapp/backend/`)
 
-**`ProductService`** implementiert `ProductServicePort`:
-- `create_product(name, beschreibung, gewicht)` – Validiert: nicht-leerer Name, Gewicht ≥ 0
+Jeder Service hat eine eigene Datei. `services.py` ist ein schlanker Aggregator, der alle drei re-exportiert.
+
+**`backend/models.py`** – Domain-Dataclasses:
+- `Product` – Felder: `name`, `description`, `weight`, `price`; validiert in `__post_init__`; `to_doc()` → MongoDB-Dict
+- `Warehouse` – Felder: `name`, `address`, `max_slots`; validiert in `__post_init__`; `to_doc()` → MongoDB-Dict
+- `InventoryEntry` – Felder: `warehouse_id`, `product_id`, `quantity`; validiert in `__post_init__`; `to_doc()` → MongoDB-Dict
+- `Event` – Felder: `timestamp`, `entity_type`, `action`, `entity_id`, `summary`, `performed_by`; `to_doc()` → MongoDB-Dict
+
+**`backend/utils.py`**:
+- `get_current_timestamp() -> str` – aktueller UTC-Zeitstempel als ISO-8601-String (`...Z`)
+
+**`product_service.py` → `ProductService`** implementiert `ProductServicePort`:
+- `create_product(name, description, weight)` – Validiert: nicht-leerer Name, Gewicht ≥ 0
 - `get_product(id)` – per `find_by_id`
 - `list_products()` – per `find_all`
 - `update_product(id, felder)` – `KeyError` wenn nicht vorhanden
 - `delete_product(id)` – `KeyError` wenn nicht vorhanden
 
-**`WarehouseService`** implementiert `WarehouseServicePort`:
-- `create_warehouse(lagername, adresse, max_plaetze)` – Validiert: nicht-leer, max_plaetze > 0
+**`warehouse_service.py` → `WarehouseService`** implementiert `WarehouseServicePort`:
+- `create_warehouse(warehouse_name, address, max_slots)` – Validiert: nicht-leer, max_slots > 0
 - `get_warehouse(id)` / `list_warehouses()` / `update_warehouse(id, felder)` / `delete_warehouse(id)`
 
-**`InventoryService`** implementiert `InventoryServicePort`:
-- `add_product(lager_id, produkt_id, menge)` – Bei vorhandenem Eintrag wird Menge addiert
-- `update_quantity(lager_id, produkt_id, menge)` – `ValueError` bei negativer Menge
-- `remove_product(lager_id, produkt_id)` – `KeyError` wenn kein Eintrag
+**`inventory_service.py` → `InventoryService`** implementiert `InventoryServicePort`:
+- `add_product(warehouse_id, product_id, quantity)` – Bei vorhandenem Eintrag wird Menge addiert
+- `update_quantity(warehouse_id, product_id, quantity)` – `ValueError` bei negativer Menge
+- `remove_product(warehouse_id, product_id)` – `KeyError` wenn kein Eintrag
+- `remove_stock(warehouse_id, product_id, quantity)` – Reduziert Menge; löscht Eintrag bei 0
+- `move_product(source_id, target_id, product_id, quantity)` – Bestand zwischen Lagern verschieben
+- `get_total_inventory_value(warehouse_id)` – Gesamtwert (Preis × Menge) eines Lagers
 - `list_inventory(lager_id)` – Reichert jeden Eintrag mit Produktname + Beschreibung an
 
-### 4. Frontend (`src/bierapp/frontend/flask/gui.py`)
+### 4. Frontend (`src/bierapp/frontend/flask/`)
 
-Flask-Anwendung mit Lazy-Singleton-Pattern für DB und Services:
+**`gui.py`** – Flask-Anwendung mit Lazy-Singleton-Pattern:
 
-```
-python
+```python
 _db: Optional[MongoDBAdapter] = None
 
 def get_db() -> MongoDBAdapter:      # erstellt Verbindung bei Bedarf
-def get_product_service() -> ProductService:
-def get_warehouse_service() -> WarehouseService:
-def get_inventory_service() -> InventoryService:
+def get_product_service() -> ProductServicePort:
+def get_warehouse_service() -> WarehouseServicePort:
+def get_inventory_service() -> InventoryServicePort:
 ```
 
-**Routen-Übersicht (Legacy):**
+**`helpers.py`** – alle Statistik- und Anreicherungsberechnungen aus `gui.py` extrahiert:
+- `enrich_warehouses()` – hängt `menge` und `num_produkte` an jeden Lager-Dict
+- `compute_warehouse_aggregates()`, `compute_warehouse_stats()`, `compute_utilisation()`
+- `compute_category_counts()`, `compute_top10_products()`
+- `compute_warehouse_top_products()`, `compute_warehouse_values()`
 
-Die Legacy-Routen wurden so angepasst, dass sie intern die neuen Page-1–4-Templates
-verwenden, aber nach außen kompatibel zu den bestehenden Tests bleiben.
+**`http_adapter.py`** – `FlaskHttpAdapter(HttpResponsePort)` mit `success()` und `error()`
+
+**Routen-Übersicht:**
 
 | Methode | Route | Beschreibung |
 |---|---|---|
 | GET | `/` | Rendert Dashboard (Page 1 – Produktverwaltung) |
-| GET | `/produkte` | Produktliste (nutzt Page 1 UI) |
-| POST | `/produkte/neu` | Produkt erstellen |
-| POST | `/produkte/<id>/bearbeiten` | Produkt aktualisieren |
-| POST | `/produkte/<id>/loeschen` | Produkt löschen |
-| GET | `/lager` | Lagerliste (nutzt Page 3 UI) |
-| POST | `/lager/neu` | Lager erstellen |
-| POST | `/lager/<id>/bearbeiten` | Lager aktualisieren |
-| POST | `/lager/<id>/loeschen` | Lager löschen |
-| GET | `/inventar` | Redirect zum ersten Lager (bei vorhandenen Lagern), sonst Dashboard |
-| GET | `/inventar/<lager_id>` | Bestand eines Lagers (nutzt Statistik-Dashboard) |
+| GET | `/favicon.ico` | Favicon |
+| GET | `/logo` | Logo-Bild |
+| GET | `/inventar` | Redirect zum ersten Lager oder leerer Statistikseite |
+| GET | `/inventar/<lager_id>` | Bestand eines Lagers (delegiert an Statistik-Dashboard) |
 | POST | `/inventar/<lager_id>/hinzufuegen` | Produkt einbuchen |
 | POST | `/inventar/<lager_id>/<produkt_id>/aktualisieren` | Menge ändern |
 | POST | `/inventar/<lager_id>/<produkt_id>/entfernen` | Produkt ausbuchen |
-| GET | `/statistik` | Statistik (Legacy) |
 
-**Routen-Übersicht (Neue UI – 4+1 Seiten):**
+**UI-Routen (5 Seiten):**
 
 | Methode | Route | Beschreibung |
 |---|---|---|
@@ -178,13 +206,14 @@ verwenden, aber nach außen kompatibel zu den bestehenden Tests bleiben.
 | GET | `/ui/produkt/<id>/bearbeiten` | **Page 2** – Produkt bearbeiten |
 | POST | `/ui/produkt/<id>/speichern` | Produkt speichern (Update; synchronisiert alle Lagerbestände) |
 | POST | `/ui/produkt/<id>/verschieben` | Produktbestand von einem Lager in ein anderes verschieben |
-| POST | `/ui/produkt/<id>/loeschen` | Produkt und zugehörige Bestände löschen |
+| POST | `/ui/produkt/<id>/loeschen` | Produkt und alle zugehörigen Bestände löschen |
 | GET | `/ui/lager` | **Page 3** – Lagerliste |
 | POST | `/ui/lager/neu` | Lager erstellen |
 | POST | `/ui/lager/<id>/bearbeiten` | Lager aktualisieren |
-| POST | `/ui/lager/<id>/loeschen` | Lager löschen (inkl. dazugehörigem Inventar) |
+| POST | `/ui/lager/<id>/loeschen` | Lager löschen (inkl. Inventarbereinigung) |
 | GET | `/ui/statistik` | **Page 4** – Statistik-Dashboard |
 | GET | `/ui/historie` | **Page 5** – Historie aller Änderungen (Events) |
+| POST | `/ui/historie/export` | Historie als TXT-Datei herunterladen |
 
 ### 5. Templates (`src/resources/templates/`)
 
@@ -300,5 +329,5 @@ Umgebungsvariablen (konfigurierbar über `.env` oder Docker Compose):
 
 ---
 
-**Letzte Aktualisierung:** 2026-02-25
-**Version:** 1.1
+**Letzte Aktualisierung:** 2026-03-02
+**Version:** 1.3

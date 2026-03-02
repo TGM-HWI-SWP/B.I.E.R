@@ -136,9 +136,9 @@ Frontend (Flask)
 ```
 
 - **Frontend** - Flask routes and Jinja2 templates (`src/bierapp/frontend/`)
-- **Backend** - Business logic (`src/bierapp/backend/`)
+- **Backend** - Business logic, one file per service (`src/bierapp/backend/`)
 - **DB** - MongoDB adapter (`src/bierapp/db/`)
-- **Contracts** - Shared interfaces (`src/bierapp/contracts.py`)
+- **Contracts** - Shared interfaces as a package (`src/bierapp/contracts/`)
 
 ---
 
