@@ -8,6 +8,18 @@ from pymongo import MongoClient
 from pytest import mark
 from requests import get
 
+def _mongo_express_available() -> bool:
+    """Return True when Mongo Express is reachable on port 8081.
+
+    Returns:
+        bool: True if the HTTP endpoint responds within 2 seconds.
+    """
+    try:
+        response = get("http://localhost:8081", timeout=2)
+        return response.status_code == 200
+    except Exception:
+        return False
+
 def _mongodb_available() -> bool:
     """Return True when a local MongoDB instance is reachable.
 
@@ -39,8 +51,8 @@ def test_mongodb_ping():
     assert client.admin.command("ping")["ok"] == 1
 
 @mark.skipif(
-    True,
-    reason="Mongo Express reachability – start Docker stack first",
+    not _mongo_express_available(),
+    reason="Mongo Express not reachable – start Docker stack first",
 )
 def test_mongo_express_reachable():
     """Mongo Express web UI is reachable on port 8081 via HTTP."""
