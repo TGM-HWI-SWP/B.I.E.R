@@ -1,63 +1,66 @@
 services:
-  # ─── MongoDB ───────────────────────────────────────────────
-  mongodb:
-    image: mongo:7
-    container_name: bierapp-mongodb
+  # ─── PostgreSQL ───────────────────────────────────────────
+  postgres:
+    image: postgres:16
+    container_name: lagerapp-postgres
     restart: unless-stopped
     environment:
-      MONGO_INITDB_DATABASE: bierapp
-      # Zugangsdaten nur für lokale Entwicklung – in Produktion Secrets nutzen!
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: secret
+      POSTGRES_DB: lagerverwaltung
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
     volumes:
-      - mongo_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "27017:27017"
+      - "5432:5432"
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "pg_isready -U admin"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─── Mongo Express (Web-UI) ───────────────────────────────
-  mongo-express:
-    image: mongo-express:1
-    container_name: bierapp-mongoexpress
+  # ─── pgAdmin (Web-UI für PostgreSQL) ─────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: lagerapp-pgadmin
     restart: unless-stopped
     depends_on:
-      mongodb:
+      postgres:
         condition: service_healthy
     environment:
-      ME_CONFIG_MONGODB_URL: mongodb://admin:secret@mongodb:27017/
-      ME_CONFIG_BASICAUTH: "false"
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: secret
     ports:
-      - "8081:8081"
+      - "8081:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
 
-  # ─── Flask-App ─────────────────────────────────────────────
+  # ─── Flask-App ───────────────────────────────────────────
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: bierapp-flask
+    container_name: lagerapp-flask
     restart: unless-stopped
     depends_on:
-      mongodb:
+      postgres:
         condition: service_healthy
     environment:
-      MONGO_HOST: mongodb
-      MONGO_PORT: 27017
-      MONGO_DB: bierapp
-      MONGO_USER: admin
-      MONGO_PASSWORD: secret
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: lagerverwaltung
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: secret
       FLASK_HOST: 0.0.0.0
       FLASK_PORT: 5000
       FLASK_DEBUG: "false"
     ports:
       - "5000:5000"
     volumes:
-      # Live-Reload des Source-Codes während der Entwicklung
       - ./src:/app/src:ro
 
 volumes:
-  mongo_data:
+  postgres_data:
+    driver: local
+
+  pgadmin_data:
     driver: local

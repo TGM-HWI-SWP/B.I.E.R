@@ -4,15 +4,15 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Optional
 
 # ============================================================
-# Database Port (MongoDB Layer)
+# Database Port (Postgres Layer)
 # ============================================================
 
 class DatabasePort(ABC):
-    """Abstract interface for MongoDB database operations."""
+    """Abstract interface for Postgres database operations."""
 
     @abstractmethod
     def connect(self) -> None:
-        """Establish a connection to the MongoDB instance.
+        """Establish a connection to the Postgres instance.
 
         Raises:
             ConnectionError: If the connection cannot be established.

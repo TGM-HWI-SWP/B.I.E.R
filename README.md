@@ -34,7 +34,7 @@ This project was developed as part of the Software Development and Project Manag
 ## Prerequisites
 
 - **Python 3.10+**
-- **Docker Desktop** - Required for containerized deployment
+- **Docker Desktop** - Required for containerized deployment 
 
 ---
 
