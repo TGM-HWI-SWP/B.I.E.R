@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="icon" type="image/png" href="/favicon.ico">
+	<title>B.I.E.R – Lagerliste</title>
+	<style>
+		:root {
+			color-scheme: light;
+			--bg: #ffffff;
+			--fg: #111827;
+			--muted: #6b7280;
+			--surface: #ffffff;
+			--border: #d1d5db;
+			--surface-2: #f3f4f6;
+			--focus: #111827;
+			--radius: 12px;
+		}
+
+		* { box-sizing: border-box; }
+
+		body {
+			margin: 0;
+			font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+			background: var(--bg);
+			color: var(--fg);
+		}
+
+		.topbar {
+			border-bottom: 1px solid var(--border);
+			background: var(--surface);
+		}
+
+		.tabs {
+			display: grid;
+			grid-auto-flow: column;
+			grid-auto-columns: minmax(90px, max-content);
+			gap: 0;
+			padding: 8px 12px;
+			align-items: center;
+			overflow-x: auto;
+		}
+
+		.tab {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			height: 34px;
+			padding: 0 12px;
+			border: 1px solid var(--border);
+			border-right: none;
+			background: var(--surface);
+			color: var(--fg);
+			text-decoration: none;
+			font-size: 14px;
+			line-height: 1;
+			white-space: nowrap;
+		}
+
+		.tab:first-child {
+			border-top-left-radius: 10px;
+			border-bottom-left-radius: 10px;
+		}
+
+		.tab:last-child {
+			border-right: 1px solid var(--border);
+			border-top-right-radius: 10px;
+			border-bottom-right-radius: 10px;
+		}
+
+		.tab[aria-current="page"] {
+			background: var(--surface-2);
+			font-weight: 650;
+		}
+
+		.tab.is-disabled {
+			color: var(--muted);
+			cursor: not-allowed;
+			user-select: none;
+		}
+
+		.container {
+			max-width: 980px;
+			margin: 0 auto;
+			padding: 18px 16px 28px;
+		}
+
+		.page-title {
+			margin: 10px 0 18px;
+			text-align: center;
+			font-size: 28px;
+			font-weight: 750;
+			letter-spacing: 0.2px;
+		}
+
+		.card {
+			border: 2px solid var(--border);
+			border-radius: var(--radius);
+			background: var(--surface);
+			overflow: hidden;
+		}
+
+		.card-header {
+			padding: 12px;
+			border-bottom: 1px solid var(--border);
+		}
+
+		.note {
+			margin: 0;
+			color: var(--muted);
+			font-size: 13px;
+		}
+
+		.create {
+			display: grid;
+			grid-template-columns: 1fr 1fr 1fr 160px;
+			gap: 10px;
+			padding: 12px;
+			border-bottom: 1px solid var(--border);
+			background: var(--surface);
+		}
+
+		label {
+			display: grid;
+			gap: 6px;
+			font-size: 13px;
+			color: var(--muted);
+		}
+
+		input[type="text"] {
+			height: 42px;
+			border-radius: 12px;
+			border: 1px solid var(--border);
+			padding: 0 12px;
+			font-size: 15px;
+			background: var(--surface);
+			color: var(--fg);
+		}
+
+		input[type="number"] {
+			height: 42px;
+			border-radius: 12px;
+			border: 1px solid var(--border);
+			padding: 0 12px;
+			font-size: 15px;
+			background: var(--surface);
+			color: var(--fg);
+		}
+
+		input:focus {
+			outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
+			outline-offset: 2px;
+		}
+
+		input[type="number"]:focus {
+			outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
+			outline-offset: 2px;
+		}
+
+		.btn {
+			height: 42px;
+			border-radius: 12px;
+			border: 2px solid var(--border);
+			background: var(--surface);
+			color: var(--fg);
+			font-size: 14px;
+			font-weight: 650;
+			cursor: pointer;
+			align-self: end;
+		}
+
+		.btn-small {
+			height: 32px;
+			border-radius: 10px;
+			border-width: 1px;
+			font-size: 13px;
+			padding: 0 10px;
+			align-self: center;
+		}
+
+		.btn:focus-visible {
+			outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
+			outline-offset: 2px;
+		}
+
+		.table-wrap {
+			max-height: min(520px, 62vh);
+			overflow: auto;
+		}
+
+		table {
+			width: 100%;
+			border-collapse: separate;
+			border-spacing: 0;
+			min-width: 640px;
+		}
+
+		thead th {
+			position: sticky;
+			top: 0;
+			background: var(--surface);
+			border-bottom: 1px solid var(--border);
+			text-align: left;
+			font-size: 13px;
+			color: var(--muted);
+			padding: 10px 12px;
+			z-index: 1;
+		}
+
+		tbody td {
+			padding: 12px;
+			border-bottom: 1px solid var(--border);
+			font-size: 14px;
+		}
+
+		tbody tr:hover td {
+			background: var(--surface-2);
+		}
+
+		.actions {
+			display: inline-flex;
+			gap: 8px;
+			align-items: center;
+		}
+
+		.pill {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			height: 26px;
+			padding: 0 10px;
+			border-radius: 999px;
+			border: 1px solid var(--border);
+			background: var(--surface);
+			font-size: 13px;
+			color: var(--fg);
+			white-space: nowrap;
+		}
+
+		@media (max-width: 720px) {
+			.create {
+				grid-template-columns: 1fr;
+			}
+			table {
+				min-width: 540px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<header class="topbar">
+		<nav class="tabs" aria-label="Page Auswahl">
+			<a class="tab" href="{{ url_for('index') }}">Page 1</a>
+			<a class="tab" href="{{ url_for('page1') }}">Page 2</a>
+			<a class="tab" href="{{ url_for('page2') }}" aria-current="page">Page 3</a>
+			<span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Ausw</span>
+			<span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">&nbsp;</span>
+		</nav>
+	</header>
+
+	<main class="container">
+		<h1 class="page-title">Lager Liste</h1>
+
+		<section class="card" aria-label="Lagerliste">
+			<div class="card-header">
+				<p class="note">Übersicht aller angelegten Lager (UI-Demo). Du siehst u.a. Produkte, Kapazität (max. Produkte) und kannst Lager (UI-only) löschen.</p>
+			</div>
+
+			<div class="create" aria-label="Lager erstellen">
+				<label>
+					Lagername
+					<input type="text" placeholder="z.B. Ersatzteillager" />
+				</label>
+				<label>
+					Ort
+					<input type="text" placeholder="z.B. Wien" />
+				</label>
+				<label>
+					Kapazität (max. Produkte)
+					<input type="number" min="0" step="1" placeholder="z.B. 500" />
+				</label>
+				<button class="btn" type="button">Lager erstellen</button>
+			</div>
+
+			<div class="table-wrap" role="region" aria-label="Tabelle: Lager" tabindex="0">
+				<table>
+					<thead>
+						<tr>
+							<th style="width: 26%">Lager</th>
+							<th style="width: 18%">Ort</th>
+							<th style="width: 14%">Produkte</th>
+							<th style="width: 16%">Kapazität</th>
+							<th style="width: 14%">Auslastung</th>
+							<th style="width: 12%">Aktion</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Hauptlager Wien</td>
+							<td>Wien</td>
+							<td><span class="pill">0 Produkte</span></td>
+							<td><span class="pill">1000 max.</span></td>
+							<td><span class="pill">0%</span></td>
+							<td>
+								<span class="actions">
+									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td>Nebenlager Graz</td>
+							<td>Graz</td>
+							<td><span class="pill">0 Produkte</span></td>
+							<td><span class="pill">300 max.</span></td>
+							<td><span class="pill">0%</span></td>
+							<td>
+								<span class="actions">
+									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td>Außenlager Linz</td>
+							<td>Linz</td>
+							<td><span class="pill">0 Produkte</span></td>
+							<td><span class="pill">500 max.</span></td>
+							<td><span class="pill">0%</span></td>
+							<td>
+								<span class="actions">
+									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td>Kühllager Salzburg</td>
+							<td>Salzburg</td>
+							<td><span class="pill">0 Produkte</span></td>
+							<td><span class="pill">200 max.</span></td>
+							<td><span class="pill">0%</span></td>
+							<td>
+								<span class="actions">
+									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
+								</span>
+							</td>
+						</tr>
+						<tr>
+							<td>Depot Innsbruck</td>
+							<td>Innsbruck</td>
+							<td><span class="pill">0 Produkte</span></td>
+							<td><span class="pill">150 max.</span></td>
+							<td><span class="pill">0%</span></td>
+							<td>
+								<span class="actions">
+									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
+								</span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+	</main>
+
+	<script>
+		(function () {
+			document.addEventListener('click', function (event) {
+				const target = event.target;
+				if (!(target instanceof HTMLElement)) return;
+
+				if (target.matches('[data-action="delete-warehouse"]')) {
+					const row = target.closest('tr');
+					const nameCell = row ? row.querySelector('td') : null;
+					const warehouseName = nameCell ? nameCell.textContent.trim() : 'dieses Lager';
+
+					const ok = confirm(`Lager löschen: ${warehouseName}?\n(Demo: entfernt nur die Zeile im UI)`);
+					if (ok && row) {
+						row.remove();
+					}
+				}
+			});
+		})();
+	</script>
+</body>
+</html>

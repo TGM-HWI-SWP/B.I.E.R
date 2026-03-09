@@ -232,7 +232,7 @@
         <nav class="tabs" aria-label="Page Auswahl">
             <a class="tab" href="{{ url_for('index') }}">Page 1</a>
             <a class="tab" href="{{ url_for('page1') }}" aria-current="page">Page 2</a>
-            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Page 3</span>
+            <a class="tab" href="{{ url_for('page2') }}">Page 3</a>
             <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Ausw</span>
             <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">&nbsp;</span>
         </nav>
@@ -257,9 +257,11 @@
                     <div class="field">
                         <div class="label">Lager</div>
                         <select aria-label="Lager auswählen">
-                            <option>Hauptlager</option>
-                            <option>Außenlager</option>
-                            <option>Zimmer 204</option>
+                            <option>Hauptlager Wien</option>
+                            <option>Nebenlager Graz</option>
+                            <option>Außenlager Linz</option>
+                            <option>Kühllager Salzburg</option>
+                            <option>Depot Innsbruck</option>
                         </select>
                     </div>
 

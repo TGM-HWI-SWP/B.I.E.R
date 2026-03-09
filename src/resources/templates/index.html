@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/favicon.ico">
-    <title>B.I.E.R – Lagerverwaltung</title>
+    <title>B.I.E.R – Produktverwaltung</title>
     <style>
         :root {
             color-scheme: light;
@@ -228,14 +228,14 @@
         <nav class="tabs" aria-label="Page Auswahl">
             <a class="tab" href="{{ url_for('index') }}" aria-current="page">Page 1</a>
             <a class="tab" href="{{ url_for('page1') }}">Page 2</a>
-            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Page 3</span>
+            <a class="tab" href="{{ url_for('page2') }}">Page 3</a>
             <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Ausw</span>
             <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">&nbsp;</span>
         </nav>
     </header>
 
     <main class="container">
-        <h1 class="page-title">Lagerverwaltung</h1>
+        <h1 class="page-title">Produktverwaltung</h1>
 
         <section class="search-row" aria-label="Produktverwaltung">
             <a class="add-button" href="{{ url_for('page1') }}" aria-label="Neues Produkt anlegen" title="Neues Produkt anlegen">
