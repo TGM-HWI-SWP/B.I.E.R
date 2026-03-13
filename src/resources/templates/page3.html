@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.ico">
+    <title>B.I.E.R – Statistik</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #ffffff;
+            --fg: #111827;
+            --muted: #6b7280;
+            --surface: #ffffff;
+            --border: #d1d5db;
+            --surface-2: #f3f4f6;
+            --focus: #111827;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+        }
+
+        .topbar {
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .tabs {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(90px, max-content);
+            gap: 0;
+            padding: 8px 12px;
+            align-items: center;
+            overflow-x: auto;
+        }
+
+        .tab {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 34px;
+            padding: 0 12px;
+            border: 1px solid var(--border);
+            border-right: none;
+            background: var(--surface);
+            color: var(--fg);
+            text-decoration: none;
+            font-size: 14px;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .tab:first-child {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        .tab:last-child {
+            border-right: 1px solid var(--border);
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        .tab[aria-current="page"] {
+            background: var(--surface-2);
+            font-weight: 650;
+        }
+
+        .tab.is-disabled {
+            color: var(--muted);
+            cursor: not-allowed;
+            user-select: none;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 18px 16px 28px;
+        }
+
+        .page-title {
+            margin: 10px 0 18px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 750;
+            letter-spacing: 0.2px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .kpis {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .card {
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            overflow: hidden;
+        }
+
+        .kpi {
+            padding: 12px;
+        }
+
+        .kpi-label {
+            margin: 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .kpi-value {
+            margin: 6px 0 0;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+        }
+
+        .kpi-sub {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .split {
+            grid-template-columns: 1.2fr 0.8fr;
+            align-items: start;
+        }
+
+        .card-header {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 750;
+        }
+
+        .card-note {
+            margin: 6px 0 0;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .card-body {
+            padding: 12px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .bar-row {
+            display: grid;
+            grid-template-columns: 180px 1fr 72px;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .bar-label {
+            font-size: 13px;
+            color: var(--fg);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .bar-track {
+            height: 14px;
+            border-radius: 999px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--fg);
+            border-radius: 999px;
+            opacity: 0.85;
+        }
+
+        .bar-value {
+            font-size: 13px;
+            color: var(--muted);
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            gap: 8px;
+        }
+
+        .list-item {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px;
+            display: grid;
+            gap: 4px;
+        }
+
+        .list-item strong {
+            font-size: 14px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 26px;
+            padding: 0 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            font-size: 13px;
+            color: var(--fg);
+            white-space: nowrap;
+            width: fit-content;
+        }
+
+        @media (max-width: 980px) {
+            .kpis { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 720px) {
+            .split { grid-template-columns: 1fr; }
+            .bar-row { grid-template-columns: 1fr; }
+            .bar-value { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <nav class="tabs" aria-label="Page Auswahl">
+            <a class="tab" href="{{ url_for('index') }}">Page 1</a>
+            <a class="tab" href="{{ url_for('page1') }}">Page 2</a>
+            <a class="tab" href="{{ url_for('page2') }}">Page 3</a>
+            <a class="tab" href="{{ url_for('page3') }}" aria-current="page">Page 4</a>
+            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">&nbsp;</span>
+        </nav>
+    </header>
+
+    <main class="container">
+        <h1 class="page-title">Statistik</h1>
+
+        <section class="grid kpis" aria-label="Kennzahlen">
+            <div class="card kpi">
+                <p class="kpi-label">Anzahl Lager</p>
+                <p class="kpi-value" id="kpiWarehouses">–</p>
+                <p class="kpi-sub">Alle angelegten Lager</p>
+            </div>
+            <div class="card kpi">
+                <p class="kpi-label">Anzahl Produkte</p>
+                <p class="kpi-value" id="kpiProducts">–</p>
+                <p class="kpi-sub">Gesamt über alle Lager</p>
+            </div>
+            <div class="card kpi">
+                <p class="kpi-label">Meisten Stück</p>
+                <p class="kpi-value" id="kpiTopProduct">–</p>
+                <p class="kpi-sub" id="kpiTopProductSub">–</p>
+            </div>
+            <div class="card kpi">
+                <p class="kpi-label">Größte Auslastung</p>
+                <p class="kpi-value" id="kpiMaxUtil">–</p>
+                <p class="kpi-sub" id="kpiMaxUtilSub">–</p>
+            </div>
+        </section>
+
+        <section class="grid split" style="margin-top: 12px" aria-label="Diagramme">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Produkte pro Lager</p>
+                    <p class="card-note">Demo-Daten (später aus DB aggregieren).</p>
+                </div>
+                <div class="card-body" id="chartWarehouses"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Top Produkte</p>
+                    <p class="card-note">Sortiert nach Menge (Demo).</p>
+                </div>
+                <div class="card-body">
+                    <ol class="list" id="topProducts"></ol>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        (function () {
+            const warehouses = [
+                { name: 'Hauptlager Wien', products: 84, capacity: 1000 },
+                { name: 'Nebenlager Graz', products: 41, capacity: 300 },
+                { name: 'Außenlager Linz', products: 26, capacity: 500 },
+                { name: 'Kühllager Salzburg', products: 97, capacity: 200 },
+                { name: 'Depot Innsbruck', products: 12, capacity: 150 },
+            ];
+
+            const products = [
+                { name: 'Papier A4', qty: 120 },
+                { name: 'Kugelschreiber', qty: 85 },
+                { name: 'Ordner', qty: 52 },
+                { name: 'Marker', qty: 44 },
+                { name: 'Heftklammern', qty: 39 },
+            ];
+
+            const totalWarehouses = warehouses.length;
+            const totalProducts = warehouses.reduce((sum, w) => sum + w.products, 0);
+            const topProduct = products.slice().sort((a, b) => b.qty - a.qty)[0];
+
+            const byUtil = warehouses
+                .map(w => ({
+                    ...w,
+                    util: w.capacity > 0 ? (w.products / w.capacity) : 0,
+                }))
+                .sort((a, b) => b.util - a.util);
+
+            const maxUtil = byUtil[0];
+
+            document.getElementById('kpiWarehouses').textContent = String(totalWarehouses);
+            document.getElementById('kpiProducts').textContent = String(totalProducts);
+
+            document.getElementById('kpiTopProduct').textContent = topProduct ? topProduct.name : '–';
+            document.getElementById('kpiTopProductSub').textContent = topProduct ? `${topProduct.qty} Stk.` : '–';
+
+            if (maxUtil) {
+                const pct = Math.round(maxUtil.util * 100);
+                document.getElementById('kpiMaxUtil').textContent = `${pct}%`;
+                document.getElementById('kpiMaxUtilSub').textContent = `${maxUtil.name} (${maxUtil.products}/${maxUtil.capacity})`;
+            } else {
+                document.getElementById('kpiMaxUtil').textContent = '–';
+                document.getElementById('kpiMaxUtilSub').textContent = '–';
+            }
+
+            const chartHost = document.getElementById('chartWarehouses');
+            const maxProducts = Math.max(1, ...warehouses.map(w => w.products));
+
+            warehouses
+                .slice()
+                .sort((a, b) => b.products - a.products)
+                .forEach(w => {
+                    const row = document.createElement('div');
+                    row.className = 'bar-row';
+
+                    const label = document.createElement('div');
+                    label.className = 'bar-label';
+                    label.textContent = w.name;
+
+                    const track = document.createElement('div');
+                    track.className = 'bar-track';
+
+                    const fill = document.createElement('div');
+                    fill.className = 'bar-fill';
+                    fill.style.width = `${Math.round((w.products / maxProducts) * 100)}%`;
+
+                    track.appendChild(fill);
+
+                    const value = document.createElement('div');
+                    value.className = 'bar-value';
+                    value.textContent = `${w.products} Stk.`;
+
+                    row.appendChild(label);
+                    row.appendChild(track);
+                    row.appendChild(value);
+                    chartHost.appendChild(row);
+                });
+
+            const topHost = document.getElementById('topProducts');
+            products
+                .slice()
+                .sort((a, b) => b.qty - a.qty)
+                .forEach(p => {
+                    const li = document.createElement('li');
+                    li.className = 'list-item';
+
+                    const title = document.createElement('strong');
+                    title.textContent = p.name;
+
+                    const pill = document.createElement('span');
+                    pill.className = 'pill';
+                    pill.textContent = `${p.qty} Stk.`;
+
+                    li.appendChild(title);
+                    li.appendChild(pill);
+                    topHost.appendChild(li);
+                });
+        })();
+    </script>
+</body>
+</html>
