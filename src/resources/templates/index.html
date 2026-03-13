@@ -4,10 +4,265 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/favicon.ico">
-    <title>B.I.E.R</title>
+    <title>B.I.E.R – Produktverwaltung</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #ffffff;
+            --fg: #111827;
+            --muted: #6b7280;
+            --surface: #ffffff;
+            --border: #d1d5db;
+            --surface-2: #f3f4f6;
+            --focus: #111827;
+            --radius: 12px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+        }
+
+        .topbar {
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .tabs {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: minmax(90px, max-content);
+            gap: 0;
+            padding: 8px 12px;
+            align-items: center;
+            overflow-x: auto;
+        }
+
+        .tab {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 34px;
+            padding: 0 12px;
+            border: 1px solid var(--border);
+            border-right: none;
+            background: var(--surface);
+            color: var(--fg);
+            text-decoration: none;
+            font-size: 14px;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .tab:first-child {
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+        }
+
+        .tab:last-child {
+            border-right: 1px solid var(--border);
+            border-top-right-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        .tab[aria-current="page"] {
+            background: var(--surface-2);
+            font-weight: 650;
+        }
+
+        .tab.is-disabled {
+            color: var(--muted);
+            cursor: not-allowed;
+            user-select: none;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 18px 16px 28px;
+        }
+
+        .page-title {
+            margin: 10px 0 18px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 750;
+            letter-spacing: 0.2px;
+        }
+
+        .search-row {
+            display: grid;
+            grid-template-columns: 70px 1fr;
+            gap: 14px;
+            align-items: start;
+            margin: 0 auto 14px;
+        }
+
+        .add-button {
+            display: inline-block;
+            width: 70px;
+            height: 70px;
+            border-radius: 18px;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            position: relative;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .add-button::before,
+        .add-button::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--fg);
+            border-radius: 999px;
+        }
+
+        .add-button::before { width: 34px; height: 4px; }
+        .add-button::after { width: 4px; height: 34px; }
+
+        .add-button:focus-visible {
+            outline: 3px solid color-mix(in oklab, var(--focus) 25%, transparent);
+            outline-offset: 2px;
+        }
+
+        .search-wrap {
+            border: 2px solid var(--border);
+            border-radius: 18px;
+            background: var(--surface);
+            padding: 14px;
+        }
+
+        .search-label {
+            display: block;
+            font-size: 13px;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 0 12px;
+            font-size: 16px;
+            background: var(--surface);
+            color: var(--fg);
+        }
+
+        .search-input:focus {
+            outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
+            outline-offset: 2px;
+        }
+
+        .search-hint {
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .results {
+            margin-top: 10px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            min-height: 180px;
+            overflow: hidden;
+        }
+
+        .results-inner {
+            padding: 12px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .results-placeholder {
+            height: 110px;
+            border-radius: 12px;
+            border: 1px dashed var(--border);
+            background: color-mix(in oklab, var(--surface-2) 60%, transparent);
+        }
+
+        .results-note {
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        @media (max-width: 560px) {
+            .search-row {
+                grid-template-columns: 56px 1fr;
+            }
+            .add-button {
+                width: 56px;
+                height: 56px;
+                border-radius: 16px;
+            }
+            .page-title {
+                font-size: 24px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>B.I.E.R - Büro-Inventar- und Einkaufs-Register</h1>
-    <p>Noch nicht implementiert.</p>
+    <header class="topbar">
+        <nav class="tabs" aria-label="Page Auswahl">
+            <a class="tab" href="{{ url_for('index') }}" aria-current="page">Page 1</a>
+            <a class="tab" href="{{ url_for('page1') }}">Page 2</a>
+            <a class="tab" href="{{ url_for('page2') }}">Page 3</a>
+            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Ausw</span>
+            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">&nbsp;</span>
+        </nav>
+    </header>
+
+    <main class="container">
+        <h1 class="page-title">Produktverwaltung</h1>
+
+        <section class="search-row" aria-label="Produktverwaltung">
+            <a class="add-button" href="{{ url_for('page1') }}" aria-label="Neues Produkt anlegen" title="Neues Produkt anlegen">
+                <span class="sr-only">Neues Produkt anlegen</span>
+            </a>
+
+            <div class="search-wrap">
+                <label class="search-label" for="productSearch">Produktsuche</label>
+                <input
+                    id="productSearch"
+                    class="search-input"
+                    type="search"
+                    inputmode="search"
+                    autocomplete="off"
+                    placeholder="Produkte durchsuchen …"
+                    aria-describedby="searchHint"
+                />
+                <div id="searchHint" class="search-hint">Suche ist aktuell nur UI (noch keine Datenquelle).</div>
+            </div>
+        </section>
+
+        <section class="results" aria-label="Ergebnisliste">
+            <div class="results-inner">
+                <div class="results-placeholder" aria-hidden="true"></div>
+                <div class="results-note">Hier kommt später die Liste/Ansicht der angelegten Produkte hin.</div>
+            </div>
+        </section>
+    </main>
 </body>
 </html>

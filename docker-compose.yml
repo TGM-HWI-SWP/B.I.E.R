@@ -2,7 +2,7 @@ services:
   # ─── PostgreSQL ───────────────────────────────────────────
   postgres:
     image: postgres:16
-    container_name: lagerapp-postgres
+    container_name: bierapp-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: lagerverwaltung
@@ -21,7 +21,7 @@ services:
   # ─── pgAdmin (Web-UI für PostgreSQL) ─────────────────────
   pgadmin:
     image: dpage/pgadmin4:8
-    container_name: lagerapp-pgadmin
+    container_name: bierapp-pgadmin
     restart: unless-stopped
     depends_on:
       postgres:
@@ -39,7 +39,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: lagerapp-flask
+    container_name: bierapp-flask
     restart: unless-stopped
     depends_on:
       postgres:
