@@ -420,3 +420,4 @@ class HttpResponseService(HttpResponsePort):
             tuple[Dict, int]: The error response and status code.
         """
         return {"error": message}, status
+    

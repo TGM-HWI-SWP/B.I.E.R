@@ -1,7 +1,7 @@
 services:
   # ─── PostgreSQL ───────────────────────────────────────────
   postgres:
-    image: postgres:16
+    image: postgres:18
     container_name: bierapp-postgres
     restart: unless-stopped
     env_file:
@@ -11,18 +11,19 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     ports:
       - "${POSTGRES_PORT}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} -c 'SELECT 1' -q --no-align --tuples-only"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
 
   # ─── pgAdmin (Web-UI für PostgreSQL) ─────────────────────
   pgadmin:
-    image: dpage/pgadmin4:8
+    image: dpage/pgadmin4:9.13
     container_name: bierapp-pgadmin
     restart: unless-stopped
     depends_on:
@@ -70,3 +71,4 @@ volumes:
 
   pgadmin_data:
     driver: local
+  

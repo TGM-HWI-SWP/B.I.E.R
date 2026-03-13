@@ -3,7 +3,6 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-
 class PostgresRepository:
     """Repository handling Postgres database operations."""
 
@@ -17,6 +16,7 @@ class PostgresRepository:
         Returns:
             None: No return value.
         """
+
         if self.conn is None:
             self.conn = psycopg2.connect(
                 host=os.environ.get("POSTGRES_HOST", "localhost"),
@@ -37,6 +37,7 @@ class PostgresRepository:
         Returns:
             str: The ID of the newly inserted record.
         """
+
         with self.conn.cursor() as cur:
 
             columns = data.keys()
@@ -64,6 +65,7 @@ class PostgresRepository:
         Returns:
             dict | None: The record as a dictionary if found, otherwise None.
         """
+
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
 
             query = f"SELECT * FROM {table} WHERE id = %s"
@@ -84,6 +86,7 @@ class PostgresRepository:
         Returns:
             list[dict]: A list of dictionaries representing all records in the table.
         """
+
         with self.conn.cursor(cursor_factory=RealDictCursor) as cur:
 
             query = f"SELECT * FROM {table}"
@@ -105,6 +108,7 @@ class PostgresRepository:
         Returns:
             bool: True if the record was successfully updated, otherwise False.
         """
+
         with self.conn.cursor() as cur:
 
             set_clause = ", ".join([f"{k}=%s" for k in data.keys()])
@@ -131,7 +135,8 @@ class PostgresRepository:
 
         Returns:
             bool: True if the record was successfully deleted, otherwise False.
-    """
+        """
+
         with self.conn.cursor() as cur:
 
             query = f"DELETE FROM {table} WHERE id = %s"
@@ -140,3 +145,4 @@ class PostgresRepository:
             self.conn.commit()
 
             return cur.rowcount > 0
+        

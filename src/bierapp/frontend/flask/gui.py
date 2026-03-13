@@ -35,7 +35,6 @@ def page1():
     """
     return render_template("page1.html")
 
-
 @app.route("/page2")
 def page2():
     """Render the third application page.
