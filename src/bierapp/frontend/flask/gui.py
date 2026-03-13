@@ -5,6 +5,7 @@ from flask import Flask, send_from_directory, render_template
 
 RESOURCES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "pictures"))
 TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "templates"))
+STYLESHEETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "stylesheets"))
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
@@ -16,6 +17,19 @@ def favicon():
         Response: PNG image response for the browser favicon.
     """
     return send_from_directory(RESOURCES_DIR, "BIER_ICON_COMPRESSED.png", mimetype="image/png")
+
+
+@app.route("/stylesheets/<path:filename>")
+def stylesheet(filename: str):
+    """Serve shared CSS stylesheets.
+
+    Args:
+        filename: Relative path inside the stylesheets directory.
+
+    Returns:
+        Response: CSS file response.
+    """
+    return send_from_directory(STYLESHEETS_DIR, filename, mimetype="text/css")
 
 @app.route("/")
 def index():
