@@ -45,6 +45,16 @@ def page2():
     """
     return render_template("page2.html")
 
+
+@app.route("/page3")
+def page3():
+    """Render the statistics page (UI demo).
+
+    Returns:
+        str: Rendered HTML of ``page3.html``.
+    """
+    return render_template("page3.html")
+
 if __name__ == "__main__":
     host = os.environ.get("FLASK_HOST", "0.0.0.0")
     port = int(os.environ.get("FLASK_PORT", 5000))
