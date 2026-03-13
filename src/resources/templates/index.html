@@ -4,87 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/favicon.ico">
+    <link rel="stylesheet" href="/stylesheets/common.css">
     <title>B.I.E.R – Produktverwaltung</title>
     <style>
-        :root {
-            color-scheme: light;
-            --bg: #ffffff;
-            --fg: #111827;
-            --muted: #6b7280;
-            --surface: #ffffff;
-            --border: #d1d5db;
-            --surface-2: #f3f4f6;
-            --focus: #111827;
-            --radius: 12px;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--fg);
-        }
-
-        .topbar {
-            border-bottom: 1px solid var(--border);
-            background: var(--surface);
-        }
-
-        .tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 8px 12px;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        .tab {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            height: 34px;
-            padding: 0 12px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: var(--surface);
-            color: var(--fg);
-            text-decoration: none;
-            font-size: 14px;
-            line-height: 1;
-            white-space: nowrap;
-            max-width: 220px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .tab[aria-current="page"] {
-            background: var(--surface-2);
-            font-weight: 650;
-        }
-
-        .tab.is-disabled {
-            color: var(--muted);
-            cursor: not-allowed;
-            user-select: none;
-        }
-
-        .container {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 18px 16px 28px;
-        }
-
-        .page-title {
-            margin: 10px 0 18px;
-            text-align: center;
-            font-size: 28px;
-            font-weight: 750;
-            letter-spacing: 0.2px;
-        }
-
         .search-row {
             display: grid;
             grid-template-columns: 70px 1fr;

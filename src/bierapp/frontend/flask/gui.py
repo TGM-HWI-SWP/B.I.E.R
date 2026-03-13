@@ -5,7 +5,7 @@ from flask import Flask, send_from_directory, render_template
 
 RESOURCES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "pictures"))
 TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "templates"))
-STYLESHEETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "stylesheets"))
+STYLESHEETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "stylesheet"))
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
