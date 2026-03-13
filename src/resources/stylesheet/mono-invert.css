@@ -1,0 +1,16 @@
+@import url("/stylesheets/common.css");
+
+:root {
+  --bg: #fefefe;
+  --fg: #050505;
+  --muted: #2f2f2f;
+  --surface: #ffffff;
+  --surface-2: #ebebeb;
+  --border: #000000;
+  --focus: #000000;
+  --shadow: 0 0 0 transparent;
+}
+
+body {
+  filter: grayscale(1) contrast(1.25);
+}

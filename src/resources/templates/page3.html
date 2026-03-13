@@ -4,143 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/favicon.ico">
-    <link rel="stylesheet" href="/stylesheets/common.css">
+    <link rel="stylesheet" href="{{ url_for('stylesheet', filename=selected_theme) }}">
     <title>B.I.E.R – Statistik</title>
-    <style>
-        .grid {
-            display: grid;
-            gap: 12px;
-        }
-
-        .kpis {
-            grid-template-columns: repeat(4, 1fr);
-        }
-
-        .kpi {
-            padding: 12px;
-        }
-
-        .kpi-label {
-            margin: 0;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        .kpi-value {
-            margin: 6px 0 0;
-            font-size: 22px;
-            font-weight: 800;
-            letter-spacing: 0.2px;
-        }
-
-        .kpi-sub {
-            margin: 6px 0 0;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        .split {
-            grid-template-columns: 1.2fr 0.8fr;
-            align-items: start;
-        }
-
-        .card-title {
-            margin: 0;
-            font-size: 15px;
-            font-weight: 750;
-        }
-
-        .card-note {
-            margin: 6px 0 0;
-            font-size: 13px;
-            color: var(--muted);
-        }
-
-        .card-body {
-            padding: 12px;
-            display: grid;
-            gap: 10px;
-        }
-
-        .bar-row {
-            display: grid;
-            grid-template-columns: 180px 1fr 72px;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .bar-label {
-            font-size: 13px;
-            color: var(--fg);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .bar-track {
-            height: 14px;
-            border-radius: 999px;
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            overflow: hidden;
-        }
-
-        .bar-fill {
-            height: 100%;
-            width: 0%;
-            background: var(--fg);
-            border-radius: 999px;
-            opacity: 0.85;
-        }
-
-        .bar-value {
-            font-size: 13px;
-            color: var(--muted);
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .list {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            display: grid;
-            gap: 8px;
-        }
-
-        .list-item {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 10px;
-            display: grid;
-            gap: 4px;
-        }
-
-        .list-item strong {
-            font-size: 14px;
-        }
-
-        @media (max-width: 980px) {
-            .kpis { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 720px) {
-            .split { grid-template-columns: 1fr; }
-            .bar-row { grid-template-columns: 1fr; }
-            .bar-value { text-align: left; }
-        }
-    </style>
 </head>
-<body>
+<body class="page-stats">
     <header class="topbar">
-        <nav class="tabs" aria-label="Page Auswahl">
-            <a class="tab" href="{{ url_for('index') }}">Produkte</a>
-            <a class="tab" href="{{ url_for('page1') }}">Produkt bearbeiten</a>
-            <a class="tab" href="{{ url_for('page2') }}">Lagerliste</a>
-            <a class="tab" href="{{ url_for('page3') }}" aria-current="page">Statistik</a>
-            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Historie</span>
-            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
-        </nav>
+        <div class="topbar-inner">
+            <nav class="tabs" aria-label="Page Auswahl">
+                <a class="tab" href="{{ url_for('index', theme=selected_theme) }}">Produkte</a>
+                <a class="tab" href="{{ url_for('page1', theme=selected_theme) }}">Produkt bearbeiten</a>
+                <a class="tab" href="{{ url_for('page2', theme=selected_theme) }}">Lagerliste</a>
+                <a class="tab" href="{{ url_for('page3', theme=selected_theme) }}" aria-current="page">Statistik</a>
+                <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Historie</span>
+                <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
+            </nav>
+
+            <form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
+                <label class="theme-label" for="themeSelect">Style</label>
+                <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+                    {% for theme in theme_options %}
+                    <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
+                    {% endfor %}
+                </select>
+                <noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+            </form>
+        </div>
     </header>
 
     <main class="container">
@@ -169,7 +57,7 @@
             </div>
         </section>
 
-        <section class="grid split" style="margin-top: 12px" aria-label="Diagramme">
+        <section class="grid split split-section" aria-label="Diagramme">
             <div class="card">
                 <div class="card-header">
                     <p class="card-title">Produkte pro Lager</p>

@@ -4,125 +4,31 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<link rel="icon" type="image/png" href="/favicon.ico">
-	<link rel="stylesheet" href="/stylesheets/common.css">
+	<link rel="stylesheet" href="{{ url_for('stylesheet', filename=selected_theme) }}">
 	<title>B.I.E.R – Lagerliste</title>
-	<style>
-		.note {
-			margin: 0;
-			color: var(--muted);
-			font-size: 13px;
-		}
-
-		.create {
-			display: grid;
-			grid-template-columns: 1fr 1fr 1fr 160px;
-			gap: 10px;
-			padding: 12px;
-			border-bottom: 1px solid var(--border);
-			background: var(--surface);
-		}
-
-		.create .btn {
-			align-self: end;
-		}
-
-		label {
-			display: grid;
-			gap: 6px;
-			font-size: 13px;
-			color: var(--muted);
-		}
-
-		input[type="text"] {
-			height: 42px;
-			border-radius: 12px;
-			border: 1px solid var(--border);
-			padding: 0 12px;
-			font-size: 15px;
-			background: var(--surface);
-			color: var(--fg);
-		}
-
-		input[type="number"] {
-			height: 42px;
-			border-radius: 12px;
-			border: 1px solid var(--border);
-			padding: 0 12px;
-			font-size: 15px;
-			background: var(--surface);
-			color: var(--fg);
-		}
-
-		input:focus {
-			outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
-			outline-offset: 2px;
-		}
-
-		input[type="number"]:focus {
-			outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
-			outline-offset: 2px;
-		}
-
-		.table-wrap {
-			max-height: min(520px, 62vh);
-			overflow: auto;
-		}
-
-		table {
-			width: 100%;
-			border-collapse: separate;
-			border-spacing: 0;
-			min-width: 640px;
-		}
-
-		thead th {
-			position: sticky;
-			top: 0;
-			background: var(--surface);
-			border-bottom: 1px solid var(--border);
-			text-align: left;
-			font-size: 13px;
-			color: var(--muted);
-			padding: 10px 12px;
-			z-index: 1;
-		}
-
-		tbody td {
-			padding: 12px;
-			border-bottom: 1px solid var(--border);
-			font-size: 14px;
-		}
-
-		tbody tr:hover td {
-			background: var(--surface-2);
-		}
-
-		.actions {
-			display: inline-flex;
-			gap: 8px;
-			align-items: center;
-		}
-
-		@media (max-width: 720px) {
-			.create {
-				grid-template-columns: 1fr;
-			}
-			table {
-				min-width: 540px;
-			}
-		}
-	</style>
 </head>
-<body>
+<body class="page-warehouse">
 	<header class="topbar">
-		<nav class="tabs" aria-label="Page Auswahl">
-			<a class="tab" href="{{ url_for('index') }}">Produkte</a>
-			<a class="tab" href="{{ url_for('page1') }}">Produkt bearbeiten</a>
-			<a class="tab" href="{{ url_for('page2') }}" aria-current="page">Lagerliste</a>
-			<a class="tab" href="{{ url_for('page3') }}">Statistik</a>
-			<span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Historie</span>
-			<span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
-		</nav>
+		<div class="topbar-inner">
+			<nav class="tabs" aria-label="Page Auswahl">
+				<a class="tab" href="{{ url_for('index', theme=selected_theme) }}">Produkte</a>
+				<a class="tab" href="{{ url_for('page1', theme=selected_theme) }}">Produkt bearbeiten</a>
+				<a class="tab" href="{{ url_for('page2', theme=selected_theme) }}" aria-current="page">Lagerliste</a>
+				<a class="tab" href="{{ url_for('page3', theme=selected_theme) }}">Statistik</a>
+				<span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Historie</span>
+				<span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
+			</nav>
+
+			<form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
+				<label class="theme-label" for="themeSelect">Style</label>
+				<select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+					{% for theme in theme_options %}
+					<option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
+					{% endfor %}
+				</select>
+				<noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+			</form>
+		</div>
 	</header>
 
 	<main class="container">
@@ -153,12 +59,12 @@
 				<table>
 					<thead>
 						<tr>
-							<th style="width: 26%">Lager</th>
-							<th style="width: 18%">Ort</th>
-							<th style="width: 14%">Produkte</th>
-							<th style="width: 16%">Kapazität</th>
-							<th style="width: 14%">Auslastung</th>
-							<th style="width: 12%">Aktion</th>
+							<th class="col-warehouse">Lager</th>
+							<th class="col-location">Ort</th>
+							<th class="col-products">Produkte</th>
+							<th class="col-capacity">Kapazität</th>
+							<th class="col-utilization">Auslastung</th>
+							<th class="col-action">Aktion</th>
 						</tr>
 					</thead>
 					<tbody>

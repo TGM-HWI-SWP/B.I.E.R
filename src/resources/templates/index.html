@@ -4,148 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/favicon.ico">
-    <link rel="stylesheet" href="/stylesheets/common.css">
+    <link rel="stylesheet" href="{{ url_for('stylesheet', filename=selected_theme) }}">
     <title>B.I.E.R – Produktverwaltung</title>
-    <style>
-        .search-row {
-            display: grid;
-            grid-template-columns: 70px 1fr;
-            gap: 14px;
-            align-items: start;
-            margin: 0 auto 14px;
-        }
-
-        .add-button {
-            display: inline-block;
-            width: 70px;
-            height: 70px;
-            border-radius: 18px;
-            border: 2px solid var(--border);
-            background: var(--surface);
-            position: relative;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .add-button::before,
-        .add-button::after {
-            content: "";
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--fg);
-            border-radius: 999px;
-        }
-
-        .add-button::before { width: 34px; height: 4px; }
-        .add-button::after { width: 4px; height: 34px; }
-
-        .add-button:focus-visible {
-            outline: 3px solid color-mix(in oklab, var(--focus) 25%, transparent);
-            outline-offset: 2px;
-        }
-
-        .search-wrap {
-            border: 2px solid var(--border);
-            border-radius: 18px;
-            background: var(--surface);
-            padding: 14px;
-        }
-
-        .search-label {
-            display: block;
-            font-size: 13px;
-            color: var(--muted);
-            margin-bottom: 8px;
-        }
-
-        .search-input {
-            width: 100%;
-            height: 44px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            padding: 0 12px;
-            font-size: 16px;
-            background: var(--surface);
-            color: var(--fg);
-        }
-
-        .search-input:focus {
-            outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
-            outline-offset: 2px;
-        }
-
-        .search-hint {
-            margin-top: 10px;
-            font-size: 13px;
-            color: var(--muted);
-        }
-
-        .results {
-            margin-top: 10px;
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--surface);
-            min-height: 180px;
-            overflow: hidden;
-        }
-
-        .results-inner {
-            padding: 12px;
-            display: grid;
-            gap: 10px;
-        }
-
-        .results-placeholder {
-            height: 110px;
-            border-radius: 12px;
-            border: 1px dashed var(--border);
-            background: color-mix(in oklab, var(--surface-2) 60%, transparent);
-        }
-
-        .results-note {
-            font-size: 13px;
-            color: var(--muted);
-        }
-
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-
-        @media (max-width: 560px) {
-            .search-row {
-                grid-template-columns: 56px 1fr;
-            }
-            .add-button {
-                width: 56px;
-                height: 56px;
-                border-radius: 16px;
-            }
-            .page-title {
-                font-size: 24px;
-            }
-        }
-    </style>
 </head>
-<body>
+<body class="page-index">
     <header class="topbar">
-        <nav class="tabs" aria-label="Page Auswahl">
-            <a class="tab" href="{{ url_for('index') }}" aria-current="page">Produkte</a>
-            <a class="tab" href="{{ url_for('page1') }}">Produkt bearbeiten</a>
-            <a class="tab" href="{{ url_for('page2') }}">Lagerliste</a>
-            <a class="tab" href="{{ url_for('page3') }}">Statistik</a>
+        <div class="topbar-inner">
+            <nav class="tabs" aria-label="Page Auswahl">
+                <a class="tab" href="{{ url_for('index', theme=selected_theme) }}" aria-current="page">Produkte</a>
+                <a class="tab" href="{{ url_for('page1', theme=selected_theme) }}">Produkt bearbeiten</a>
+                <a class="tab" href="{{ url_for('page2', theme=selected_theme) }}">Lagerliste</a>
+                <a class="tab" href="{{ url_for('page3', theme=selected_theme) }}">Statistik</a>
             <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Historie</span>
             <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
-        </nav>
+            </nav>
+
+            <form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
+                <label class="theme-label" for="themeSelect">Style</label>
+                <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+                    {% for theme in theme_options %}
+                    <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
+                    {% endfor %}
+                </select>
+                <noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+            </form>
+        </div>
     </header>
 
     <main class="container">
