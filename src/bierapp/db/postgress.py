@@ -1,3 +1,5 @@
+import os
+
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
@@ -17,10 +19,11 @@ class PostgresRepository:
         """
         if self.conn is None:
             self.conn = psycopg2.connect(
-                host="localhost",
-                database="lagerverwaltung",
-                user="admin",
-                password="secret"
+                host=os.environ.get("POSTGRES_HOST", "localhost"),
+                port=int(os.environ.get("POSTGRES_PORT", 5432)),
+                database=os.environ.get("POSTGRES_DB", "lagerverwaltung"),
+                user=os.environ.get("POSTGRES_USER", "admin"),
+                password=os.environ.get("POSTGRES_PASSWORD", "secret")
             )
 
     def insert(self, table: str, data: dict) -> str:
