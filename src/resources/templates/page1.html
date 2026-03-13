@@ -33,13 +33,12 @@
         }
 
         .tabs {
-            display: grid;
-            grid-auto-flow: column;
-            grid-auto-columns: minmax(90px, max-content);
-            gap: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
             padding: 8px 12px;
             align-items: center;
-            overflow-x: auto;
+            overflow: hidden;
         }
 
         .tab {
@@ -49,24 +48,16 @@
             height: 34px;
             padding: 0 12px;
             border: 1px solid var(--border);
-            border-right: none;
+            border-radius: 10px;
             background: var(--surface);
             color: var(--fg);
             text-decoration: none;
             font-size: 14px;
             line-height: 1;
             white-space: nowrap;
-        }
-
-        .tab:first-child {
-            border-top-left-radius: 10px;
-            border-bottom-left-radius: 10px;
-        }
-
-        .tab:last-child {
-            border-right: 1px solid var(--border);
-            border-top-right-radius: 10px;
-            border-bottom-right-radius: 10px;
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .tab[aria-current="page"] {
@@ -230,11 +221,12 @@
 <body>
     <header class="topbar">
         <nav class="tabs" aria-label="Page Auswahl">
-            <a class="tab" href="{{ url_for('index') }}">Page 1</a>
-            <a class="tab" href="{{ url_for('page1') }}" aria-current="page">Page 2</a>
-            <a class="tab" href="{{ url_for('page2') }}">Page 3</a>
-            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Ausw</span>
-            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">&nbsp;</span>
+            <a class="tab" href="{{ url_for('index') }}">Produkte</a>
+            <a class="tab" href="{{ url_for('page1') }}" aria-current="page">Produkt bearbeiten</a>
+            <a class="tab" href="{{ url_for('page2') }}">Lagerliste</a>
+            <a class="tab" href="{{ url_for('page3') }}">Statistik</a>
+            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Historie</span>
+            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
         </nav>
     </header>
 
