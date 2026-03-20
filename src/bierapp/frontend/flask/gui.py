@@ -3,6 +3,20 @@
 import os
 from flask import Flask, send_from_directory, render_template, jsonify, request
 
+from bierapp.backend import service
+from bierapp.backend.service import (
+    BierService,
+    ProductService,
+    WarehouseService
+)
+from bierapp.db.postgress import PostgresRepository
+repo = PostgresRepository()
+db = BierService(repo)
+
+product_service = ProductService(db)
+warehouse_service = WarehouseService(db)
+
+
 RESOURCES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "pictures"))
 TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "templates"))
 
@@ -10,35 +24,42 @@ app = Flask(__name__, template_folder=TEMPLATES_DIR)
 
 @app.route("/products", methods=["GET"])
 def get_products():
-    # TODO: echte DB später
-    return jsonify([
-        {"id": 1, "name": "Bier 1"},
-        {"id": 2, "name": "Bier 2"}
-    ])
+    products = product_service.list_products()
+    return jsonify(products)
 
 @app.route("/products", methods=["POST"])
 def create_product():
     data = request.json
-    print("Produkt erhalten:", data)
-    return jsonify({"status": "ok"}), 201
+
+    product = product_service.create_product(
+        name=data["supplier"],              # mapping!
+        beschreibung="Auto erstellt",       # fehlt im frontend
+        gewicht=float(data["price"])        # mapping!
+    )
+
+    return jsonify(product), 201
 
 @app.route("/warehouses", methods=["GET"])
 def get_warehouses():
-    return jsonify([
-        {
-            "id": 1,
-            "lagername": "Lager A",
-            "adresse": "Wien",
-            "products": 10,
-            "max_plaetze": 100
-        }
-    ])
+    warehouses = warehouse_service.list_warehouses()
+    return jsonify(warehouses)
 
-@app.route("/warehouses/<int:id>", methods=["DELETE"])
+@app.route("/warehouses/<id>", methods=["DELETE"])
 def delete_warehouse(id):
-    print("Lösche Lager:", id)
+    warehouse_service.delete_warehouse(id)
     return "", 204
 
+@app.route("/warehouses", methods=["POST"])
+def create_warehouse():
+    data = request.json
+
+    warehouse = warehouse_service.create_warehouse(
+        lagername=data["lagername"],
+        adresse=data["adresse"],
+        max_plaetze=int(data["max_plaetze"])
+    )
+
+    return jsonify(warehouse), 201
 
 @app.route("/favicon.ico")
 def favicon():
