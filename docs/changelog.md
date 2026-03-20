@@ -25,21 +25,24 @@
 
 ---
 
-## [v0.2] - [Datum]
+## [v0.2] - 20.03.2026
 
 ### Implementiert
 
-- [Feature/Fix 1]
-- [Feature/Fix 2]
+- Report A
+- Report Format
 
 ### Tests geschrieben
 
-- test_[name 1]
+- keine
 
 ### Commits
 
 ```
-- jkl3456 Feat: [Beschreibung]
+- 1491cd4 Feat: Dummy Data for the first report tests 
+- 4de159a Feat: Made a format template for all the reports so they look uniform and professional
+- 961b08d Feat: Created the first attempt on report a, loading the dummy data
+- bf380c6 Feat: Changed the format template for the reports for better readability 
 ```
 
 ### Mergekonflikt(e)
