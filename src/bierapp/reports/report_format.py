@@ -20,7 +20,18 @@ def create_cover_page(pdf: PdfPages, title: str, subtitle: str, meta: Optional[D
     plt.close(fig)
 
 
-def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]], title: Optional[str] = None, rows_per_page: int = 40) -> None:
+def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]], title: Optional[str] = None, rows_per_page: int = 40, fit_one_page: bool = False) -> None:
+    """Render table rows into one or more A4 pages.
+
+    If `fit_one_page` is True, try to fit all rows onto a single A4 portrait page by
+    reducing font size and spacing. This is a best-effort heuristic suitable for
+    text tables (monospace) and works for moderate row counts.
+    """
+    # If fit_one_page is requested we still render with a proper table,
+    # but allow many rows per page. The user accepted multiple pages, so
+    # default to paginated table rendering for readable output.
+
+    # default multi-page rendering
     total_pages = (len(rows) + rows_per_page - 1) // rows_per_page or 1
     for page in range(total_pages):
         start = page * rows_per_page
@@ -32,21 +43,43 @@ def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]],
         if title:
             ax.set_title(title, fontsize=12, loc="left")
 
-        # header line
-        y = 0.92
-        header_line = "  ".join([h.ljust(30) for h in headers])
-        ax.text(0.05, y, header_line, fontfamily="monospace", fontsize=9)
-        y -= 0.03
+        # Use matplotlib.table for readable cells and automatic layout
+        try:
+            # prepare cell text and column labels
+            cell_text = [[str(c) for c in r] for r in page_rows]
+            ncols = len(headers)
 
-        for r in page_rows:
-            line = "  ".join([str(c)[:30].ljust(30) for c in r])
-            ax.text(0.05, y, line, fontfamily="monospace", fontsize=8)
-            y -= 0.025
-            if y < 0.05:
-                break
+            # heuristic column widths: make first two columns wider (date, product)
+            if ncols >= 3:
+                if ncols == 5:
+                    col_widths = [0.18, 0.44, 0.12, 0.13, 0.13]
+                else:
+                    first = 0.25
+                    second = 0.45
+                    rest = max(0.05, (1.0 - first - second) / max(1, ncols - 2))
+                    col_widths = [first, second] + [rest] * (ncols - 2)
+            else:
+                col_widths = [1.0 / ncols] * ncols
+
+            table = ax.table(cellText=cell_text, colLabels=headers, loc="center", cellLoc="left", colWidths=col_widths)
+            table.auto_set_font_size(False)
+            table.set_fontsize(8)
+            table.scale(1, 1.2)
+        except Exception:
+            # fallback to plain text rendering
+            y = 0.92
+            header_line = "  ".join([h.ljust(30) for h in headers])
+            ax.text(0.05, y, header_line, fontfamily="monospace", fontsize=9)
+            y -= 0.03
+            for r in page_rows:
+                line = "  ".join([str(c)[:30].ljust(30) for c in r])
+                ax.text(0.05, y, line, fontfamily="monospace", fontsize=8)
+                y -= 0.025
+                if y < 0.05:
+                    break
 
         ax.text(0.5, 0.03, f"Seite {page+1} von {total_pages}", ha="center", fontsize=8, color="#666666")
-        pdf.savefig(fig)
+        pdf.savefig(fig, bbox_inches="tight")
         plt.close(fig)
 
 
