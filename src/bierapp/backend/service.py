@@ -185,6 +185,20 @@ class WarehouseService(WarehouseServicePort):
     def __init__(self, db: DatabasePort):
         self.db = db
 
+    def add_product_to_warehouse(self, lager_id, produkt_id, menge):
+        return self.repo.add_product_to_warehouse(lager_id, produkt_id, menge)
+    
+    def count_products_in_warehouse(self, lager_id):
+        return self.repo.count_products_in_warehouse(lager_id)
+    
+    def list_warehouses_with_products(self):
+        warehouses = self.list_warehouses()
+
+        for w in warehouses:
+            w["products"] = self.count_products_in_warehouse(w["lager_id"])
+
+        return warehouses
+
     def create_warehouse(self, lagername: str, adresse: str, max_plaetze: int) -> Dict:
         """
         Create a new warehouse and store it in the database.

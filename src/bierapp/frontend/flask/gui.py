@@ -32,9 +32,9 @@ def create_product():
     data = request.json
 
     product = product_service.create_product(
-        name=data["supplier"],              # mapping!
-        beschreibung="Auto erstellt",       # fehlt im frontend
-        gewicht=float(data["price"])        # mapping!
+        name=data["name"],
+        beschreibung=data.get("beschreibung", ""),
+        gewicht=float(data["gewicht"])
     )
 
     return jsonify(product), 201
@@ -44,10 +44,10 @@ def get_warehouses():
     warehouses = warehouse_service.list_warehouses()
     return jsonify(warehouses)
 
-@app.route("/warehouses/<id>", methods=["DELETE"])
-def delete_warehouse(id):
-    warehouse_service.delete_warehouse(id)
-    return "", 204
+@app.route("/warehouses", methods=["GET"])
+def get_warehouses():
+    warehouses = warehouse_service.list_warehouses_with_products()
+    return jsonify(warehouses)
 
 @app.route("/warehouses", methods=["POST"])
 def create_warehouse():
@@ -56,10 +56,23 @@ def create_warehouse():
     warehouse = warehouse_service.create_warehouse(
         lagername=data["lagername"],
         adresse=data["adresse"],
-        max_plaetze=int(data["max_plaetze"])
+        max_plaetze=int(data["max_plaetze"]),
+        firma_id=data["firma_id"]
     )
 
     return jsonify(warehouse), 201
+
+@app.route("/lagerprodukte", methods=["POST"])
+def add_product_to_warehouse():
+    data = request.json
+
+    lagerprodukt = warehouse_service.add_product_to_warehouse(
+        lager_id=data["lager_id"],
+        produkt_id=data["produkt_id"],
+        menge=int(data["menge"])
+    )
+
+    return jsonify(lagerprodukt), 201
 
 @app.route("/favicon.ico")
 def favicon():
