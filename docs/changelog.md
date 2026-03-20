@@ -25,21 +25,35 @@
 
 ---
 
-## [v0.2] - [Datum]
+## [v0.2] - [20.3.2026]
+
 
 ### Implementiert
 
-- [Feature/Fix 1]
-- [Feature/Fix 2]
+- [api caller]
+- [Basic Api caller and DB Connection Syncing]
+- [extending ground for Layer connections]
+- [Seperating diffrent services from eachother
+    FIXING GUI.py import and functions
+
+    and general import fixing
+    ]
 
 ### Tests geschrieben
 
-- test_[name 1]
+- KEINE
 
 ### Commits
 
 ```
-- jkl3456 Feat: [Beschreibung]
+- 5edea58cc967712eed0a10c969c6fa3513da8ae0 Feat: [api caller added]
+- 5edea58cc967712eed0a10c969c6fa3513da8ae0 Feat: [Basic Api caller and DB Connection Syncing]
+- 25563634ad4259901e0e5b9e1490804a558e5027 Feat: [extending ground for Layer connections]
+- f97e50d16f2cddfdc4ee82f5929c63e277e9e71d Feat: [Seperating diffrent services from eachother
+FIXING GUI.py import and functions
+
+and general import fixing
+]
 ```
 
 ### Mergekonflikt(e)
