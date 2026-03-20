@@ -1,12 +1,44 @@
 """UI layer - Flask web interface"""
 
 import os
-from flask import Flask, send_from_directory, render_template
+from flask import Flask, send_from_directory, render_template, jsonify, request
 
 RESOURCES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "pictures"))
 TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "templates"))
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR)
+
+@app.route("/products", methods=["GET"])
+def get_products():
+    # TODO: echte DB später
+    return jsonify([
+        {"id": 1, "name": "Bier 1"},
+        {"id": 2, "name": "Bier 2"}
+    ])
+
+@app.route("/products", methods=["POST"])
+def create_product():
+    data = request.json
+    print("Produkt erhalten:", data)
+    return jsonify({"status": "ok"}), 201
+
+@app.route("/warehouses", methods=["GET"])
+def get_warehouses():
+    return jsonify([
+        {
+            "id": 1,
+            "lagername": "Lager A",
+            "adresse": "Wien",
+            "products": 10,
+            "max_plaetze": 100
+        }
+    ])
+
+@app.route("/warehouses/<int:id>", methods=["DELETE"])
+def delete_warehouse(id):
+    print("Lösche Lager:", id)
+    return "", 204
+
 
 @app.route("/favicon.ico")
 def favicon():
