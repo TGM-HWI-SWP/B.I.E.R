@@ -1,32 +1,53 @@
-"""UI layer - Flask web interface"""
+from flask import Flask, render_template, jsonify, request
 
-import os
-from flask import Flask, send_from_directory, render_template, jsonify, request
-
-from bierapp.backend import service
-from bierapp.backend.service import (
-    BierService,
-    ProductService,
-    WarehouseService
-)
+# Services & DB
+from bierapp.backend.service.product_service import ProductService, InventoryService
+from bierapp.backend.service.warehouse_service import WarehouseService
+from bierapp.backend.service.db_Service import dbService
 from bierapp.db.postgress import PostgresRepository
+
+app = Flask(__name__)
+
+# =========================
+# INIT SERVICES
+# =========================
 repo = PostgresRepository()
-db = BierService(repo)
+db = dbService(repo)
 
 product_service = ProductService(db)
 warehouse_service = WarehouseService(db)
+inventory_service = InventoryService(db)
 
+# =========================
+# FRONTEND
+# =========================
+@app.route("/")
+def index():
+    return render_template("index.html")
 
-RESOURCES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "pictures"))
-TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "templates"))
+# =========================
+# PRODUCTS API
+# =========================
 
-app = Flask(__name__, template_folder=TEMPLATES_DIR)
+@app.route("/inventory", methods=["POST"])
+def add_inventory():
+    data = request.json
 
+    inventory_service.add_product(
+        lager_id=data["lager_id"],
+        produkt_id=data["produkt_id"],
+        menge=int(data["menge"])
+    )
+
+    return {"status": "ok"}, 201
+
+# GET all products
 @app.route("/products", methods=["GET"])
 def get_products():
     products = product_service.list_products()
     return jsonify(products)
 
+# CREATE product
 @app.route("/products", methods=["POST"])
 def create_product():
     data = request.json
@@ -39,78 +60,65 @@ def create_product():
 
     return jsonify(product), 201
 
-@app.route("/warehouses", methods=["GET"])
-def get_warehouses():
-    warehouses = warehouse_service.list_warehouses()
-    return jsonify(warehouses)
+# DELETE product (optional)
+@app.route("/products/<produkt_id>", methods=["DELETE"])
+def delete_product(produkt_id):
+    product_service.delete_product(produkt_id)
+    return "", 204
 
+
+# =========================
+# WAREHOUSE API
+# =========================
+
+# GET warehouses + product count
 @app.route("/warehouses", methods=["GET"])
 def get_warehouses():
     warehouses = warehouse_service.list_warehouses_with_products()
     return jsonify(warehouses)
 
-@app.route("/warehouses", methods=["POST"])
-def create_warehouse():
-    data = request.json
+# CREATE warehouse
+@app.route("/warehouses", methods=["GET"])
+def get_warehouses():
+    warehouses = warehouse_service.list_warehouses()
+    inventory = inventory_service.db.find_all("inventory")
 
-    warehouse = warehouse_service.create_warehouse(
-        lagername=data["lagername"],
-        adresse=data["adresse"],
-        max_plaetze=int(data["max_plaetze"]),
-        firma_id=data["firma_id"]
-    )
+    for w in warehouses:
+        w["products"] = sum(
+            item["menge"]
+            for item in inventory
+            if item["lager_id"] == w["id"]
+        )
 
-    return jsonify(warehouse), 201
+    return warehouses
 
+# DELETE warehouse
+@app.route("/warehouses/<lager_id>", methods=["DELETE"])
+def delete_warehouse(lager_id):
+    warehouse_service.delete_warehouse(lager_id)
+    return "", 204
+
+
+# =========================
+# LAGERPRODUKT API (NEU!)
+# =========================
+
+# Produkt einem Lager zuweisen
 @app.route("/lagerprodukte", methods=["POST"])
 def add_product_to_warehouse():
     data = request.json
 
-    lagerprodukt = warehouse_service.add_product_to_warehouse(
-        lager_id=data["lager_id"],
-        produkt_id=data["produkt_id"],
+    warehouse_service.add_product_to_warehouse(
+        lager_id=int(data["lager_id"]),
+        produkt_id=int(data["produkt_id"]),
         menge=int(data["menge"])
     )
 
-    return jsonify(lagerprodukt), 201
+    return jsonify({"status": "ok"}), 201
 
-@app.route("/favicon.ico")
-def favicon():
-    """Serve the application favicon.
 
-    Returns:
-        Response: PNG image response for the browser favicon.
-    """
-    return send_from_directory(RESOURCES_DIR, "BIER_ICON_COMPRESSED.png", mimetype="image/png")
-
-@app.route("/")
-def index():
-    """Render the main application page.
-
-    Returns:
-        str: Rendered HTML of ``index.html``.
-    """
-    return render_template("index.html")
-
-@app.route("/page1")
-def page1():
-    """Render the second application page.
-
-    Returns:
-        str: Rendered HTML of ``page1.html``.
-    """
-    return render_template("page1.html")
-
-@app.route("/page2")
-def page2():
-    """Render the third application page.
-
-    Returns:
-        str: Rendered HTML of ``page2.html``.
-    """
-    return render_template("page2.html")
-
+# =========================
+# RUN
+# =========================
 if __name__ == "__main__":
-    host = os.environ.get("FLASK_HOST", "0.0.0.0")
-    port = int(os.environ.get("FLASK_PORT", 5000))
-    app.run(host=host, port=port)
+    app.run(debug=True)

@@ -41,56 +41,68 @@ async function loadProducts() {
         container.innerHTML = "";
 
         if (!products || products.length === 0) {
-            container.innerHTML = "<div class='results-note'>Keine Produkte vorhanden.</div>";
+            container.innerHTML = "<div>Keine Produkte vorhanden.</div>";
             return;
         }
 
         products.forEach(p => {
             const el = document.createElement("div");
             el.className = "results-placeholder";
-            el.textContent = p.name || `Produkt ${p.id}`;
+            el.textContent = p.name || ("Produkt " + p.produkt_id);
             container.appendChild(el);
         });
 
     } catch {
-        container.innerHTML = "<div class='error'>Fehler beim Laden der Produkte</div>";
+        container.innerHTML = "<div>Fehler beim Laden</div>";
     }
 }
 
 /* =========================
-   CREATE PRODUCT
+   CREATE PRODUCT (2-STEP!)
 ========================= */
 
 async function createProduct() {
-    const supplier = document.getElementById("productSupplier");
-    if (!supplier) return;
 
-    const data = {
-        supplier: supplier.value.trim(),
-        price: Number(document.getElementById("productPrice").value),
-        currency: document.getElementById("productCurrency").value,
-        warehouse: document.getElementById("productWarehouse").value,
-        amount: Number(document.getElementById("productAmount").value)
-    };
+    const supplier = document.getElementById("productSupplier").value.trim();
+    const price = Number(document.getElementById("productPrice").value);
+    const warehouse = Number(document.getElementById("productWarehouse").value);
+    const amount = Number(document.getElementById("productAmount").value);
 
-    if (!data.supplier || isNaN(data.price) || isNaN(data.amount)) {
+    if (!supplier || isNaN(price) || isNaN(amount) || isNaN(warehouse)) {
         alert("Bitte gültige Daten eingeben");
         return;
     }
 
     try {
-        await api("/products", {
+        // 1️⃣ Produkt erstellen
+        const product = await api("/products", {
             method: "POST",
-            body: JSON.stringify(data)
+            body: JSON.stringify({
+                name: supplier,
+                gewicht: price,
+                beschreibung: ""
+            })
+        });
+
+        // 2️⃣ Produkt dem Lager zuweisen
+        await api("/inventory", {
+            method: "POST",
+            body: JSON.stringify({
+                lager_id: warehouse,
+                produkt_id: product.id,
+                menge: amount
+            })
         });
 
         alert("Produkt gespeichert");
 
-        supplier.value = "";
+        // Reset
+        document.getElementById("productSupplier").value = "";
         document.getElementById("productPrice").value = "";
         document.getElementById("productAmount").value = "";
 
         loadProducts();
+        loadWarehouses();
 
     } catch {}
 }
@@ -111,6 +123,7 @@ async function loadWarehouses() {
         table.innerHTML = "";
 
         warehouses.forEach(w => {
+
             const usage = w.max_plaetze
                 ? Math.round((w.products || 0) / w.max_plaetze * 100)
                 : 0;
@@ -120,11 +133,11 @@ async function loadWarehouses() {
             row.innerHTML = `
                 <td>${w.lagername}</td>
                 <td>${w.adresse}</td>
-                <td><span class="pill">${w.products || 0} Produkte</span></td>
-                <td><span class="pill">${w.max_plaetze}</span></td>
-                <td><span class="pill">${usage}%</span></td>
+                <td>${w.products || 0}</td>
+                <td>${w.max_plaetze}</td>
+                <td>${usage}%</td>
                 <td>
-                    <button class="btn btn-small deleteWarehouse">Löschen</button>
+                    <button class="deleteWarehouse">Löschen</button>
                 </td>
             `;
 
@@ -132,7 +145,10 @@ async function loadWarehouses() {
                 if (!confirm("Wirklich löschen?")) return;
 
                 try {
-                    await api(`/warehouses/${w.id}`, { method: "DELETE" });
+                    await api(`/warehouses/${w.id}`, {
+                        method: "DELETE"
+                    });
+
                     row.remove();
                 } catch {}
             };
@@ -150,16 +166,12 @@ async function loadWarehouses() {
 ========================= */
 
 async function createWarehouse() {
-    const name = document.getElementById("warehouseName");
-    if (!name) return;
 
-    const data = {
-        lagername: name.value.trim(),
-        adresse: document.getElementById("warehouseLocation").value,
-        max_plaetze: Number(document.getElementById("warehouseCapacity").value)
-    };
+    const name = document.getElementById("warehouseName").value.trim();
+    const adresse = document.getElementById("warehouseLocation").value;
+    const capacity = Number(document.getElementById("warehouseCapacity").value);
 
-    if (!data.lagername || isNaN(data.max_plaetze)) {
+    if (!name || isNaN(capacity)) {
         alert("Bitte gültige Daten eingeben");
         return;
     }
@@ -167,10 +179,16 @@ async function createWarehouse() {
     try {
         await api("/warehouses", {
             method: "POST",
-            body: JSON.stringify(data)
+            body: JSON.stringify({
+                lagername: name,
+                adresse: adresse,
+                max_plaetze: capacity,
+                firma_id: 1   // 🔥 wichtig (fix oder später auswählbar machen)
+            })
         });
 
-        name.value = "";
+        // Reset
+        document.getElementById("warehouseName").value = "";
         document.getElementById("warehouseLocation").value = "";
         document.getElementById("warehouseCapacity").value = "";
 
@@ -184,9 +202,13 @@ async function createWarehouse() {
 ========================= */
 
 document.addEventListener("DOMContentLoaded", () => {
+
     loadProducts();
     loadWarehouses();
 
-    document.getElementById("saveProductBtn")?.addEventListener("click", createProduct);
-    document.getElementById("createWarehouseBtn")?.addEventListener("click", createWarehouse);
+    document.getElementById("saveProductBtn")
+        ?.addEventListener("click", createProduct);
+
+    document.getElementById("createWarehouseBtn")
+        ?.addEventListener("click", createWarehouse);
 });

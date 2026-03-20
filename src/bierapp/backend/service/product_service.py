@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional
-from ..db.postgress import PostgresRepository
-from ..contracts import (
+from ...db.postgress import PostgresRepository
+from ...contracts import (
     DatabasePort,
     ProductServicePort,
     WarehouseServicePort,
@@ -8,86 +8,6 @@ from ..contracts import (
     ReportPort,
     HttpResponsePort,
 )
-
-class BierService(DatabasePort):
-    """Service implementing Postgres database operations."""
-
-    def __init__(self, repository: PostgresRepository):
-        self.repo = repository
-
-    def connect(self) -> None:
-        """
-        Establish a connection to the database through the repository.
-
-        Returns:
-            None: No return value.
-        """
-        self.repo.connect()
-
-    def insert(self, collection: str, data: Dict) -> str:
-        """
-        Insert a new record into a collection.
-
-        Args:
-            collection (str): The name of the target database collection.
-            data (Dict): The data to insert as key-value pairs.
-
-        Returns:
-            str: The ID of the inserted record.
-        """
-        return self.repo.insert(collection, data)
-
-    def find_by_id(self, collection: str, document_id: str) -> Optional[Dict]:
-        """
-        Retrieve a record from a collection by its ID.
-
-        Args:
-            collection (str): The name of the database collection.
-            document_id (str): The unique identifier of the record.
-
-        Returns:
-            Optional[Dict]: The record if found, otherwise None.
-        """
-        return self.repo.find_by_id(collection, document_id)
-
-    def find_all(self, collection: str) -> List[Dict]:
-        """
-        Retrieve all records from a collection.
-
-        Args:
-            collection (str): The name of the database collection.
-
-        Returns:
-            List[Dict]: A list containing all records.
-        """
-        return self.repo.find_all(collection)
-
-    def update(self, collection: str, document_id: str, data: Dict) -> bool:
-        """
-        Update a record in a collection.
-
-        Args:
-            collection (str): The name of the database collection.
-            document_id (str): The ID of the record to update.
-            data (Dict): The updated fields and values.
-
-        Returns:
-            bool: True if the update was successful, otherwise False.
-        """
-        return self.repo.update(collection, document_id, data)
-
-    def delete(self, collection: str, document_id: str) -> bool:
-        """
-        Delete a record from a collection.
-
-        Args:
-            collection (str): The name of the database collection.
-            document_id (str): The ID of the record to delete.
-
-        Returns:
-            bool: True if the deletion was successful, otherwise False.
-        """
-        return self.repo.delete(collection, document_id)
 
 class ProductService(ProductServicePort):
     """Service for managing products in the inventory system."""
@@ -176,108 +96,6 @@ class ProductService(ProductServicePort):
 
         if not success:
             raise KeyError("Product not found")
-        
-class WarehouseService(WarehouseServicePort):
-    """Service for managing warehouses in the inventory system."""
-
-    COLLECTION = "warehouses"
-
-    def __init__(self, db: DatabasePort):
-        self.db = db
-
-    def add_product_to_warehouse(self, lager_id, produkt_id, menge):
-        return self.repo.add_product_to_warehouse(lager_id, produkt_id, menge)
-    
-    def count_products_in_warehouse(self, lager_id):
-        return self.repo.count_products_in_warehouse(lager_id)
-    
-    def list_warehouses_with_products(self):
-        warehouses = self.list_warehouses()
-
-        for w in warehouses:
-            w["products"] = self.count_products_in_warehouse(w["lager_id"])
-
-        return warehouses
-
-    def create_warehouse(self, lagername: str, adresse: str, max_plaetze: int) -> Dict:
-        """
-        Create a new warehouse and store it in the database.
-
-        Args:
-            lagername (str): The name of the warehouse.
-            adresse (str): The physical address of the warehouse.
-            max_plaetze (int): The maximum storage capacity.
-
-        Returns:
-            Dict: The created warehouse including its generated ID.
-        """
-        if max_plaetze <= 0:
-            raise ValueError("max_plaetze must be positive")
-
-        data = {
-            "lagername": lagername,
-            "adresse": adresse,
-            "max_plaetze": max_plaetze
-        }
-
-        warehouse_id = self.db.insert(self.COLLECTION, data)
-        data["id"] = warehouse_id
-
-        return data
-
-    def get_warehouse(self, lager_id: str) -> Optional[Dict]:
-        """
-        Retrieve a warehouse by its ID.
-
-        Args:
-            lager_id (str): The unique identifier of the warehouse.
-
-        Returns:
-            Optional[Dict]: The warehouse if found, otherwise None.
-        """
-        return self.db.find_by_id(self.COLLECTION, lager_id)
-
-    def list_warehouses(self) -> List[Dict]:
-        """
-        Retrieve all warehouses.
-
-        Returns:
-            List[Dict]: A list containing all warehouses.
-        """
-        return self.db.find_all(self.COLLECTION)
-
-    def update_warehouse(self, lager_id: str, data: Dict) -> Dict:
-        """
-        Update an existing warehouse.
-
-        Args:
-            lager_id (str): The ID of the warehouse to update.
-            data (Dict): The updated warehouse fields.
-
-        Returns:
-            Dict: The updated warehouse.
-        """
-        success = self.db.update(self.COLLECTION, lager_id, data)
-
-        if not success:
-            raise KeyError("Warehouse not found")
-
-        return self.db.find_by_id(self.COLLECTION, lager_id)
-
-    def delete_warehouse(self, lager_id: str) -> None:
-        """
-        Delete a warehouse from the database.
-
-        Args:
-            lager_id (str): The ID of the warehouse to delete.
-
-        Returns:
-            None: No return value.
-        """
-        success = self.db.delete(self.COLLECTION, lager_id)
-
-        if not success:
-            raise KeyError("Warehouse not found")
 
 class InventoryService(InventoryServicePort):
     """Service for managing inventory entries in the system."""
