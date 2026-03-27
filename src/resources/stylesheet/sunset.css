@@ -1,0 +1,12 @@
+@import url("/stylesheets/common.css");
+
+:root {
+  --bg: #fff8f3;
+  --fg: #3f1b10;
+  --muted: #7a4a39;
+  --surface: #fffdfb;
+  --surface-2: #ffe6d7;
+  --border: #f3b89b;
+  --focus: #dd5f2d;
+  --shadow: 0 8px 24px color-mix(in oklab, var(--fg) 14%, transparent);
+}

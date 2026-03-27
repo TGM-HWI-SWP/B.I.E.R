@@ -4,243 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/favicon.ico">
+    <link rel="stylesheet" href="{{ url_for('stylesheet', filename=selected_theme) }}">
     <title>B.I.E.R – Produktbearbeitung</title>
-    <style>
-        :root {
-            color-scheme: light;
-            --bg: #ffffff;
-            --fg: #111827;
-            --muted: #6b7280;
-            --surface: #ffffff;
-            --border: #d1d5db;
-            --surface-2: #f3f4f6;
-            --focus: #111827;
-            --radius: 12px;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--fg);
-        }
-
-        .topbar {
-            border-bottom: 1px solid var(--border);
-            background: var(--surface);
-        }
-
-        .tabs {
-            display: grid;
-            grid-auto-flow: column;
-            grid-auto-columns: minmax(90px, max-content);
-            gap: 0;
-            padding: 8px 12px;
-            align-items: center;
-            overflow-x: auto;
-        }
-
-        .tab {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            height: 34px;
-            padding: 0 12px;
-            border: 1px solid var(--border);
-            border-right: none;
-            background: var(--surface);
-            color: var(--fg);
-            text-decoration: none;
-            font-size: 14px;
-            line-height: 1;
-            white-space: nowrap;
-        }
-
-        .tab:first-child {
-            border-top-left-radius: 10px;
-            border-bottom-left-radius: 10px;
-        }
-
-        .tab:last-child {
-            border-right: 1px solid var(--border);
-            border-top-right-radius: 10px;
-            border-bottom-right-radius: 10px;
-        }
-
-        .tab[aria-current="page"] {
-            background: var(--surface-2);
-            font-weight: 650;
-        }
-
-        .tab.is-disabled {
-            color: var(--muted);
-            cursor: not-allowed;
-            user-select: none;
-        }
-
-        .container {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 18px 16px 28px;
-        }
-
-        .product-header {
-            display: grid;
-            grid-template-columns: 44px 1fr 44px;
-            align-items: center;
-            gap: 12px;
-            margin: 10px 0 14px;
-        }
-
-        .back {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            border: 2px solid var(--border);
-            background: var(--surface);
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: var(--fg);
-        }
-
-        .back:focus-visible {
-            outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
-            outline-offset: 2px;
-        }
-
-        .product-title {
-            text-align: center;
-            font-size: 22px;
-            font-weight: 750;
-            margin: 0;
-        }
-
-        .card {
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--surface);
-            overflow: hidden;
-        }
-
-        .card-header {
-            padding: 12px 12px 8px;
-            border-bottom: 1px solid var(--border);
-            background: var(--surface);
-        }
-
-        .card-header small {
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        .fields {
-            padding: 12px;
-            display: grid;
-            gap: 10px;
-            max-height: min(520px, 62vh);
-            overflow: auto;
-        }
-
-        .field {
-            display: grid;
-            grid-template-columns: 160px 1fr;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .label {
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%;
-            height: 42px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            padding: 0 12px;
-            font-size: 15px;
-            background: var(--surface);
-            color: var(--fg);
-        }
-
-        input:focus,
-        select:focus {
-            outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
-            outline-offset: 2px;
-        }
-
-        input[readonly] {
-            background: var(--surface-2);
-            color: var(--muted);
-        }
-
-        .toolbar {
-            position: sticky;
-            bottom: 0;
-            border-top: 1px solid var(--border);
-            background: var(--surface);
-            padding: 10px 12px;
-            display: grid;
-            grid-auto-flow: column;
-            grid-auto-columns: 1fr;
-            gap: 10px;
-        }
-
-        .btn {
-            height: 42px;
-            border-radius: 12px;
-            border: 2px solid var(--border);
-            background: var(--surface);
-            color: var(--fg);
-            font-size: 14px;
-            font-weight: 650;
-            cursor: pointer;
-        }
-
-        .btn:focus-visible {
-            outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
-            outline-offset: 2px;
-        }
-
-        .btn:disabled {
-            opacity: 0.55;
-            cursor: not-allowed;
-        }
-
-        @media (max-width: 720px) {
-            .field {
-                grid-template-columns: 1fr;
-                gap: 6px;
-                align-items: start;
-            }
-            .toolbar {
-                grid-auto-flow: row;
-                grid-auto-columns: unset;
-            }
-        }
-    </style>
 </head>
-<body>
+<body class="page-product">
     <header class="topbar">
-        <nav class="tabs" aria-label="Page Auswahl">
-            <a class="tab" href="{{ url_for('index') }}">Page 1</a>
-            <a class="tab" href="{{ url_for('page1') }}" aria-current="page">Page 2</a>
-            <a class="tab" href="{{ url_for('page2') }}">Page 3</a>
-            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Ausw</span>
-            <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">&nbsp;</span>
-        </nav>
+        <div class="topbar-inner">
+            <nav class="tabs" aria-label="Page Auswahl">
+                <a class="tab" href="{{ url_for('index', theme=selected_theme) }}">Produkte</a>
+                <a class="tab" href="{{ url_for('page1', theme=selected_theme) }}" aria-current="page">Produkt bearbeiten</a>
+                <a class="tab" href="{{ url_for('page2', theme=selected_theme) }}">Lagerliste</a>
+                <a class="tab" href="{{ url_for('page3', theme=selected_theme) }}">Statistik</a>
+                <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Historie</span>
+                <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
+            </nav>
+
+            <form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
+                <label class="theme-label" for="themeSelect">Style</label>
+                <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+                    {% for theme in theme_options %}
+                    <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
+                    {% endfor %}
+                </select>
+                <noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+            </form>
+        </div>
     </header>
 
     <main class="container">
         <section class="product-header" aria-label="Produktkopf">
-            <a class="back" href="{{ url_for('index') }}" aria-label="Zurück zu Page 1" title="Zurück">
+            <a class="back" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Zurück zu Page 1" title="Zurück">
                 <span aria-hidden="true">←</span>
             </a>
             <h1 class="product-title">Produkt (1)</h1>
