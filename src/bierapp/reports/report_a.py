@@ -10,7 +10,7 @@ from collections import defaultdict
 from src.bierapp.db.postgress import PostgresRepository
 from src.bierapp.contracts import ReportPort
 from datetime import timedelta
-from src.bierapp.reports.report_format import create_cover_page, create_table_pages, create_barh_chart, create_summary_page
+from src.bierapp.reports.report_format import create_cover_page, create_table_pages, create_bar_chart, create_summary_page
 
 
 def _products_to_movements(products: List[Dict]) -> List[Dict]:
@@ -276,7 +276,7 @@ class ReportA(ReportPort):
             if top10:
                 names = [t[0] for t in top10]
                 values = [t[1] for t in top10]
-                create_barh_chart(pdf, names, values, "Top 10 Produkte nach Verkaufszahlen")
+                create_bar_chart(pdf, names, values, "Top 10 Produkte nach Verkaufszahlen")
 
             total_in = sum(float(m.get("quantity") or 0) for m in all_movements if float(m.get("quantity") or 0) >= 0)
             total_out = sum(abs(float(m.get("quantity") or 0)) for m in all_movements if float(m.get("quantity") or 0) < 0)

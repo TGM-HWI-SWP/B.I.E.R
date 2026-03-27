@@ -3,12 +3,19 @@ from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from datetime import datetime
 from PIL import Image
+from pathlib import Path
 
 
 def create_cover_page(pdf: PdfPages, title: str, subtitle: str, meta: Optional[Dict[str, str]] = None) -> None:
     fig = plt.figure(figsize=(8.27, 11.69))
-    img = Image.open("../reports/logo/bierapp_logo.png")
     fig.patch.set_facecolor("#f7f7f7")
+    try:
+        logo_path = Path(__file__).resolve().parents[2] / "resources" / "pictures" / "BIER_LOGO_WEISS_COMPRESSED.png"
+        if logo_path.exists():
+            img = Image.open(logo_path)
+            plt.imshow(img, aspect="auto", alpha=0.8)
+    except Exception:
+        pass
     plt.axis("off")
     plt.text(0.5, 0.78, title, ha="center", fontsize=28, weight="bold")
     plt.text(0.5, 0.72, subtitle, ha="center", fontsize=12)
@@ -17,7 +24,6 @@ def create_cover_page(pdf: PdfPages, title: str, subtitle: str, meta: Optional[D
         for k, v in meta.items():
             plt.text(0.15, y, f"{k}: {v}", fontsize=10)
             y -= 0.035
-    plt.imshow(img, aspect="equal")
     plt.text(0.15, 0.2, "Dieser Bericht wurde automatisch erstellt.", fontsize=8, color="#555555")
     pdf.savefig(fig)
     plt.close(fig)
@@ -78,7 +84,7 @@ def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]],
         plt.close(fig)
 
 
-def create_barh_chart(pdf: PdfPages, names: List[str], values: List[float], title: str) -> None:
+def create_bar_chart(pdf: PdfPages, names: List[str], values: List[float], title: str) -> None:
     fig, ax = plt.subplots(figsize=(8.27, 5))
     ax.barh(range(len(names))[::-1], values, color="#2b7bba")
     ax.set_yticks(range(len(names))[::-1])
