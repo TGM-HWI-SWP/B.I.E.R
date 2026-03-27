@@ -1,113 +1,322 @@
-from flask import Flask, render_template, jsonify, request
-import os
+"""B.I.E.R Flask GUI - Route handlers for the inventory management system."""
 
-# Services & DB
+import os
+from flask import Flask, render_template, jsonify, request, send_from_directory
 from bierapp.backend.service.product_service import ProductService, InventoryService
 from bierapp.backend.service.warehouse_service import WarehouseService
-from bierapp.backend.service.db_Service import dbService
-from bierapp.db.postgress import PostgresRepository
-
-RESOURCES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "pictures"))
-TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "templates"))
-STYLESHEETS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "stylesheet"))
-
-app = Flask(__name__, template_folder=TEMPLATES_DIR)
-
-repo = PostgresRepository()
-db = dbService(repo)
-
-product_service = ProductService(db)
-warehouse_service = WarehouseService(db)
-inventory_service = InventoryService(db)
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-# =========================
-# PRODUCTS API
-# =========================
-
-@app.route("/inventory", methods=["POST"])
-def add_inventory():
-    data = request.json
-
-    inventory_service.add_product(
-        lager_id=data["lager_id"],
-        produkt_id=data["produkt_id"],
-        menge=int(data["menge"])
-    )
-
-    return {"status": "ok"}, 201
-
-# GET all products
-@app.route("/products", methods=["GET"])
-def get_products():
-    products = product_service.list_products()
-    return jsonify(products)
-
-# CREATE product
-@app.route("/products", methods=["POST"])
-def create_product():
-    data = request.json
-
-    product = product_service.create_product(
-        name=data["name"],
-        beschreibung=data.get("beschreibung", ""),
-        gewicht=float(data["gewicht"])
-    )
-
-    return jsonify(product), 201
-
-# DELETE product (optional)
-@app.route("/products/<produkt_id>", methods=["DELETE"])
-def delete_product(produkt_id):
-    product_service.delete_product(produkt_id)
-    return "", 204
 
 
-# CREATE warehouse
-@app.route("/warehouses", methods=["GET"])
-def get_warehouses():
-    warehouses = warehouse_service.list_warehouses()
-    inventory = inventory_service.db.find_all("inventory")
+def _theme_options() -> list[str]:
+    """Return available stylesheet filenames.
 
-    for w in warehouses:
-        w["products"] = sum(
-            item["menge"]
-            for item in inventory
-            if item["lager_id"] == w["id"]
-        )
-
-    return warehouses
-
-# DELETE warehouse
-@app.route("/warehouses/<lager_id>", methods=["DELETE"])
-def delete_warehouse(lager_id):
-    warehouse_service.delete_warehouse(lager_id)
-    return "", 204
+    Returns:
+        list[str]: Sorted list of available `.css` themes.
+    """
+    styles_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "stylesheets"))
+    return sorted([name for name in os.listdir(styles_dir) if name.endswith(".css")])
 
 
-# =========================
-# LAGERPRODUKT API (NEU!)
-# =========================
+def _selected_theme() -> str:
+    """Resolve the currently selected theme from the request query.
 
-# Produkt einem Lager zuweisen
-@app.route("/lagerprodukte", methods=["POST"])
-def add_product_to_warehouse():
-    data = request.json
-
-    warehouse_service.add_product_to_warehouse(
-        lager_id=int(data["lager_id"]),
-        produkt_id=int(data["produkt_id"]),
-        menge=int(data["menge"])
-    )
-
-    return jsonify({"status": "ok"}), 201
+    Returns:
+        str: A valid stylesheet filename.
+    """
+    options = _theme_options()
+    fallback = "common.css" if "common.css" in options else (options[0] if options else "common.css")
+    requested = request.args.get("theme", fallback)
+    return requested if requested in options else fallback
 
 
-# =========================
-# RUN
-# =========================
-if __name__ == "__main__":
-    app.run(debug=True)
+def register_routes(app: Flask, product_service: ProductService, warehouse_service: WarehouseService, inventory_service: InventoryService) -> None:
+    """Register all API routes for the Flask application.
+
+    Args:
+        app (Flask): The Flask application instance.
+        product_service (ProductService): Service for product management.
+        warehouse_service (WarehouseService): Service for warehouse management.
+        inventory_service (InventoryService): Service for inventory management.
+    """
+    @app.route("/stylesheets/<path:filename>", endpoint="stylesheet", methods=["GET"])
+    def stylesheet(filename: str):
+        """Serve a stylesheet file from the resources directory.
+
+        Args:
+            filename (str): Name of the stylesheet file.
+
+        Returns:
+            Response: The requested stylesheet file.
+        """
+        styles_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "stylesheets"))
+        return send_from_directory(styles_dir, filename)
+
+    @app.route("/", methods=["GET"])
+    def index():
+        """Render the main index page.
+
+        Returns:
+            str: Rendered HTML template for the main dashboard.
+        """
+        selected_theme = _selected_theme()
+        return render_template("index.html", selected_theme=selected_theme, theme_options=_theme_options())
+
+    @app.route("/page1", methods=["GET"])
+    def page1():
+        """Render the product edit page.
+
+        Returns:
+            str: Rendered HTML template for product editing.
+        """
+        selected_theme = _selected_theme()
+        return render_template("page1.html", selected_theme=selected_theme, theme_options=_theme_options())
+
+    @app.route("/page2", methods=["GET"])
+    def page2():
+        """Render the warehouse list page.
+
+        Returns:
+            str: Rendered HTML template for warehouse overview.
+        """
+        selected_theme = _selected_theme()
+        return render_template("page2.html", selected_theme=selected_theme, theme_options=_theme_options())
+
+    @app.route("/page3", methods=["GET"])
+    def page3():
+        """Render the statistics page.
+
+        Returns:
+            str: Rendered HTML template for statistics dashboard.
+        """
+        selected_theme = _selected_theme()
+        return render_template("page3.html", selected_theme=selected_theme, theme_options=_theme_options())
+
+    @app.route("/products", methods=["GET"])
+    def get_products():
+        """Retrieve all products from the inventory.
+
+        Returns:
+            tuple: JSON response with products list and HTTP 200 status.
+        """
+        try:
+            products = product_service.list_products()
+            return jsonify(products), 200
+        except Exception as exc:
+            return jsonify({"error": "Failed to retrieve products", "details": str(exc)}), 500
+
+    @app.route("/products", methods=["POST"])
+    def create_product():
+        """Create a new product in the inventory.
+
+        Returns:
+            tuple: JSON response with created product and HTTP 201 status.
+
+        Raises:
+            400: If required fields are missing or data type is invalid.
+            500: If product creation fails.
+        """
+        try:
+            data = request.get_json()
+            if not data or "name" not in data or "gewicht" not in data:
+                return jsonify({"error": "Missing required fields: name, gewicht"}), 400
+            product = product_service.create_product(name=data["name"], beschreibung=data.get("beschreibung", ""), gewicht=float(data["gewicht"]))
+            return jsonify(product), 201
+        except ValueError as exc:
+            return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
+        except Exception as exc:
+            return jsonify({"error": "Failed to create product", "details": str(exc)}), 500
+
+    @app.route("/products/<produkt_id>", methods=["GET"])
+    def get_product(produkt_id):
+        """Retrieve a specific product by its ID.
+
+        Args:
+            produkt_id (str): The unique identifier of the product.
+
+        Returns:
+            tuple: JSON response with product data and appropriate HTTP status.
+
+        Raises:
+            404: If product not found.
+            500: If retrieval fails.
+        """
+        try:
+            product = product_service.get_product(str(produkt_id))
+            return jsonify(product) if product else jsonify({"error": "Product not found"}), (200 if product else 404)
+        except Exception as exc:
+            return jsonify({"error": "Failed to retrieve product", "details": str(exc)}), 500
+
+    @app.route("/products/<produkt_id>", methods=["PUT"])
+    def update_product(produkt_id):
+        """Update an existing product.
+
+        Args:
+            produkt_id (str): The unique identifier of the product to update.
+
+        Returns:
+            tuple: JSON response with updated product and HTTP 200 status.
+
+        Raises:
+            400: If request body is not JSON.
+            404: If product not found.
+            500: If update fails.
+        """
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "Request body must be JSON"}), 400
+            updated_product = product_service.update_product(str(produkt_id), data)
+            return jsonify(updated_product), 200
+        except KeyError:
+            return jsonify({"error": "Product not found"}), 404
+        except Exception as exc:
+            return jsonify({"error": "Failed to update product", "details": str(exc)}), 500
+
+    @app.route("/products/<produkt_id>", methods=["DELETE"])
+    def delete_product(produkt_id):
+        """Delete a product from the inventory.
+
+        Args:
+            produkt_id (str): The unique identifier of the product to delete.
+
+        Returns:
+            tuple: Empty response and HTTP status code (204 or 404).
+
+        Raises:
+            404: If product not found.
+            500: If deletion fails.
+        """
+        try:
+            product_service.delete_product(str(produkt_id))
+            return "", 204
+        except KeyError:
+            return jsonify({"error": "Product not found"}), 404
+        except Exception as exc:
+            return jsonify({"error": "Failed to delete product", "details": str(exc)}), 500
+
+    @app.route("/warehouses", methods=["GET"])
+    def get_warehouses():
+        """Retrieve all warehouses with their inventory counts.
+
+        Returns:
+            tuple: JSON response with warehouses list and HTTP 200 status.
+
+        Raises:
+            500: If retrieval fails.
+        """
+        try:
+            warehouses = warehouse_service.list_warehouses()
+            inventory = inventory_service.db.find_all("inventory")
+            for w in warehouses:
+                w["products"] = sum(item["menge"] for item in inventory if item["lager_id"] == w["id"])
+            return jsonify(warehouses), 200
+        except Exception as exc:
+            return jsonify({"error": "Failed to retrieve warehouses", "details": str(exc)}), 500
+
+    @app.route("/warehouses", methods=["POST"])
+    def create_warehouse():
+        """Create a new warehouse.
+
+        Returns:
+            tuple: JSON response with created warehouse and HTTP 201 status.
+
+        Raises:
+            400: If required fields are missing or data type is invalid.
+            500: If warehouse creation fails.
+        """
+        try:
+            data = request.get_json()
+            if not data or not all(k in data for k in ["lagername", "adresse", "max_plaetze", "firma_id"]):
+                return jsonify({"error": "Missing required fields: lagername, adresse, max_plaetze, firma_id"}), 400
+            warehouse = warehouse_service.create_warehouse(lagername=data["lagername"], adresse=data["adresse"], max_plaetze=int(data["max_plaetze"]), firma_id=int(data["firma_id"]))
+            return jsonify(warehouse), 201
+        except ValueError as exc:
+            return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
+        except Exception as exc:
+            return jsonify({"error": "Failed to create warehouse", "details": str(exc)}), 500
+
+    @app.route("/warehouses/<lager_id>", methods=["DELETE"])
+    def delete_warehouse(lager_id):
+        """Delete a warehouse from the system.
+
+        Args:
+            lager_id (str): The unique identifier of the warehouse to delete.
+
+        Returns:
+            tuple: Empty response and HTTP status code (204 or 404).
+
+        Raises:
+            404: If warehouse not found.
+            500: If deletion fails.
+        """
+        try:
+            warehouse_service.delete_warehouse(str(lager_id))
+            return "", 204
+        except KeyError:
+            return jsonify({"error": "Warehouse not found"}), 404
+        except Exception as exc:
+            return jsonify({"error": "Failed to delete warehouse", "details": str(exc)}), 500
+
+    @app.route("/inventory", methods=["POST"])
+    def add_inventory():
+        """Add a product to warehouse inventory.
+
+        Returns:
+            tuple: JSON response confirming operation and HTTP 201 status.
+
+        Raises:
+            400: If required fields are missing or data type is invalid.
+            500: If inventory addition fails.
+        """
+        try:
+            data = request.get_json()
+            if not data or not all(k in data for k in ["lager_id", "produkt_id", "menge"]):
+                return jsonify({"error": "Missing required fields: lager_id, produkt_id, menge"}), 400
+            inventory_service.add_product(lager_id=int(data["lager_id"]), produkt_id=int(data["produkt_id"]), menge=int(data["menge"]))
+            return jsonify({"status": "ok", "message": "Product added to inventory"}), 201
+        except ValueError as exc:
+            return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
+        except Exception as exc:
+            return jsonify({"error": "Failed to add inventory", "details": str(exc)}), 500
+
+    @app.route("/inventory/<lager_id>/products", methods=["GET"])
+    def get_warehouse_inventory(lager_id):
+        """Retrieve all products in a specific warehouse.
+
+        Args:
+            lager_id (str): The unique identifier of the warehouse.
+
+        Returns:
+            tuple: JSON response with inventory items and HTTP 200 status.
+
+        Raises:
+            500: If retrieval fails.
+        """
+        try:
+            inventory = inventory_service.db.find_all("inventory")
+            warehouse_inventory = [item for item in inventory if item["lager_id"] == int(lager_id)]
+            return jsonify(warehouse_inventory), 200
+        except Exception as exc:
+            return jsonify({"error": "Failed to retrieve warehouse inventory", "details": str(exc)}), 500
+
+    @app.route("/lagerprodukte", methods=["POST"])
+    def add_product_to_warehouse():
+        """Assign a product to a warehouse.
+
+        Returns:
+            tuple: JSON response confirming operation and HTTP 201 status.
+
+        Raises:
+            400: If required fields are missing or data type is invalid.
+            500: If product assignment fails.
+        """
+        try:
+            data = request.get_json()
+            if not data or not all(k in data for k in ["lager_id", "produkt_id", "menge"]):
+                return jsonify({"error": "Missing required fields: lager_id, produkt_id, menge"}), 400
+            warehouse_service.add_product_to_warehouse(lager_id=int(data["lager_id"]), produkt_id=int(data["produkt_id"]), menge=int(data["menge"]))
+            return jsonify({"status": "ok", "message": "Product assigned to warehouse"}), 201
+        except ValueError as exc:
+            return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
+        except Exception as exc:
+            return jsonify({"error": "Failed to add product to warehouse", "details": str(exc)}), 500
+
