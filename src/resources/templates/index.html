@@ -35,7 +35,7 @@
         <h1 class="page-title">Produktverwaltung</h1>
 
         <section class="search-row" aria-label="Produktverwaltung">
-            <a class="add-button" href="{{ url_for('page1') }}" aria-label="Neues Produkt anlegen" title="Neues Produkt anlegen">
+            <a class="add-button" href="{{ url_for('page1', theme=selected_theme) }}" aria-label="Neues Produkt anlegen" title="Neues Produkt anlegen">
                 <span class="sr-only">Neues Produkt anlegen</span>
             </a>
 
@@ -50,16 +50,31 @@
                     placeholder="Produkte durchsuchen …"
                     aria-describedby="searchHint"
                 />
-                <div id="searchHint" class="search-hint">Suche ist aktuell nur UI (noch keine Datenquelle).</div>
+                <div id="searchHint" class="search-hint">Produkte werden live aus der Datenbank geladen.</div>
             </div>
         </section>
 
         <section class="results" aria-label="Ergebnisliste">
             <div class="results-inner">
-                <div class="results-placeholder" aria-hidden="true"></div>
-                <div class="results-note">Hier kommt später die Liste/Ansicht der angelegten Produkte hin.</div>
+                <div class="table-wrap" role="region" aria-label="Tabelle: Produkte" tabindex="0">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Beschreibung</th>
+                                <th>Gewicht</th>
+                                <th>Aktion</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody"></tbody>
+                    </table>
+                </div>
+                <div class="results-note" id="productsStatus">Lade Produkte ...</div>
             </div>
         </section>
     </main>
+
+    <script src="{{ url_for('app_script') }}"></script>
 </body>
 </html>

@@ -36,63 +36,65 @@
             <a class="back" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Zurück zu Page 1" title="Zurück">
                 <span aria-hidden="true">←</span>
             </a>
-            <h1 class="product-title">Produkt (1)</h1>
+            <h1 class="product-title">Produkt bearbeiten</h1>
             <div aria-hidden="true"></div>
         </section>
 
         <section class="card" aria-label="Produkt bearbeiten">
             <div class="card-header">
-                <small>Default-Attribute wie Lager und ID bleiben immer vorhanden (UI-Demo).</small>
+                <small>Änderungen werden direkt in der PostgreSQL-Datenbank gespeichert.</small>
             </div>
 
-            <form>
+            <form id="productForm">
+                <div class="fields">
+                    <div class="field">
+                        <div class="label">Bestehendes Produkt</div>
+                        <select id="existingProduct" aria-label="Produkt auswählen">
+                            <option value="">Neues Produkt</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <div class="label">Produktname</div>
+                        <input id="productName" type="text" placeholder="z.B. Papier A4" required />
+                    </div>
+
+                    <div class="field">
+                        <div class="label">Beschreibung</div>
+                        <input id="productDescription" type="text" placeholder="z.B. 500 Blatt" />
+                    </div>
+
+                    <div class="field">
+                        <div class="label">Gewicht</div>
+                        <input id="productWeight" type="number" min="0.01" step="0.01" placeholder="z.B. 1.2" required />
+                    </div>
+                </div>
+
                 <div class="fields">
                     <div class="field">
                         <div class="label">Lager</div>
-                        <select aria-label="Lager auswählen">
-                            <option>Hauptlager Wien</option>
-                            <option>Nebenlager Graz</option>
-                            <option>Außenlager Linz</option>
-                            <option>Kühllager Salzburg</option>
-                            <option>Depot Innsbruck</option>
+                        <select id="warehouseSelect" aria-label="Lager auswählen">
+                            <option value="">Lager wählen</option>
                         </select>
                     </div>
 
                     <div class="field">
                         <div class="label">Menge</div>
-                        <input type="number" min="0" step="1" value="0" />
-                    </div>
-
-                    <div class="field">
-                        <div class="label">ID</div>
-                        <input type="text" value="1" readonly />
-                    </div>
-
-                    <div class="field">
-                        <div class="label">Preis</div>
-                        <input type="text" placeholder="z.B. 12.99" />
-                    </div>
-
-                    <div class="field">
-                        <div class="label">Währung</div>
-                        <input type="text" placeholder="z.B. EUR" />
-                    </div>
-
-                    <div class="field">
-                        <div class="label">Lieferant</div>
-                        <input type="text" placeholder="z.B. Firma X" />
+                        <input id="warehouseQuantity" type="number" min="1" step="1" value="1" />
                     </div>
                 </div>
 
                 <div class="toolbar" aria-label="Aktionen">
-                    <button class="btn" type="button">Save changes</button>
-                    <button class="btn" type="button">Discard changes</button>
-                    <button class="btn" type="button">Revert changes</button>
-                    <button class="btn" type="button">Add attribute</button>
-                    <button class="btn" type="button" disabled>Delete attribute</button>
+                    <button class="btn" id="createProductBtn" type="button">Produkt anlegen</button>
+                    <button class="btn" id="updateProductBtn" type="button">Produkt speichern</button>
+                    <button class="btn" id="assignWarehouseBtn" type="button">In Lager buchen</button>
+                    <button class="btn" id="deleteProductBtn" type="button">Produkt löschen</button>
                 </div>
             </form>
+            <div class="card-header"><small id="page1Status">Bereit.</small></div>
         </section>
     </main>
+
+    <script src="{{ url_for('app_script') }}"></script>
 </body>
 </html>

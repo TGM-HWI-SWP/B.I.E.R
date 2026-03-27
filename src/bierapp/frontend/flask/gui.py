@@ -50,6 +50,16 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         styles_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "stylesheets"))
         return send_from_directory(styles_dir, filename)
 
+    @app.route("/scripts/app.js", endpoint="app_script", methods=["GET"])
+    def app_script():
+        """Serve the centralized frontend JavaScript bundle.
+
+        Returns:
+            Response: The shared `app.js` frontend script.
+        """
+        script_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "controller"))
+        return send_from_directory(script_dir, "app.js")
+
     @app.route("/", methods=["GET"])
     def index():
         """Render the main index page.

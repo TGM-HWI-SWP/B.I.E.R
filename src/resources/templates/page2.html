@@ -36,23 +36,27 @@
 
 		<section class="card" aria-label="Lagerliste">
 			<div class="card-header">
-				<p class="note">Übersicht aller angelegten Lager (UI-Demo). Du siehst u.a. Produkte, Kapazität (max. Produkte) und kannst Lager (UI-only) löschen.</p>
+				<p class="note">Übersicht aller angelegten Lager aus der PostgreSQL-Datenbank.</p>
 			</div>
 
 			<div class="create" aria-label="Lager erstellen">
 				<label>
 					Lagername
-					<input type="text" placeholder="z.B. Ersatzteillager" />
+					<input id="warehouseName" type="text" placeholder="z.B. Ersatzteillager" />
 				</label>
 				<label>
 					Ort
-					<input type="text" placeholder="z.B. Wien" />
+					<input id="warehouseAddress" type="text" placeholder="z.B. Wien" />
 				</label>
 				<label>
 					Kapazität (max. Produkte)
-					<input type="number" min="0" step="1" placeholder="z.B. 500" />
+					<input id="warehouseCapacity" type="number" min="1" step="1" placeholder="z.B. 500" />
 				</label>
-				<button class="btn" type="button">Lager erstellen</button>
+				<label>
+					Firma-ID
+					<input id="warehouseCompany" type="number" min="1" step="1" value="1" />
+				</label>
+				<button class="btn" id="createWarehouseBtn" type="button">Lager erstellen</button>
 			</div>
 
 			<div class="table-wrap" role="region" aria-label="Tabelle: Lager" tabindex="0">
@@ -67,91 +71,13 @@
 							<th class="col-action">Aktion</th>
 						</tr>
 					</thead>
-					<tbody>
-						<tr>
-							<td>Hauptlager Wien</td>
-							<td>Wien</td>
-							<td><span class="pill">0 Produkte</span></td>
-							<td><span class="pill">1000 max.</span></td>
-							<td><span class="pill">0%</span></td>
-							<td>
-								<span class="actions">
-									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
-								</span>
-							</td>
-						</tr>
-						<tr>
-							<td>Nebenlager Graz</td>
-							<td>Graz</td>
-							<td><span class="pill">0 Produkte</span></td>
-							<td><span class="pill">300 max.</span></td>
-							<td><span class="pill">0%</span></td>
-							<td>
-								<span class="actions">
-									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
-								</span>
-							</td>
-						</tr>
-						<tr>
-							<td>Außenlager Linz</td>
-							<td>Linz</td>
-							<td><span class="pill">0 Produkte</span></td>
-							<td><span class="pill">500 max.</span></td>
-							<td><span class="pill">0%</span></td>
-							<td>
-								<span class="actions">
-									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
-								</span>
-							</td>
-						</tr>
-						<tr>
-							<td>Kühllager Salzburg</td>
-							<td>Salzburg</td>
-							<td><span class="pill">0 Produkte</span></td>
-							<td><span class="pill">200 max.</span></td>
-							<td><span class="pill">0%</span></td>
-							<td>
-								<span class="actions">
-									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
-								</span>
-							</td>
-						</tr>
-						<tr>
-							<td>Depot Innsbruck</td>
-							<td>Innsbruck</td>
-							<td><span class="pill">0 Produkte</span></td>
-							<td><span class="pill">150 max.</span></td>
-							<td><span class="pill">0%</span></td>
-							<td>
-								<span class="actions">
-									<button class="btn btn-small" type="button" data-action="delete-warehouse">Löschen</button>
-								</span>
-							</td>
-						</tr>
-					</tbody>
+					<tbody id="warehousesTableBody"></tbody>
 				</table>
 			</div>
+			<div class="card-header"><p class="note" id="warehousesStatus">Lade Lager ...</p></div>
 		</section>
 	</main>
 
-	<script>
-		(function () {
-			document.addEventListener('click', function (event) {
-				const target = event.target;
-				if (!(target instanceof HTMLElement)) return;
-
-				if (target.matches('[data-action="delete-warehouse"]')) {
-					const row = target.closest('tr');
-					const nameCell = row ? row.querySelector('td') : null;
-					const warehouseName = nameCell ? nameCell.textContent.trim() : 'dieses Lager';
-
-					const ok = confirm(`Lager löschen: ${warehouseName}?\n(Demo: entfernt nur die Zeile im UI)`);
-					if (ok && row) {
-						row.remove();
-					}
-				}
-			});
-		})();
-	</script>
+	<script src="{{ url_for('app_script') }}"></script>
 </body>
 </html>
