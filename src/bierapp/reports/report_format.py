@@ -9,22 +9,37 @@ from pathlib import Path
 def create_cover_page(pdf: PdfPages, title: str, subtitle: str, meta: Optional[Dict[str, str]] = None) -> None:
     fig = plt.figure(figsize=(8.27, 11.69))
     fig.patch.set_facecolor("#f7f7f7")
+    # default title position (figure coords) - may be adjusted if logo is present
+    title_y = 0.78
     try:
         logo_path = Path(__file__).resolve().parents[2] / "resources" / "pictures" / "BIER_LOGO_WEISS_COMPRESSED.png"
         if logo_path.exists():
             img = Image.open(logo_path)
-            plt.imshow(img, aspect="auto", alpha=0.8)
+            img_w, img_h = img.size
+            width_frac = 0.32
+            aspect = img_h / img_w
+            img_width = width_frac
+            img_height = img_width * aspect
+            bottom = 0.68
+            if bottom + img_height > 0.94:
+                bottom = 0.94 - img_height
+            left = max(0.02, 0.5 - img_width / 2)
+            ax_img = fig.add_axes([left, bottom, img_width, img_height])
+            ax_img.imshow(img, aspect='auto', alpha=0.95)
+            ax_img.axis('off')
+            title_y = bottom - 0.04
+            
     except Exception:
         pass
     plt.axis("off")
-    plt.text(0.5, 0.78, title, ha="center", fontsize=28, weight="bold")
-    plt.text(0.5, 0.72, subtitle, ha="center", fontsize=12)
+    fig.text(0.5, title_y, title, ha="center", fontsize=28, weight="bold")
+    fig.text(0.5, title_y - 0.06, subtitle, ha="center", fontsize=12)
     if meta:
-        y = 0.6
+        y = title_y - 0.12
         for k, v in meta.items():
-            plt.text(0.15, y, f"{k}: {v}", fontsize=10)
+            fig.text(0.15, y, f"{k}: {v}", fontsize=10)
             y -= 0.035
-    plt.text(0.15, 0.2, "Dieser Bericht wurde automatisch erstellt.", fontsize=8, color="#555555")
+    fig.text(0.15, 0.18, "Dieser Bericht wurde automatisch erstellt.", fontsize=8, color="#555555")
     pdf.savefig(fig)
     plt.close(fig)
 
