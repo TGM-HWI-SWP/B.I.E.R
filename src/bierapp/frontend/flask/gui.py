@@ -92,7 +92,6 @@ def page1():
     """
     return _render_page("page1.html")
 
-
 @app.route("/page2")
 def page2():
     """Render the third application page.
