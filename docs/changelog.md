@@ -51,25 +51,27 @@
 
 ---
 
-## [v0.3] - [Datum]
+## [v0.3] - [27.03.2026]
 
 ### Implementiert
 
-- [Feature/Fix 1]
+- [Fixed formating for reports]
+- [Added picture to report]
 
 ### Tests geschrieben
 
-- [Tests]
+- [keine]
 
 ### Commits
 
 ```
-- [Commits]
+- c847de5 Feat: Logo is now on the report title page
+- 70ddac7 Feat: fixed formating for reports
 ```
 
 ### Mergekonflikt(e)
 
-- [Konflikte, falls vorhanden]
+- keine
 
 ---
 
