@@ -44,8 +44,8 @@ def get_warehouses():
     warehouses = warehouse_service.list_warehouses()
     return jsonify(warehouses)
 
-@app.route("/warehouses", methods=["GET"])
-def get_warehouses():
+@app.route("/warehouses/with-products", methods=["GET"])
+def get_warehouses_with_products():
     warehouses = warehouse_service.list_warehouses_with_products()
     return jsonify(warehouses)
 
