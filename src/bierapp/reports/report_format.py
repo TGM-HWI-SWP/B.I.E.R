@@ -2,10 +2,12 @@ from typing import List, Dict, Optional
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from datetime import datetime
+from PIL import Image
 
 
 def create_cover_page(pdf: PdfPages, title: str, subtitle: str, meta: Optional[Dict[str, str]] = None) -> None:
     fig = plt.figure(figsize=(8.27, 11.69))
+    img = Image.open("../reports/logo/bierapp_logo.png")
     fig.patch.set_facecolor("#f7f7f7")
     plt.axis("off")
     plt.text(0.5, 0.78, title, ha="center", fontsize=28, weight="bold")
@@ -15,6 +17,7 @@ def create_cover_page(pdf: PdfPages, title: str, subtitle: str, meta: Optional[D
         for k, v in meta.items():
             plt.text(0.15, y, f"{k}: {v}", fontsize=10)
             y -= 0.035
+    plt.imshow(img, aspect="equal")
     plt.text(0.15, 0.2, "Dieser Bericht wurde automatisch erstellt.", fontsize=8, color="#555555")
     pdf.savefig(fig)
     plt.close(fig)
@@ -27,11 +30,7 @@ def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]],
     reducing font size and spacing. This is a best-effort heuristic suitable for
     text tables (monospace) and works for moderate row counts.
     """
-    # If fit_one_page is requested we still render with a proper table,
-    # but allow many rows per page. The user accepted multiple pages, so
-    # default to paginated table rendering for readable output.
 
-    # default multi-page rendering
     total_pages = (len(rows) + rows_per_page - 1) // rows_per_page or 1
     for page in range(total_pages):
         start = page * rows_per_page
@@ -42,14 +41,10 @@ def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]],
         ax.axis("off")
         if title:
             ax.set_title(title, fontsize=12, loc="left")
-
-        # Use matplotlib.table for readable cells and automatic layout
         try:
-            # prepare cell text and column labels
             cell_text = [[str(c) for c in r] for r in page_rows]
             ncols = len(headers)
 
-            # heuristic column widths: make first two columns wider (date, product)
             if ncols >= 3:
                 if ncols == 5:
                     col_widths = [0.18, 0.44, 0.12, 0.13, 0.13]
@@ -66,7 +61,7 @@ def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]],
             table.set_fontsize(8)
             table.scale(1, 1.2)
         except Exception:
-            # fallback to plain text rendering
+
             y = 0.92
             header_line = "  ".join([h.ljust(30) for h in headers])
             ax.text(0.05, y, header_line, fontfamily="monospace", fontsize=9)
