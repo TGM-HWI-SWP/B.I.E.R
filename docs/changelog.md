@@ -75,25 +75,25 @@
 
 ---
 
-## [v0.4] - [Datum]
+## [v0.4] - [08.04.2026]
 
 ### Implementiert
 
-- [Feature/Fix]
+- [Refactoring Report A]
 
 ### Tests geschrieben
 
-- [Tests]
+- [keine]
 
 ### Commits
 
 ```
-- [Commits]
+- [e016691 Feat:Refactoring Report A]
 ```
 
 ### Mergekonflikt(e)
 
-- [Konflikte]
+- [keine]
 
 ---
 
