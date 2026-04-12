@@ -100,6 +100,16 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         selected_theme = _selected_theme()
         return render_template("page3.html", selected_theme=selected_theme, theme_options=_theme_options())
 
+    @app.route("/page4", methods=["GET"])
+    def page4():
+        """Render the history page.
+
+        Returns:
+            str: Rendered HTML template for change history.
+        """
+        selected_theme = _selected_theme()
+        return render_template("page4.html", selected_theme=selected_theme, theme_options=_theme_options())
+
     @app.route("/products", methods=["GET"])
     def get_products():
         """Retrieve all products from the inventory.

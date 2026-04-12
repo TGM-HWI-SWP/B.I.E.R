@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.ico">
+    <link rel="stylesheet" href="{{ url_for('stylesheet', filename=selected_theme) }}">
+    <title>B.I.E.R – Historie</title>
+</head>
+<body class="page-history page-warehouse">
+    <header class="topbar">
+        <div class="topbar-inner">
+            <nav class="tabs" aria-label="Page Auswahl">
+                <a class="tab" href="{{ url_for('index', theme=selected_theme) }}">Produkte</a>
+                <a class="tab" href="{{ url_for('page1', theme=selected_theme) }}">Produkt bearbeiten</a>
+                <a class="tab" href="{{ url_for('page2', theme=selected_theme) }}">Lagerliste</a>
+                <a class="tab" href="{{ url_for('page3', theme=selected_theme) }}">Statistik</a>
+                <a class="tab" href="{{ url_for('page4', theme=selected_theme) }}" aria-current="page">Historie</a>
+                <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
+            </nav>
+
+            <form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
+                <label class="theme-label" for="themeSelect">Style</label>
+                <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+                    {% for theme in theme_options %}
+                    <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
+                    {% endfor %}
+                </select>
+                <noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+            </form>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1 class="page-title">Historie</h1>
+
+        <section class="card" aria-label="Historie">
+            <div class="card-header">
+                <p class="note">Alle Änderungen an Produkten, Lagern und Beständen.</p>
+            </div>
+
+            <div class="create" aria-label="Historie filtern">
+                <label>
+                    Typ
+                    <select id="historyType" name="historyType">
+                        <option value="all">Alle</option>
+                        <option value="product">Produkt</option>
+                        <option value="warehouse">Lager</option>
+                        <option value="inventory">Bestand</option>
+                    </select>
+                </label>
+
+                <label>
+                    Suche
+                    <input id="historySearch" type="search" placeholder="Textsuche..." autocomplete="off">
+                </label>
+
+                <label>
+                    Sortierung
+                    <select id="historySort" name="historySort">
+                        <option value="desc">Neueste zuerst</option>
+                        <option value="asc">Älteste zuerst</option>
+                    </select>
+                </label>
+
+                <button class="btn" type="button" disabled aria-disabled="true" title="Noch nicht implementiert">
+                    Historie als TXT exportieren
+                </button>
+            </div>
+
+            <div class="table-wrap" role="region" aria-label="Tabelle: Historie" tabindex="0">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Zeitpunkt</th>
+                            <th>Typ</th>
+                            <th>Aktion</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr>
+                            <td colspan="4">Noch keine Historie-Einträge vorhanden.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-header">
+                <p class="note" id="historyStatus">0 Einträge.</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="{{ url_for('app_script') }}"></script>
+</body>
+</html>
