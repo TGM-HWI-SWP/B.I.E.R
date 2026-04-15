@@ -60,7 +60,8 @@ def _products_to_movements(product_list: List[Dict]) -> List[Dict]:
     return movements
 
 
-class ReportB(ReportPort):
+
+class ReportA(ReportPort):
     """Simplified, well-named implementation that produces a PDF report.
 
     The class keeps the same external behavior: load movements (from JSON, DB
@@ -69,11 +70,81 @@ class ReportB(ReportPort):
 
     def __init__(self, db_repo: Optional[object] = None):
         self.db = db_repo or (PostgresRepository() if PostgresRepository else None)
+        self.warehouses: Dict[str, str] = {}
         if self.db:
             try:
                 self.db.connect()
+                # load warehouse lookup (id -> display name)
+                self._load_warehouses()
             except Exception:
                 self.db = None
+
+    def _load_warehouses(self) -> None:
+        """Load warehouse id -> display name mapping from DB.
+
+        Keeps implementation tiny and forgiving about field names.
+        """
+        self.warehouses = {}
+        if not self.db:
+            return
+        try:
+            rows = self.db.find_all("warehouses") or []
+            for w in rows:
+                wid = w.get("id") or w.get("lager_id") or w.get("warehouse_id")
+                if wid is None:
+                    continue
+                name = w.get("name") or w.get("bezeichnung") or w.get("label") or wid
+                self.warehouses[str(wid)] = str(name)
+        except Exception:
+            # keep warehouses empty on any DB error
+            self.warehouses = {}
+
+    def _movement_direction(self, raw: Dict, quantity: float) -> str:
+        """Return a readable "Von -> Zu" label using explicit GUI fields.
+
+        Rules (simple):
+        - Prefer explicit `from`/`to` fields (several common names supported).
+        - If those are missing, try common warehouse id fields and resolve via
+          `self.warehouses` (if loaded).
+        - If either side is missing, show `(nicht angegeben)` for that side.
+        - If neither side is available return `Nicht angegeben`.
+        """
+        if not isinstance(raw, dict):
+            raw = {}
+
+        keys = {
+            "from": ("from", "quelle", "von", "source", "origin", "from_location"),
+            "to": ("to", "ziel", "zu", "target", "destination", "to_location"),
+            "from_id": ("lager_id", "source_lager", "from_warehouse"),
+            "to_id": ("ziel_lager", "target_lager", "to_warehouse"),
+        }
+
+        def resolve(side: str):
+            for k in keys[side]:
+                v = raw.get(k)
+                if v:
+                    return str(v)
+            return None
+
+        src = resolve("from") or None
+        dst = resolve("to") or None
+
+        if not src:
+            src_id = resolve("from_id")
+            if src_id:
+                src = self.warehouses.get(str(src_id)) or str(src_id)
+
+        if not dst:
+            dst_id = resolve("to_id")
+            if dst_id:
+                dst = self.warehouses.get(str(dst_id)) or str(dst_id)
+
+        if not src and not dst:
+            return "Nicht angegeben"
+
+        src = src or "(nicht angegeben)"
+        dst = dst or "(nicht angegeben)"
+        return f"{src} -> {dst}"
 
     def get_data(self, input_path: Optional[pathlib.Path] = None) -> List[Dict]:
         """Load movements from a file, the DB, or bundled dummy data.
@@ -258,7 +329,9 @@ class ReportB(ReportPort):
             current = previous + change
             ts = movement.get("timestamp")
             time_str = ts.strftime("%Y-%m-%d %H:%M") if isinstance(ts, datetime) else (getattr(ts, "isoformat", lambda: str(ts))()) if ts else ""
-            table_rows.append([time_str, name, f"{previous:g}", f"{change:g}", f"{current:g}"])
+           
+            movement_direction = self._movement_direction(movement.get("raw", {}), change)
+            table_rows.append([time_str, name, movement_direction, f"{previous:g}", f"{change:g}", f"{current:g}"])
             running_totals[pid] = current
 
   
@@ -272,7 +345,7 @@ class ReportB(ReportPort):
         with PdfPages(output_path) as pdf:
             create_cover_page(pdf, "Lagerbewegungsbericht", "Report A — Bewegungen aller Produkte", metadata)
 
-            headers = ["Datum", "Produkt", "Menge", "Änderung", "Neue Menge"]
+            headers = ["Datum", "Produkt", "Von -> Zu", "Menge", "Änderung", "Neue Menge"]
             create_table_pages(pdf, headers, table_rows, title="Lagerbewegungen", fit_one_page=False)
 
           
@@ -307,7 +380,7 @@ class ReportB(ReportPort):
 
 if __name__ == "__main__":
     arg = sys.argv[1] if len(sys.argv) > 1 else None
-    report = ReportB()
+    report = ReportA()
     raw = report.get_data(arg)
     processed = report.process_data(raw)
     output = report.generate_report(processed)
