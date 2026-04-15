@@ -97,20 +97,22 @@
 
 ---
 
-## [v0.5] - [Datum]
+## [v0.5] - [15.04.2026]
 
 ### Implementiert
 
-- [Feature/Fix]
+- [Warehouse movements for products]
+- [Movement column in report format]
 
 ### Tests geschrieben
 
-- [Tests]
+- [keine]
 
 ### Commits
 
 ```
-- [Commits]
+- [5b1f21a Feat:Warehouse movements for products]
+- [1937f0a Feat:Movement column in report format]
 ```
 
 ### Mergekonflikt(e)
