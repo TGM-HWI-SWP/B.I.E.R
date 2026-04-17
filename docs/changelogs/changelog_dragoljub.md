@@ -22,4 +22,3 @@ Commits:
 - 431e80a - Created service.py.
 - 67357f5 - Implemented the base structure for DB connection.
 - 9d46192 - Implemented connection between postgress.py and service.py.
-

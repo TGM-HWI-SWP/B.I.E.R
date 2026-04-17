@@ -40,4 +40,3 @@ Created a page for history.
 
 Commits:
 - 8b0472b - Created page4 (history).
-
