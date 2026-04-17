@@ -5,7 +5,7 @@ from ...db.postgress import PostgresRepository
 from ...contracts import DatabasePort
 
 
-class dbService(DatabasePort):
+class DbService(DatabasePort):
     """Service implementing Postgres database operations."""
 
     def __init__(self, repository: PostgresRepository):
