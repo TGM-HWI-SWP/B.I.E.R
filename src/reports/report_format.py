@@ -9,7 +9,7 @@ from pathlib import Path
 def create_cover_page(pdf: PdfPages, title: str, subtitle: str, meta: Optional[Dict[str, str]] = None) -> None:
     fig = plt.figure(figsize=(8.27, 11.69))
     fig.patch.set_facecolor("#f7f7f7")
-    # default title position (figure coords) - may be adjusted if logo is present
+    
     title_y = 0.78
     try:
         logo_path = Path(__file__).resolve().parents[2] / "resources" / "pictures" / "BIER_LOGO_WEISS_COMPRESSED.png"
@@ -67,14 +67,14 @@ def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]],
             ncols = len(headers)
 
             if ncols >= 3:
-                # Prefer readable widths for common table shapes. Keep total width ~= 1.0
+                
                 if ncols == 5:
                     col_widths = [0.18, 0.44, 0.12, 0.13, 0.13]
                 elif ncols == 6:
-                    # Date, Product, Von->Zu, Menge, Änderung, Neue Menge
+                    
                     col_widths = [0.14, 0.34, 0.20, 0.10, 0.11, 0.11]
                 else:
-                    # Generic fallback: smaller date + product, split rest evenly
+                    
                     first = 0.14
                     second = 0.34
                     rest = max(0.03, (1.0 - first - second) / max(1, ncols - 2))
@@ -84,10 +84,10 @@ def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]],
 
             table = ax.table(cellText=cell_text, colLabels=headers, loc="center", cellLoc="left", colWidths=col_widths)
             table.auto_set_font_size(False)
-            # Use slightly smaller font when many columns
+            
             font_size = 8 if ncols < 6 else 7
             table.set_fontsize(font_size)
-            # Vertical scaling keeps row height readable; horizontal space controlled by colWidths
+            
             table.scale(1, 1.15)
         except Exception:
 
