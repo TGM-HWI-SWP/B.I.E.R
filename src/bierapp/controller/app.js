@@ -100,32 +100,67 @@ function initIndexPage() {
 
 function initProductPage() {
     const productSelect = document.getElementById("existingProduct");
-    const warehouseSelect = document.getElementById("warehouseSelect");
+    const warehouseStocks = document.getElementById("warehouseStocks");
     const nameInput = document.getElementById("productName");
     const descriptionInput = document.getElementById("productDescription");
     const weightInput = document.getElementById("productWeight");
-    const quantityInput = document.getElementById("warehouseQuantity");
     const status = document.getElementById("page1Status");
-    const createBtn = document.getElementById("createProductBtn");
-    const updateBtn = document.getElementById("updateProductBtn");
-    const assignBtn = document.getElementById("assignWarehouseBtn");
-    const deleteBtn = document.getElementById("deleteProductBtn");
 
-    if (!productSelect || !warehouseSelect || !nameInput || !descriptionInput || !weightInput || !quantityInput || !status || !createBtn || !updateBtn || !assignBtn || !deleteBtn) return;
+    const saveBtn = document.getElementById("saveProductBtn");
+    const discardBtn = document.getElementById("discardProductBtn");
+    const resetBtn = document.getElementById("resetProductBtn");
+    const deleteBtn = document.getElementById("deleteAttributeBtn");
+    const addAttrBtn = document.getElementById("addAttributeBtn");
+
+    if (!productSelect || !warehouseStocks || !nameInput || !descriptionInput || !weightInput || !status || !saveBtn || !discardBtn || !resetBtn || !deleteBtn || !addAttrBtn) return;
+
+    const title = document.querySelector(".product-title");
+    const subtitle = document.querySelector(".product-subtitle");
 
     let products = [];
+    let warehouses = [];
+    let loadedInventory = new Map();
+
+    function setHeader(productId) {
+        if (!title || !subtitle) return;
+        if (!productId) {
+            title.textContent = "Neues Produkt";
+            subtitle.textContent = "Neues Produkt erstellen";
+            return;
+        }
+        title.textContent = "Produkt bearbeiten";
+        subtitle.textContent = `Produkt ${productId} bearbeiten`;
+    }
+
+    function clearForm() {
+        nameInput.value = "";
+        descriptionInput.value = "";
+        weightInput.value = "";
+        for (const input of warehouseStocks.querySelectorAll("input[data-warehouse-id]")) {
+            input.value = "0";
+        }
+        loadedInventory = new Map();
+        setHeader("");
+    }
+
+    function productPayload() {
+        return {
+            name: nameInput.value.trim(),
+            beschreibung: descriptionInput.value.trim(),
+            gewicht: Number(weightInput.value),
+        };
+    }
 
     function fillProductForm(productId) {
         const product = products.find((item) => String(item.id) === String(productId));
         if (!product) {
-            nameInput.value = "";
-            descriptionInput.value = "";
-            weightInput.value = "";
+            clearForm();
             return;
         }
         nameInput.value = product.name || "";
         descriptionInput.value = product.beschreibung || "";
-        weightInput.value = product.gewicht || "";
+        weightInput.value = product.gewicht ?? "";
+        setHeader(productId);
     }
 
     function renderProductOptions() {
@@ -143,7 +178,19 @@ function initProductPage() {
         } else {
             productSelect.value = "";
         }
-        fillProductForm(productSelect.value);
+    }
+
+    function renderWarehouseStocks() {
+        warehouseStocks.innerHTML = "";
+        warehouses.forEach((warehouse) => {
+            const row = document.createElement("div");
+            row.className = "warehouse-row";
+            row.innerHTML = `
+                <div class="warehouse-name">${warehouse.lagername ?? ""}</div>
+                <input type="number" min="0" step="1" value="0" inputmode="numeric" data-warehouse-id="${warehouse.id}" aria-label="Menge für ${warehouse.lagername ?? "Lager"}" />
+            `;
+            warehouseStocks.appendChild(row);
+        });
     }
 
     async function loadProducts() {
@@ -152,51 +199,85 @@ function initProductPage() {
     }
 
     async function loadWarehouses() {
-        const warehouses = await api("/warehouses");
-        warehouseSelect.innerHTML = '<option value="">Lager wählen</option>';
-        warehouses.forEach((warehouse) => {
-            const option = document.createElement("option");
-            option.value = String(warehouse.id);
-            option.textContent = `${warehouse.id} - ${warehouse.lagername}`;
-            warehouseSelect.appendChild(option);
+        warehouses = await api("/warehouses");
+        renderWarehouseStocks();
+    }
+
+    async function loadInventoryForProduct(productId) {
+        loadedInventory = new Map();
+        for (const input of warehouseStocks.querySelectorAll("input[data-warehouse-id]")) {
+            input.value = "0";
+        }
+        if (!productId) return;
+        const rows = await api(`/inventory/products/${productId}`);
+        rows.forEach((row) => {
+            loadedInventory.set(String(row.lager_id), Number(row.menge));
         });
+        for (const input of warehouseStocks.querySelectorAll("input[data-warehouse-id]")) {
+            const wid = String(input.dataset.warehouseId);
+            if (loadedInventory.has(wid)) {
+                input.value = String(loadedInventory.get(wid));
+            }
+        }
     }
 
-    function productPayload() {
-        return {
-            name: nameInput.value.trim(),
-            beschreibung: descriptionInput.value.trim(),
-            gewicht: Number(weightInput.value),
-        };
-    }
-
-    async function createProduct() {
+    async function createOrUpdateProduct() {
         const payload = productPayload();
         if (!payload.name || !payload.gewicht) {
             throw new Error("Name und Gewicht sind Pflichtfelder.");
         }
-        const created = await api("/products", {
-            method: "POST",
-            body: JSON.stringify(payload),
-        });
-        await loadProducts();
-        productSelect.value = String(created.id);
-        fillProductForm(created.id);
-        status.textContent = `Produkt ${created.id} erstellt.`;
-    }
 
-    async function updateProduct() {
-        const productId = productSelect.value;
-        if (!productId) throw new Error("Bitte zuerst ein bestehendes Produkt auswählen.");
-        const payload = productPayload();
-        await api(`/products/${productId}`, {
+        const existingId = productSelect.value;
+        if (!existingId) {
+            const created = await api("/products", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+            await loadProducts();
+            productSelect.value = String(created.id);
+            fillProductForm(created.id);
+            status.textContent = `Produkt ${created.id} erstellt.`;
+            return String(created.id);
+        }
+
+        await api(`/products/${existingId}`, {
             method: "PUT",
             body: JSON.stringify(payload),
         });
         await loadProducts();
-        productSelect.value = String(productId);
-        fillProductForm(productId);
-        status.textContent = `Produkt ${productId} aktualisiert.`;
+        productSelect.value = String(existingId);
+        fillProductForm(existingId);
+        status.textContent = `Produkt ${existingId} aktualisiert.`;
+        return String(existingId);
+    }
+
+    async function saveInventoryForProduct(productId) {
+        const ops = [];
+        for (const input of warehouseStocks.querySelectorAll("input[data-warehouse-id]")) {
+            const warehouseId = String(input.dataset.warehouseId);
+            const qty = Number(input.value);
+            if (Number.isNaN(qty) || qty < 0) {
+                throw new Error("Bestand darf nicht negativ sein.");
+            }
+            if (qty > 0) {
+                ops.push(
+                    api("/inventory", {
+                        method: "PUT",
+                        body: JSON.stringify({ lager_id: Number(warehouseId), produkt_id: Number(productId), menge: qty }),
+                    })
+                );
+            } else if (loadedInventory.has(warehouseId)) {
+                ops.push(api(`/inventory/${warehouseId}/${productId}`, { method: "DELETE" }));
+            }
+        }
+        await Promise.all(ops);
+        await loadInventoryForProduct(productId);
+    }
+
+    async function saveAll() {
+        const productId = await createOrUpdateProduct();
+        await saveInventoryForProduct(productId);
+        status.textContent = `Produkt ${productId} gespeichert.`;
     }
 
     async function deleteProduct() {
@@ -205,22 +286,16 @@ function initProductPage() {
         if (!confirm(`Produkt ${productId} löschen?`)) return;
         await api(`/products/${productId}`, { method: "DELETE" });
         await loadProducts();
+        productSelect.value = "";
+        clearForm();
         status.textContent = `Produkt ${productId} gelöscht.`;
     }
 
-    async function assignToWarehouse() {
+    async function discardChanges() {
         const productId = productSelect.value;
-        const warehouseId = warehouseSelect.value;
-        const qty = Number(quantityInput.value);
-        if (!productId) throw new Error("Bitte zuerst ein Produkt auswählen.");
-        if (!warehouseId) throw new Error("Bitte ein Lager auswählen.");
-        if (!qty || qty < 1) throw new Error("Menge muss mindestens 1 sein.");
-
-        await api("/lagerprodukte", {
-            method: "POST",
-            body: JSON.stringify({ lager_id: Number(warehouseId), produkt_id: Number(productId), menge: qty }),
-        });
-        status.textContent = `Produkt ${productId} mit Menge ${qty} in Lager ${warehouseId} gebucht.`;
+        fillProductForm(productId);
+        await loadInventoryForProduct(productId);
+        status.textContent = productId ? "Änderungen verworfen." : "Zurückgesetzt.";
     }
 
     function bind(button, action) {
@@ -233,16 +308,30 @@ function initProductPage() {
         });
     }
 
-    productSelect.addEventListener("change", () => fillProductForm(productSelect.value));
-    bind(createBtn, createProduct);
-    bind(updateBtn, updateProduct);
-    bind(assignBtn, assignToWarehouse);
+    productSelect.addEventListener("change", async () => {
+        const productId = productSelect.value;
+        fillProductForm(productId);
+        try {
+            await loadInventoryForProduct(productId);
+        } catch (error) {
+            status.textContent = `Fehler beim Laden des Bestands: ${error.message}`;
+        }
+    });
+
+    bind(saveBtn, saveAll);
+    bind(discardBtn, discardChanges);
+    bind(resetBtn, discardChanges);
     bind(deleteBtn, deleteProduct);
+    addAttrBtn.addEventListener("click", () => {
+        status.textContent = "Attribut-Management ist noch nicht implementiert.";
+    });
 
     (async function init() {
         try {
             status.textContent = "Lade Produkt- und Lagerdaten ...";
             await Promise.all([loadProducts(), loadWarehouses()]);
+            fillProductForm(productSelect.value);
+            await loadInventoryForProduct(productSelect.value);
             status.textContent = "Bereit.";
         } catch (error) {
             status.textContent = `Initialisierung fehlgeschlagen: ${error.message}`;

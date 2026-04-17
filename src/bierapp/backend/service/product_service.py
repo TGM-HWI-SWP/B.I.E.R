@@ -103,7 +103,10 @@ class InventoryService(InventoryServicePort):
         """
         self.db = db
 
-    def _find_inventory_item(self, lager_id: str, produkt_id: str) -> Optional[Dict]:
+    def _normalize_id(self, value) -> int:
+        return int(value)
+
+    def _find_inventory_item(self, lager_id, produkt_id) -> Optional[Dict]:
         """Find an inventory item by warehouse and product IDs.
 
         Args:
@@ -113,13 +116,15 @@ class InventoryService(InventoryServicePort):
         Returns:
             Optional[Dict]: The inventory item if found, otherwise None.
         """
+        lager_id = self._normalize_id(lager_id)
+        produkt_id = self._normalize_id(produkt_id)
         inventory = self.db.find_all(self.COLLECTION)
         for item in inventory:
-            if item["lager_id"] == lager_id and item["produkt_id"] == produkt_id:
+            if int(item["lager_id"]) == lager_id and int(item["produkt_id"]) == produkt_id:
                 return item
         return None
 
-    def add_product(self, lager_id: str, produkt_id: str, menge: int) -> None:
+    def add_product(self, lager_id, produkt_id, menge: int) -> None:
         """Add a product to a warehouse inventory.
 
         Args:
@@ -132,10 +137,10 @@ class InventoryService(InventoryServicePort):
         """
         if menge <= 0:
             raise ValueError("menge must be positive")
-        data = {"lager_id": lager_id, "produkt_id": produkt_id, "menge": menge}
+        data = {"lager_id": self._normalize_id(lager_id), "produkt_id": self._normalize_id(produkt_id), "menge": menge}
         self.db.insert(self.COLLECTION, data)
 
-    def update_quantity(self, lager_id: str, produkt_id: str, menge: int) -> None:
+    def update_quantity(self, lager_id, produkt_id, menge: int) -> None:
         """Update the quantity of a product in a warehouse.
 
         Args:
@@ -154,7 +159,7 @@ class InventoryService(InventoryServicePort):
             raise KeyError("Inventory entry not found")
         self.db.update(self.COLLECTION, item["id"], {"menge": menge})
 
-    def remove_product(self, lager_id: str, produkt_id: str) -> None:
+    def remove_product(self, lager_id, produkt_id) -> None:
         """Remove a product from a warehouse inventory.
 
         Args:
@@ -169,7 +174,7 @@ class InventoryService(InventoryServicePort):
             raise KeyError("Inventory entry not found")
         self.db.delete(self.COLLECTION, item["id"])
 
-    def list_inventory(self, lager_id: str) -> List[Dict]:
+    def list_inventory(self, lager_id) -> List[Dict]:
         """Retrieve all inventory entries for a warehouse.
 
         Args:
@@ -178,8 +183,31 @@ class InventoryService(InventoryServicePort):
         Returns:
             List[Dict]: A list of inventory entries.
         """
+        lager_id = self._normalize_id(lager_id)
         inventory = self.db.find_all(self.COLLECTION)
-        return [item for item in inventory if item["lager_id"] == lager_id]
+        return [item for item in inventory if int(item["lager_id"]) == lager_id]
+
+    def set_quantity(self, lager_id, produkt_id, menge: int) -> None:
+        """Set the quantity of a product in a warehouse.
+
+        Creates the inventory entry if it does not exist and menge > 0.
+        Removes the inventory entry if menge == 0.
+        """
+
+        if menge < 0:
+            raise ValueError("menge cannot be negative")
+        if menge == 0:
+            try:
+                self.remove_product(lager_id, produkt_id)
+            except KeyError:
+                return
+            return
+
+        item = self._find_inventory_item(lager_id, produkt_id)
+        if item is None:
+            self.add_product(lager_id, produkt_id, menge)
+            return
+        self.db.update(self.COLLECTION, item["id"], {"menge": menge})
 
     def statistics_report(self) -> Dict:
         """Generate global statistics about products, warehouses and stock.

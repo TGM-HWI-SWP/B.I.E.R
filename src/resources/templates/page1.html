@@ -32,66 +32,165 @@
     </header>
 
     <main class="container">
-        <section class="product-header" aria-label="Produktkopf">
-            <a class="back" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Zurück zu Page 1" title="Zurück">
-                <span aria-hidden="true">←</span>
-            </a>
-            <h1 class="product-title">Produkt bearbeiten</h1>
-            <div aria-hidden="true"></div>
-        </section>
+        <section class="product-shell" aria-label="Produkt bearbeiten">
+            <div class="product-top">
+                <a class="back" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Zurück" title="Zurück">
+                    <span aria-hidden="true">←</span>
+                </a>
 
-        <section class="card" aria-label="Produkt bearbeiten">
-            <div class="card-header">
-                <small>Änderungen werden direkt in der PostgreSQL-Datenbank gespeichert.</small>
+                <div class="product-heading">
+                    <div class="product-icon" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 7.5L12 3l8 4.5v9L12 21l-8-4.5v-9Z" stroke="currentColor" stroke-width="1.8" />
+                            <path d="M12 3v18" stroke="currentColor" stroke-width="1.8" opacity="0.45" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="product-title">Neues Produkt</h1>
+                        <p class="product-subtitle">Neues Produkt erstellen</p>
+                    </div>
+                </div>
+
+                <div class="product-spacer" aria-hidden="true"></div>
             </div>
 
-            <form id="productForm">
-                <div class="fields">
-                    <div class="field">
-                        <div class="label">Bestehendes Produkt</div>
-                        <select id="existingProduct" aria-label="Produkt auswählen">
-                            <option value="">Neues Produkt</option>
-                        </select>
+            <form id="productForm" class="product-editor" aria-label="Produktformular">
+                <div class="product-section">
+                    <div class="section-title">Standardattribute</div>
+
+                    <div class="field-row">
+                        <div class="field-label">
+                            <span class="field-label-inner">
+                                <span class="field-label-icon" aria-hidden="true">🗂️</span>
+                                <span>Produkt</span>
+                            </span>
+                        </div>
+                        <div class="field-control">
+                            <select id="existingProduct" aria-label="Produkt auswählen">
+                                <option value="">Neues Produkt</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="field">
-                        <div class="label">Produktname</div>
-                        <input id="productName" type="text" placeholder="z.B. Papier A4" required />
+                    <div class="field-row">
+                        <div class="field-label">
+                            <span class="field-label-inner">
+                                <span class="field-label-icon" aria-hidden="true">🏷️</span>
+                                <span>Name</span>
+                            </span>
+                        </div>
+                        <div class="field-control">
+                            <input id="productName" type="text" placeholder="Produktname..." required />
+                        </div>
                     </div>
 
-                    <div class="field">
-                        <div class="label">Beschreibung</div>
-                        <input id="productDescription" type="text" placeholder="z.B. 500 Blatt" />
+                    <div class="field-row">
+                        <div class="field-label">
+                            <span class="field-label-inner">
+                                <span class="field-label-icon" aria-hidden="true">💶</span>
+                                <span>Preis</span>
+                            </span>
+                        </div>
+                        <div class="field-control">
+                            <input id="productPrice" type="number" min="0" step="0.01" placeholder="Preis z.B. 9.99" inputmode="decimal" />
+                        </div>
                     </div>
 
-                    <div class="field">
-                        <div class="label">Gewicht</div>
-                        <input id="productWeight" type="number" min="0.01" step="0.01" placeholder="z.B. 1.2" required />
+                    <div class="field-row">
+                        <div class="field-label">
+                            <span class="field-label-inner">
+                                <span class="field-label-icon" aria-hidden="true">💱</span>
+                                <span>Währung</span>
+                            </span>
+                        </div>
+                        <div class="field-control">
+                            <select id="productCurrency" aria-label="Währung auswählen">
+                                <option value="EUR" selected>EUR — Euro</option>
+                                <option value="USD">USD — US-Dollar</option>
+                                <option value="GBP">GBP — Pfund</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-label">
+                            <span class="field-label-inner">
+                                <span class="field-label-icon" aria-hidden="true">⚖️</span>
+                                <span>Gewicht (kg)</span>
+                            </span>
+                        </div>
+                        <div class="field-control">
+                            <input id="productWeight" type="number" min="0.01" step="0.001" placeholder="0.000" required />
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-label">
+                            <span class="field-label-inner">
+                                <span class="field-label-icon" aria-hidden="true">📦</span>
+                                <span>Bestand in Lagern</span>
+                            </span>
+                        </div>
+                        <div class="field-control">
+                            <div class="warehouse-stocks" id="warehouseStocks" aria-label="Bestand pro Lager"></div>
+                            <div class="warehouse-hint">Mengen-Eintrag 0 bedeutet: kein Bestand in diesem Lager.</div>
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-label">
+                            <span class="field-label-inner">
+                                <span class="field-label-icon" aria-hidden="true">🚚</span>
+                                <span>Lieferant</span>
+                            </span>
+                        </div>
+                        <div class="field-control">
+                            <input id="productSupplier" type="text" placeholder="Lieferantenname..." />
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-label">
+                            <span class="field-label-inner">
+                                <span class="field-label-icon" aria-hidden="true">📝</span>
+                                <span>Beschreibung</span>
+                            </span>
+                        </div>
+                        <div class="field-control">
+                            <input id="productDescription" type="text" placeholder="Kurzbeschreibung..." />
+                        </div>
                     </div>
                 </div>
 
-                <div class="fields">
-                    <div class="field">
-                        <div class="label">Lager</div>
-                        <select id="warehouseSelect" aria-label="Lager auswählen">
-                            <option value="">Lager wählen</option>
-                        </select>
+                <div class="product-footer" aria-label="Aktionen">
+                    <div class="footer-left">
+                        <button class="btn btn-primary" id="saveProductBtn" type="button">Speichern</button>
+                        <button class="btn" id="discardProductBtn" type="button">Verwerfen</button>
+                        <button class="btn btn-ghost" id="resetProductBtn" type="button">Zurücksetzen</button>
                     </div>
-
-                    <div class="field">
-                        <div class="label">Menge</div>
-                        <input id="warehouseQuantity" type="number" min="1" step="1" value="1" />
+                    <div class="footer-right">
+                        <button class="btn" id="addAttributeBtn" type="button">+ Attribut hinzufügen</button>
+                        <button class="btn btn-danger" id="deleteAttributeBtn" type="button">Attribut löschen</button>
                     </div>
                 </div>
 
-                <div class="toolbar" aria-label="Aktionen">
+                <div class="product-status" aria-live="polite">
+                    <small id="page1Status">Bereit.</small>
+                </div>
+
+                <div class="sr-only" aria-hidden="true">
+                    <label for="warehouseSelect">Lager</label>
+                    <select id="warehouseSelect" aria-label="Lager auswählen">
+                        <option value="">Lager wählen</option>
+                    </select>
+                    <label for="warehouseQuantity">Menge</label>
+                    <input id="warehouseQuantity" type="number" min="1" step="1" value="1" />
                     <button class="btn" id="createProductBtn" type="button">Produkt anlegen</button>
                     <button class="btn" id="updateProductBtn" type="button">Produkt speichern</button>
                     <button class="btn" id="assignWarehouseBtn" type="button">In Lager buchen</button>
                     <button class="btn" id="deleteProductBtn" type="button">Produkt löschen</button>
                 </div>
             </form>
-            <div class="card-header"><small id="page1Status">Bereit.</small></div>
         </section>
     </main>
 

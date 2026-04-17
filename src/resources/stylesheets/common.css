@@ -158,6 +158,22 @@ body {
   cursor: pointer;
 }
 
+.btn-primary {
+  border-color: color-mix(in oklab, var(--focus) 35%, var(--border));
+  background: color-mix(in oklab, var(--focus) 14%, var(--surface));
+}
+
+.btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn-danger {
+  border-color: color-mix(in oklab, var(--fg) 30%, var(--border));
+  background: color-mix(in oklab, var(--fg) 7%, var(--surface));
+}
+
 .btn-small {
   height: 32px;
   border-radius: 10px;
@@ -384,6 +400,149 @@ body.page-index tbody td:nth-child(3) {
 
 body.page-product {
   --page-title-size: 24px;
+}
+
+body.page-product .product-shell {
+  display: grid;
+  gap: 14px;
+}
+
+body.page-product .product-top {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 6px;
+}
+
+body.page-product .product-heading {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 12px;
+  align-items: center;
+  justify-self: center;
+}
+
+body.page-product .product-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in oklab, var(--focus) 16%, var(--border));
+  background: color-mix(in oklab, var(--focus) 10%, var(--surface));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in oklab, var(--focus) 70%, var(--fg));
+}
+
+body.page-product .product-subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+body.page-product .product-editor {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--surface) 96%, var(--bg));
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+body.page-product .product-section {
+  padding: 12px 0;
+}
+
+body.page-product .section-title {
+  padding: 10px 18px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--muted);
+  text-align: center;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+body.page-product .field-row {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+}
+
+body.page-product .field-label {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+body.page-product .field-label-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body.page-product .field-label-icon {
+  width: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.9;
+}
+
+body.page-product .warehouse-stocks {
+  display: grid;
+  gap: 10px;
+}
+
+body.page-product .warehouse-row {
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  gap: 12px;
+  align-items: center;
+}
+
+body.page-product .warehouse-name {
+  font-size: 13px;
+  color: var(--fg);
+}
+
+body.page-product .warehouse-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+body.page-product .product-footer {
+  position: sticky;
+  bottom: 0;
+  border-top: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 92%, var(--bg));
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+body.page-product .footer-left,
+body.page-product .footer-right {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
+body.page-product .product-status {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 10px 18px;
+}
+
+body.page-product .product-status small {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 body.page-product .product-header {
@@ -671,6 +830,30 @@ body.page-stats .list-item strong {
 }
 
 @media (max-width: 720px) {
+  body.page-product .product-top {
+    grid-template-columns: 44px 1fr;
+  }
+
+  body.page-product .product-spacer {
+    display: none;
+  }
+
+  body.page-product .field-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    align-items: start;
+  }
+
+  body.page-product .warehouse-row {
+    grid-template-columns: 1fr;
+  }
+
+  body.page-product .footer-left,
+  body.page-product .footer-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
   body.page-product .field {
     grid-template-columns: 1fr;
     gap: 6px;

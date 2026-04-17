@@ -356,6 +356,55 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         except Exception as exc:
             return jsonify({"error": "Failed to add inventory", "details": str(exc)}), 500
 
+    @app.route("/inventory", methods=["PUT"])
+    def set_inventory_quantity():
+        """Set (upsert) a product quantity in a warehouse.
+
+        Body: {lager_id, produkt_id, menge}
+        - menge > 0: creates or updates the inventory entry
+        - menge == 0: removes the inventory entry
+        """
+
+        try:
+            data = request.get_json()
+            if not data or not all(k in data for k in ["lager_id", "produkt_id", "menge"]):
+                return jsonify({"error": "Missing required fields: lager_id, produkt_id, menge"}), 400
+            lager_id = int(data["lager_id"])
+            produkt_id = int(data["produkt_id"])
+            menge = int(data["menge"])
+            inventory_service.set_quantity(lager_id=lager_id, produkt_id=produkt_id, menge=menge)
+            _log_history("inventory", "set", f"Bestand gesetzt: produkt_id={produkt_id} lager_id={lager_id} menge={menge}")
+            return jsonify({"status": "ok"}), 200
+        except ValueError as exc:
+            return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
+        except Exception as exc:
+            return jsonify({"error": "Failed to set inventory", "details": str(exc)}), 500
+
+    @app.route("/inventory/<lager_id>/<produkt_id>", methods=["DELETE"])
+    def delete_inventory_entry(lager_id, produkt_id):
+        """Remove a product from a warehouse inventory."""
+
+        try:
+            inventory_service.remove_product(lager_id=int(lager_id), produkt_id=int(produkt_id))
+            _log_history("inventory", "remove", f"Bestand entfernt: produkt_id={produkt_id} lager_id={lager_id}")
+            return "", 204
+        except KeyError:
+            return jsonify({"error": "Inventory entry not found"}), 404
+        except Exception as exc:
+            return jsonify({"error": "Failed to remove inventory", "details": str(exc)}), 500
+
+    @app.route("/inventory/products/<produkt_id>", methods=["GET"])
+    def get_product_inventory(produkt_id):
+        """Retrieve all inventory entries for a given product."""
+
+        try:
+            inventory = inventory_service.db.find_all("inventory")
+            produkt_id_int = int(produkt_id)
+            product_inventory = [item for item in inventory if int(item["produkt_id"]) == produkt_id_int]
+            return jsonify(product_inventory), 200
+        except Exception as exc:
+            return jsonify({"error": "Failed to retrieve product inventory", "details": str(exc)}), 500
+
     @app.route("/inventory/<lager_id>/products", methods=["GET"])
     def get_warehouse_inventory(lager_id):
         """Retrieve all products in a specific warehouse.
