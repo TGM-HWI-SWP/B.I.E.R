@@ -468,9 +468,183 @@ function initStatsPage() {
     })();
 }
 
+function initHistoryPage() {
+    const body = document.getElementById("historyTableBody");
+    const status = document.getElementById("historyStatus");
+    const typeSelect = document.getElementById("historyType");
+    const searchInput = document.getElementById("historySearch");
+    const sortSelect = document.getElementById("historySort");
+    const exportBtn = document.getElementById("exportHistoryTxtBtn");
+
+    if (!body || !status || !typeSelect || !searchInput || !sortSelect || !exportBtn) return;
+
+    let entries = [];
+
+    function typeLabel(type) {
+        if (type === "product") return "Produkt";
+        if (type === "warehouse") return "Lager";
+        if (type === "inventory") return "Bestand";
+        return type || "–";
+    }
+
+    function actionLabel(action) {
+        if (action === "create") return "Erstellt";
+        if (action === "update") return "Aktualisiert";
+        if (action === "delete") return "Gelöscht";
+        if (action === "assign") return "Gebucht";
+        if (action === "add") return "Hinzugefügt";
+        return action || "–";
+    }
+
+    function parseDate(value) {
+        if (!value) return null;
+        const d = new Date(value);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    function formatDate(value) {
+        const d = parseDate(value);
+        if (!d) return "–";
+        return d.toLocaleString("de-AT");
+    }
+
+    function filteredAndSorted() {
+        const typeFilter = String(typeSelect.value || "all");
+        const query = String(searchInput.value || "").trim().toLowerCase();
+        const sort = String(sortSelect.value || "desc");
+
+        let result = entries.slice();
+
+        if (typeFilter !== "all") {
+            result = result.filter((e) => String(e.entry_type) === typeFilter);
+        }
+
+        if (query) {
+            result = result.filter((e) => {
+                const hay = [
+                    e.created_at,
+                    e.entry_type,
+                    e.action,
+                    e.details,
+                    typeLabel(e.entry_type),
+                    actionLabel(e.action),
+                ]
+                    .map((v) => String(v || "").toLowerCase())
+                    .join(" | ");
+                return hay.includes(query);
+            });
+        }
+
+        result.sort((a, b) => {
+            const da = parseDate(a.created_at);
+            const db = parseDate(b.created_at);
+            const ta = da ? da.getTime() : 0;
+            const tb = db ? db.getTime() : 0;
+            return sort === "asc" ? ta - tb : tb - ta;
+        });
+
+        return result;
+    }
+
+    function render() {
+        const result = filteredAndSorted();
+        body.innerHTML = "";
+
+        if (result.length === 0) {
+            const row = document.createElement("tr");
+            row.innerHTML = '<td colspan="4">Noch keine Historie-Einträge vorhanden.</td>';
+            body.appendChild(row);
+            status.textContent = "0 Einträge.";
+            exportBtn.disabled = true;
+            exportBtn.setAttribute("aria-disabled", "true");
+            return;
+        }
+
+        result.forEach((e) => {
+            const row = document.createElement("tr");
+
+            const tdTime = document.createElement("td");
+            tdTime.textContent = formatDate(e.created_at);
+
+            const tdType = document.createElement("td");
+            tdType.textContent = typeLabel(e.entry_type);
+
+            const tdAction = document.createElement("td");
+            tdAction.textContent = actionLabel(e.action);
+
+            const tdDetails = document.createElement("td");
+            tdDetails.textContent = String(e.details ?? "");
+
+            row.appendChild(tdTime);
+            row.appendChild(tdType);
+            row.appendChild(tdAction);
+            row.appendChild(tdDetails);
+            body.appendChild(row);
+        });
+
+        status.textContent = `${result.length} Einträge.`;
+        exportBtn.disabled = false;
+        exportBtn.setAttribute("aria-disabled", "false");
+    }
+
+    async function load() {
+        status.textContent = "Lade Historie ...";
+        exportBtn.disabled = true;
+        exportBtn.setAttribute("aria-disabled", "true");
+
+        try {
+            entries = await api("/history");
+            if (!Array.isArray(entries)) entries = [];
+            render();
+        } catch (error) {
+            entries = [];
+            body.innerHTML = '<tr><td colspan="4">Fehler beim Laden der Historie.</td></tr>';
+            status.textContent = `Fehler: ${error.message}`;
+        }
+    }
+
+    function exportTxt() {
+        const result = filteredAndSorted();
+        const lines = result.map((e) => {
+            const ts = formatDate(e.created_at);
+            const type = typeLabel(e.entry_type);
+            const action = actionLabel(e.action);
+            const details = String(e.details ?? "").replace(/\s+/g, " ").trim();
+            return `${ts}\t${type}\t${action}\t${details}`;
+        });
+        const header = "Zeitpunkt\tTyp\tAktion\tDetails";
+        const content = [header, ...lines].join("\n") + "\n";
+        const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "historie.txt";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+    }
+
+    typeSelect.addEventListener("change", render);
+    sortSelect.addEventListener("change", render);
+    searchInput.addEventListener("input", render);
+    exportBtn.addEventListener("click", () => {
+        try {
+            exportTxt();
+        } catch (error) {
+            status.textContent = `Export fehlgeschlagen: ${error.message}`;
+        }
+    });
+
+    load();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     if (document.body.classList.contains("page-index")) initIndexPage();
     if (document.body.classList.contains("page-product")) initProductPage();
-    if (document.body.classList.contains("page-warehouse")) initWarehousePage();
+    if (document.body.classList.contains("page-warehouse") && !document.body.classList.contains("page-history")) initWarehousePage();
     if (document.body.classList.contains("page-stats")) initStatsPage();
+    if (document.body.classList.contains("page-history")) initHistoryPage();
 });
