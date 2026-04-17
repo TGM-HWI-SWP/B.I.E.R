@@ -166,13 +166,14 @@ class WarehouseServicePort(ABC):
     """Abstract interface for warehouse-related business logic."""
 
     @abstractmethod
-    def create_warehouse(self, lagername: str, adresse: str, max_plaetze: int) -> Dict:
+    def create_warehouse(self, lagername: str, adresse: str, max_plaetze: int, firma_id: int) -> Dict:
         """Create a new warehouse and persist it.
 
         Args:
             lagername (str): Human-readable warehouse name.
             adresse (str): Physical address of the warehouse.
             max_plaetze (int): Maximum number of storage slots.
+            firma_id (int): The ID of the company owning the warehouse.
 
         Returns:
             Dict: Representation of the newly created warehouse.
