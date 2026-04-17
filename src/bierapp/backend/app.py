@@ -4,16 +4,16 @@ import os
 from typing import Tuple
 from flask import Flask
 from bierapp.db.postgress import PostgresRepository
-from bierapp.backend.service.db_Service import dbService
+from bierapp.backend.service.db_Service import DbService
 from bierapp.backend.service.product_service import ProductService, InventoryService
 from bierapp.backend.service.warehouse_service import WarehouseService
 
 
-def create_app() -> Tuple[Flask, dbService, ProductService, WarehouseService, InventoryService]:
+def create_app() -> Tuple[Flask, DbService, ProductService, WarehouseService, InventoryService]:
     """Initialize Flask application and all service layers with database connection.
 
     Returns:
-        Tuple[Flask, dbService, ProductService, WarehouseService, InventoryService]: Flask app instance and all initialized services.
+        Tuple[Flask, DbService, ProductService, WarehouseService, InventoryService]: Flask app instance and all initialized services.
 
     Raises:
         ConnectionError: If database connection fails.
@@ -22,10 +22,10 @@ def create_app() -> Tuple[Flask, dbService, ProductService, WarehouseService, In
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     database_repository = PostgresRepository()
     database_repository.connect()
-    database_service = dbService(database_repository)
+    database_service = DbService(database_repository)
     product_service = ProductService(database_service)
-    warehouse_service = WarehouseService(database_service)
     inventory_service = InventoryService(database_service)
+    warehouse_service = WarehouseService(database_service, inventory_service)
     from bierapp.frontend.flask.gui import register_routes
     register_routes(app, product_service, warehouse_service, inventory_service)
 

@@ -103,6 +103,22 @@ class InventoryService(InventoryServicePort):
         """
         self.db = db
 
+    def _find_inventory_item(self, lager_id: str, produkt_id: str) -> Optional[Dict]:
+        """Find an inventory item by warehouse and product IDs.
+
+        Args:
+            lager_id (str): The ID of the warehouse.
+            produkt_id (str): The ID of the product.
+
+        Returns:
+            Optional[Dict]: The inventory item if found, otherwise None.
+        """
+        inventory = self.db.find_all(self.COLLECTION)
+        for item in inventory:
+            if item["lager_id"] == lager_id and item["produkt_id"] == produkt_id:
+                return item
+        return None
+
     def add_product(self, lager_id: str, produkt_id: str, menge: int) -> None:
         """Add a product to a warehouse inventory.
 
@@ -133,12 +149,10 @@ class InventoryService(InventoryServicePort):
         """
         if menge < 0:
             raise ValueError("menge cannot be negative")
-        inventory = self.db.find_all(self.COLLECTION)
-        for item in inventory:
-            if item["lager_id"] == lager_id and item["produkt_id"] == produkt_id:
-                self.db.update(self.COLLECTION, item["id"], {"menge": menge})
-                return
-        raise KeyError("Inventory entry not found")
+        item = self._find_inventory_item(lager_id, produkt_id)
+        if item is None:
+            raise KeyError("Inventory entry not found")
+        self.db.update(self.COLLECTION, item["id"], {"menge": menge})
 
     def remove_product(self, lager_id: str, produkt_id: str) -> None:
         """Remove a product from a warehouse inventory.
@@ -150,12 +164,10 @@ class InventoryService(InventoryServicePort):
         Raises:
             KeyError: If inventory entry not found.
         """
-        inventory = self.db.find_all(self.COLLECTION)
-        for item in inventory:
-            if item["lager_id"] == lager_id and item["produkt_id"] == produkt_id:
-                self.db.delete(self.COLLECTION, item["id"])
-                return
-        raise KeyError("Inventory entry not found")
+        item = self._find_inventory_item(lager_id, produkt_id)
+        if item is None:
+            raise KeyError("Inventory entry not found")
+        self.db.delete(self.COLLECTION, item["id"])
 
     def list_inventory(self, lager_id: str) -> List[Dict]:
         """Retrieve all inventory entries for a warehouse.

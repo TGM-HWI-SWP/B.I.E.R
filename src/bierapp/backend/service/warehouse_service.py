@@ -1,20 +1,23 @@
 """Service for managing warehouses in the inventory system."""
 
 from typing import Dict, List, Optional
+from ...contracts import WarehouseServicePort
 
 
-class WarehouseService:
+class WarehouseService(WarehouseServicePort):
     """Service for managing warehouse operations and inventory assignments."""
 
     COLLECTION = "warehouses"
 
-    def __init__(self, db):
+    def __init__(self, db, inventory_service):
         """Initialize the warehouse service with a database connection.
 
         Args:
             db: Database service instance implementing DatabasePort.
+            inventory_service: InventoryService instance for managing inventory.
         """
         self.db = db
+        self.inventory_service = inventory_service
 
     def create_warehouse(self, lagername: str, adresse: str, max_plaetze: int, firma_id: int) -> Dict:
         """Create a new warehouse in the system.
@@ -52,6 +55,25 @@ class WarehouseService:
         """
         return self.db.find_by_id(self.COLLECTION, warehouse_id)
 
+    def update_warehouse(self, lager_id: str, data: Dict) -> Dict:
+        """Update an existing warehouse.
+
+        Args:
+            lager_id (str): The ID of the warehouse to update.
+            data (Dict): The updated warehouse fields.
+
+        Returns:
+            Dict: The updated warehouse.
+
+        Raises:
+            KeyError: If warehouse not found.
+        """
+        success = self.db.update(self.COLLECTION, lager_id, data)
+        if not success:
+            raise KeyError("Warehouse not found")
+        warehouse = self.db.find_by_id(self.COLLECTION, lager_id)
+        return warehouse
+
     def delete_warehouse(self, lager_id: str) -> None:
         """Delete a warehouse from the system.
 
@@ -76,7 +98,4 @@ class WarehouseService:
         Raises:
             ValueError: If the quantity is not positive.
         """
-        if menge <= 0:
-            raise ValueError("Quantity (menge) must be positive")
-        inventory_data = {"lager_id": lager_id, "produkt_id": produkt_id, "menge": menge}
-        self.db.insert("inventory", inventory_data)
+        self.inventory_service.add_product(str(lager_id), str(produkt_id), menge)
