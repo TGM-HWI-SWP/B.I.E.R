@@ -62,6 +62,18 @@ class PostgresRepository:
                     )
                     """
                 )
+
+                cur.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS history (
+                        id SERIAL PRIMARY KEY,
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                        entry_type TEXT NOT NULL,
+                        action TEXT NOT NULL,
+                        details TEXT NOT NULL DEFAULT ''
+                    )
+                    """
+                )
             self.conn.commit()
         except psycopg2.Error:
             self.conn.rollback()

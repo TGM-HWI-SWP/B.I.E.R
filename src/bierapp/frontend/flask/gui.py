@@ -1,6 +1,7 @@
 """B.I.E.R Flask GUI - Route handlers for the inventory management system."""
 
 import os
+import json
 from flask import Flask, render_template, jsonify, request, send_from_directory
 from bierapp.backend.service.product_service import ProductService, InventoryService
 from bierapp.backend.service.warehouse_service import WarehouseService
@@ -37,6 +38,29 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         warehouse_service (WarehouseService): Service for warehouse management.
         inventory_service (InventoryService): Service for inventory management.
     """
+
+    def _log_history(entry_type: str, action: str, details: str) -> None:
+        """Best-effort history logging.
+
+        The history is not critical for core operations; failures are ignored.
+        """
+
+        try:
+            inventory_service.db.insert("history", {"entry_type": entry_type, "action": action, "details": details})
+        except Exception:
+            return
+
+    def _serialize_history_row(row: dict) -> dict:
+        created_at = row.get("created_at")
+        if hasattr(created_at, "isoformat"):
+            created_at = created_at.isoformat()
+        return {
+            "id": row.get("id"),
+            "created_at": created_at,
+            "entry_type": row.get("entry_type"),
+            "action": row.get("action"),
+            "details": row.get("details"),
+        }
     @app.route("/stylesheets/<path:filename>", endpoint="stylesheet", methods=["GET"])
     def stylesheet(filename: str):
         """Serve a stylesheet file from the resources directory.
@@ -110,6 +134,21 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         selected_theme = _selected_theme()
         return render_template("page4.html", selected_theme=selected_theme, theme_options=_theme_options())
 
+    @app.route("/history", methods=["GET"])
+    def get_history():
+        """Retrieve change history entries.
+
+        Returns:
+            tuple: JSON response with history entries and HTTP 200 status.
+        """
+
+        try:
+            rows = inventory_service.db.find_all("history")
+            rows = [_serialize_history_row(row) for row in rows]
+            return jsonify(rows), 200
+        except Exception as exc:
+            return jsonify({"error": "Failed to retrieve history", "details": str(exc)}), 500
+
     @app.route("/products", methods=["GET"])
     def get_products():
         """Retrieve all products from the inventory.
@@ -139,6 +178,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data or "name" not in data or "gewicht" not in data:
                 return jsonify({"error": "Missing required fields: name, gewicht"}), 400
             product = product_service.create_product(name=data["name"], beschreibung=data.get("beschreibung", ""), gewicht=float(data["gewicht"]))
+            _log_history("product", "create", f"Produkt {product.get('id')}: {product.get('name', '')}")
             return jsonify(product), 201
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
@@ -185,6 +225,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data:
                 return jsonify({"error": "Request body must be JSON"}), 400
             updated_product = product_service.update_product(str(produkt_id), data)
+            _log_history("product", "update", f"Produkt {produkt_id}: {json.dumps(data, ensure_ascii=False)}")
             return jsonify(updated_product), 200
         except KeyError:
             return jsonify({"error": "Product not found"}), 404
@@ -206,7 +247,14 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             500: If deletion fails.
         """
         try:
+            existing = None
+            try:
+                existing = product_service.get_product(str(produkt_id))
+            except Exception:
+                existing = None
             product_service.delete_product(str(produkt_id))
+            name = existing.get("name") if isinstance(existing, dict) else ""
+            _log_history("product", "delete", f"Produkt {produkt_id}: {name}")
             return "", 204
         except KeyError:
             return jsonify({"error": "Product not found"}), 404
@@ -248,6 +296,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data or not all(k in data for k in ["lagername", "adresse", "max_plaetze", "firma_id"]):
                 return jsonify({"error": "Missing required fields: lagername, adresse, max_plaetze, firma_id"}), 400
             warehouse = warehouse_service.create_warehouse(lagername=data["lagername"], adresse=data["adresse"], max_plaetze=int(data["max_plaetze"]), firma_id=int(data["firma_id"]))
+            _log_history("warehouse", "create", f"Lager {warehouse.get('id')}: {warehouse.get('lagername', '')} ({warehouse.get('adresse', '')})")
             return jsonify(warehouse), 201
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
@@ -269,7 +318,15 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             500: If deletion fails.
         """
         try:
+            existing = None
+            try:
+                existing = warehouse_service.get_warehouse(str(lager_id))
+            except Exception:
+                existing = None
             warehouse_service.delete_warehouse(str(lager_id))
+            name = existing.get("lagername") if isinstance(existing, dict) else ""
+            addr = existing.get("adresse") if isinstance(existing, dict) else ""
+            _log_history("warehouse", "delete", f"Lager {lager_id}: {name} ({addr})")
             return "", 204
         except KeyError:
             return jsonify({"error": "Warehouse not found"}), 404
@@ -292,6 +349,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data or not all(k in data for k in ["lager_id", "produkt_id", "menge"]):
                 return jsonify({"error": "Missing required fields: lager_id, produkt_id, menge"}), 400
             inventory_service.add_product(lager_id=int(data["lager_id"]), produkt_id=int(data["produkt_id"]), menge=int(data["menge"]))
+            _log_history("inventory", "add", f"Bestand: produkt_id={data.get('produkt_id')} lager_id={data.get('lager_id')} menge={data.get('menge')}")
             return jsonify({"status": "ok", "message": "Product added to inventory"}), 201
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
@@ -334,6 +392,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data or not all(k in data for k in ["lager_id", "produkt_id", "menge"]):
                 return jsonify({"error": "Missing required fields: lager_id, produkt_id, menge"}), 400
             warehouse_service.add_product_to_warehouse(lager_id=int(data["lager_id"]), produkt_id=int(data["produkt_id"]), menge=int(data["menge"]))
+            _log_history("inventory", "assign", f"Buchung: produkt_id={data.get('produkt_id')} lager_id={data.get('lager_id')} menge={data.get('menge')}")
             return jsonify({"status": "ok", "message": "Product assigned to warehouse"}), 201
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
