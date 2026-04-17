@@ -193,6 +193,7 @@ body {
 }
 
 input[type="text"],
+input[type="search"],
 input[type="number"],
 select {
   width: 100%;
