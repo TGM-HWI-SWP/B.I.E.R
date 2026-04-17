@@ -38,23 +38,81 @@ def _products_to_movements(product_list: List[Dict]) -> List[Dict]:
         initial_quantity = (numeric_seed % ID_MODULO) + INITIAL_OFFSET
         initial_timestamp = (SAMPLE_BASE_DATE + timedelta(days=numeric_seed % MAX_DAY_SPAN)).isoformat()
 
+        # carry over any warehouse/location-like fields from the original
+        warehouse_keys = (
+            "from",
+            "quelle",
+            "von",
+            "source",
+            "origin",
+            "from_location",
+            "to",
+            "ziel",
+            "zu",
+            "target",
+            "destination",
+            "to_location",
+            "lager_id",
+            "source_lager",
+            "from_warehouse",
+            "ziel_lager",
+            "target_lager",
+            "to_warehouse",
+        )
+        extras = {}
+        for k in warehouse_keys:
+            if k in item and item.get(k) is not None:
+                extras[k] = item.get(k)
+        # if no warehouse/location info present, provide deterministic seeded defaults
+        if not any(k in extras for k in (
+            "from",
+            "quelle",
+            "von",
+            "source",
+            "origin",
+            "from_location",
+            "lager_id",
+            "source_lager",
+            "from_warehouse",
+            "to",
+            "ziel",
+            "zu",
+            "target",
+            "destination",
+            "to_location",
+            "ziel_lager",
+            "target_lager",
+            "to_warehouse",
+        )):
+            # deterministic assignment based on numeric_seed so results are repeatable
+            src_label = f"Lager {numeric_seed % 5 + 1}"
+            dst_label = f"Filiale {numeric_seed % 3 + 1}"
+            extras["from"] = src_label
+            extras["to"] = dst_label
         movements.append({
             "id": f"init-{product_id}",
             "product_id": product_id,
             "product_name": product_name,
             "quantity_change": initial_quantity,
             "timestamp": initial_timestamp,
+            **extras,
         })
 
         outbound_quantity = -(numeric_seed % OUT_QUANTITY_MOD)
         if outbound_quantity != 0:
             outbound_timestamp = (SAMPLE_BASE_DATE + timedelta(days=(numeric_seed % MAX_DAY_SPAN) + OUT_DAYS_OFFSET)).isoformat()
+            out_extras = {k: item.get(k) for k in warehouse_keys if k in item and item.get(k) is not None}
+            if not out_extras:
+                out_extras = {}
+                out_extras["from"] = f"Lager {numeric_seed % 5 + 1}"
+                out_extras["to"] = f"Filiale {(numeric_seed + 1) % 3 + 1}"
             movements.append({
                 "id": f"out-{product_id}",
                 "product_id": product_id,
                 "product_name": product_name,
                 "quantity_change": outbound_quantity,
                 "timestamp": outbound_timestamp,
+                **out_extras,
             })
 
     return movements
