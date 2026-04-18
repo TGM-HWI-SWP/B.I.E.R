@@ -84,11 +84,16 @@ def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]],
 
             table = ax.table(cellText=cell_text, colLabels=headers, loc="center", cellLoc="left", colWidths=col_widths)
             table.auto_set_font_size(False)
-            
-            font_size = 8 if ncols < 6 else 7
+
+            # choose a sensible font size depending on column count
+            font_size = 9 if ncols <= 4 else (8 if ncols == 5 else 7)
             table.set_fontsize(font_size)
-            
-            table.scale(1, 1.15)
+
+            # scale the table conservatively so it fits A4; reduce vertical scale if many rows
+            vscale = 1.15
+            if len(page_rows) > rows_per_page:
+                vscale = max(0.8, 1.15 * rows_per_page / max(1, len(page_rows)))
+            table.scale(1, vscale)
         except Exception:
 
             y = 0.92
@@ -103,7 +108,12 @@ def create_table_pages(pdf: PdfPages, headers: List[str], rows: List[List[str]],
                     break
 
         ax.text(0.5, 0.03, f"Seite {page+1} von {total_pages}", ha="center", fontsize=8, color="#666666")
-        pdf.savefig(fig, bbox_inches="tight")
+        # ensure layout fits the A4 figure size and save without expanding canvas
+        try:
+            fig.tight_layout(rect=[0, 0.04, 1, 0.96])
+        except Exception:
+            pass
+        pdf.savefig(fig)
         plt.close(fig)
 
 
