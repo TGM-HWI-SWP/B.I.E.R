@@ -274,6 +274,9 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
                 name=data["name"],
                 beschreibung=data.get("beschreibung", ""),
                 gewicht=float(data["gewicht"]),
+                preis=float(data.get("preis", 0)),
+                waehrung=data.get("waehrung", "EUR"),
+                lieferant=data.get("lieferant", ""),
                 einheit=data.get("einheit", "Stk"),
             )
             _log_history("product", "create", f"Produkt {product.get('id')}: {product.get('name', '')}")

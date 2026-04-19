@@ -102,6 +102,9 @@ function initProductPage() {
     const productSelect = document.getElementById("existingProduct");
     const warehouseStocks = document.getElementById("warehouseStocks");
     const nameInput = document.getElementById("productName");
+    const priceInput = document.getElementById("productPrice");
+    const currencyInput = document.getElementById("productCurrency");
+    const supplierInput = document.getElementById("productSupplier");
     const descriptionInput = document.getElementById("productDescription");
     const weightInput = document.getElementById("productWeight");
     const unitInput = document.getElementById("productUnit");
@@ -113,7 +116,7 @@ function initProductPage() {
     const deleteBtn = document.getElementById("deleteAttributeBtn");
     const addAttrBtn = document.getElementById("addAttributeBtn");
 
-    if (!productSelect || !warehouseStocks || !nameInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !resetBtn || !deleteBtn || !addAttrBtn) return;
+    if (!productSelect || !warehouseStocks || !nameInput || !priceInput || !currencyInput || !supplierInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !resetBtn || !deleteBtn || !addAttrBtn) return;
 
     const title = document.querySelector(".product-title");
     const subtitle = document.querySelector(".product-subtitle");
@@ -135,6 +138,9 @@ function initProductPage() {
 
     function clearForm() {
         nameInput.value = "";
+        priceInput.value = "";
+        currencyInput.value = "EUR";
+        supplierInput.value = "";
         descriptionInput.value = "";
         weightInput.value = "";
         unitInput.value = "Stk";
@@ -148,6 +154,9 @@ function initProductPage() {
     function productPayload() {
         return {
             name: nameInput.value.trim(),
+            preis: Number(priceInput.value || 0),
+            waehrung: currencyInput.value || "EUR",
+            lieferant: supplierInput.value.trim(),
             beschreibung: descriptionInput.value.trim(),
             gewicht: Number(weightInput.value),
             einheit: unitInput.value || "Stk",
@@ -161,6 +170,9 @@ function initProductPage() {
             return;
         }
         nameInput.value = product.name || "";
+        priceInput.value = product.preis ?? "";
+        currencyInput.value = product.waehrung || "EUR";
+        supplierInput.value = product.lieferant || "";
         descriptionInput.value = product.beschreibung || "";
         weightInput.value = product.gewicht ?? "";
         unitInput.value = product.einheit || "Stk";
@@ -227,8 +239,8 @@ function initProductPage() {
 
     async function createOrUpdateProduct() {
         const payload = productPayload();
-        if (!payload.name || !payload.gewicht) {
-            throw new Error("Name und Gewicht sind Pflichtfelder.");
+        if (!payload.name || !payload.gewicht || Number.isNaN(payload.preis) || payload.preis < 0) {
+            throw new Error("Name, Gewicht und ein gültiger Preis sind Pflichtfelder.");
         }
 
         const existingId = productSelect.value;
@@ -700,21 +712,48 @@ function initWarehouseDetailPage() {
 function initStatsPage() {
     const warehousesValue = document.getElementById("kpiWarehouses");
     const productsValue = document.getElementById("kpiProducts");
+    const capacityValue = document.getElementById("kpiCapacity");
+    const freeCapacityValue = document.getElementById("kpiFreeCapacity");
     const topProductValue = document.getElementById("kpiTopProduct");
     const topProductSub = document.getElementById("kpiTopProductSub");
     const maxUtilValue = document.getElementById("kpiMaxUtil");
     const maxUtilSub = document.getElementById("kpiMaxUtilSub");
+    const avgUtilValue = document.getElementById("kpiAvgUtil");
+    const activeWarehousesValue = document.getElementById("kpiActiveWarehouses");
+    const inventoryValueKpi = document.getElementById("kpiInventoryValue");
+    const mainCurrencyKpi = document.getElementById("kpiMainCurrency");
+    const topSupplierKpi = document.getElementById("kpiTopSupplier");
+    const topSupplierSub = document.getElementById("kpiTopSupplierSub");
     const chartHost = document.getElementById("chartWarehouses");
+    const utilHost = document.getElementById("chartUtilization");
+    const distributionHost = document.getElementById("chartDistribution");
+    const currencyHost = document.getElementById("chartCurrencyValue");
     const topHost = document.getElementById("topProducts");
+    const unitMixHost = document.getElementById("unitMixList");
+    const supplierMixHost = document.getElementById("supplierMixList");
 
-    if (!warehousesValue || !productsValue || !topProductValue || !topProductSub || !maxUtilValue || !maxUtilSub || !chartHost || !topHost) return;
+    if (!warehousesValue || !productsValue || !capacityValue || !freeCapacityValue || !topProductValue || !topProductSub || !maxUtilValue || !maxUtilSub || !avgUtilValue || !activeWarehousesValue || !inventoryValueKpi || !mainCurrencyKpi || !topSupplierKpi || !topSupplierSub || !chartHost || !utilHost || !distributionHost || !currencyHost || !topHost || !unitMixHost || !supplierMixHost) return;
 
     (async function run() {
         try {
             const [warehouses, products] = await Promise.all([api("/warehouses"), api("/products")]);
             const productMap = new Map(products.map((product) => [String(product.id), product.name || `Produkt ${product.id}`]));
+            const productMeta = new Map(
+                products.map((product) => [
+                    String(product.id),
+                    {
+                        preis: Number(product.preis || 0),
+                        waehrung: product.waehrung || "EUR",
+                        lieferant: product.lieferant || "Unbekannt",
+                        einheit: product.einheit || "Stk",
+                    },
+                ])
+            );
             const inventoryByWarehouse = [];
             const productTotals = new Map();
+            const currencyTotals = new Map();
+            const unitTotals = new Map();
+            const supplierTotals = new Map();
 
             for (const warehouse of warehouses) {
                 const items = await api(`/inventory/${warehouse.id}/products`);
@@ -727,8 +766,19 @@ function initStatsPage() {
 
                 items.forEach((item) => {
                     const productId = String(item.produkt_id);
+                    const qty = Number(item.menge || 0);
                     const current = productTotals.get(productId) || 0;
-                    productTotals.set(productId, current + Number(item.menge || 0));
+                    productTotals.set(productId, current + qty);
+
+                    const meta = productMeta.get(productId) || { preis: 0, waehrung: "EUR", einheit: "Stk" };
+                    const currencyValue = (currencyTotals.get(meta.waehrung) || 0) + meta.preis * qty;
+                    currencyTotals.set(meta.waehrung, currencyValue);
+
+                    const unitValue = (unitTotals.get(meta.einheit) || 0) + qty;
+                    unitTotals.set(meta.einheit, unitValue);
+
+                    const supplierValue = (supplierTotals.get(meta.lieferant) || 0) + qty;
+                    supplierTotals.set(meta.lieferant, supplierValue);
                 });
             }
 
@@ -738,16 +788,33 @@ function initStatsPage() {
 
             const totalWarehouses = warehouses.length;
             const totalProducts = inventoryByWarehouse.reduce((sum, item) => sum + item.products, 0);
+            const totalCapacity = inventoryByWarehouse.reduce((sum, item) => sum + item.capacity, 0);
+            const freeCapacity = Math.max(0, totalCapacity - totalProducts);
             const topProduct = topProducts[0] || null;
             const byUtil = inventoryByWarehouse
                 .map((item) => ({ ...item, util: item.capacity > 0 ? item.products / item.capacity : 0 }))
                 .sort((a, b) => b.util - a.util);
             const maxUtil = byUtil[0] || null;
+            const avgUtil = totalWarehouses > 0 ? byUtil.reduce((sum, item) => sum + item.util, 0) / totalWarehouses : 0;
+            const activeWarehouses = inventoryByWarehouse.filter((item) => item.products > 0).length;
+            const currencyEntries = Array.from(currencyTotals.entries()).sort((a, b) => b[1] - a[1]);
+            const totalInventoryValue = currencyEntries.reduce((sum, [, value]) => sum + value, 0);
+            const mainCurrency = currencyEntries[0]?.[0] || "-";
+            const supplierEntries = Array.from(supplierTotals.entries()).sort((a, b) => b[1] - a[1]);
+            const topSupplier = supplierEntries[0] || null;
 
             warehousesValue.textContent = String(totalWarehouses);
             productsValue.textContent = String(totalProducts);
+            capacityValue.textContent = String(totalCapacity);
+            freeCapacityValue.textContent = String(freeCapacity);
             topProductValue.textContent = topProduct ? topProduct.name : "-";
             topProductSub.textContent = topProduct ? `${topProduct.qty} Stk.` : "-";
+            avgUtilValue.textContent = `${Math.round(avgUtil * 100)}%`;
+            activeWarehousesValue.textContent = `${activeWarehouses}/${totalWarehouses}`;
+            inventoryValueKpi.textContent = `${totalInventoryValue.toFixed(2)}${currencyEntries.length === 1 ? ` ${mainCurrency}` : ""}`;
+            mainCurrencyKpi.textContent = currencyEntries.length <= 1 ? mainCurrency : `${mainCurrency} (gemischt)`;
+            topSupplierKpi.textContent = topSupplier ? topSupplier[0] : "-";
+            topSupplierSub.textContent = topSupplier ? `${topSupplier[1]} Stück im Bestand` : "-";
 
             if (maxUtil) {
                 const pct = Math.round(maxUtil.util * 100);
@@ -805,13 +872,134 @@ function initStatsPage() {
                 li.appendChild(pill);
                 topHost.appendChild(li);
             });
+
+            utilHost.innerHTML = "";
+            byUtil.forEach((item) => {
+                const row = document.createElement("div");
+                row.className = "bar-row";
+
+                const label = document.createElement("div");
+                label.className = "bar-label";
+                label.textContent = item.name;
+
+                const track = document.createElement("div");
+                track.className = "bar-track";
+
+                const fill = document.createElement("div");
+                fill.className = "bar-fill";
+                fill.style.width = `${Math.round(item.util * 100)}%`;
+
+                const value = document.createElement("div");
+                value.className = "bar-value";
+                value.textContent = `${Math.round(item.util * 100)}%`;
+
+                track.appendChild(fill);
+                row.appendChild(label);
+                row.appendChild(track);
+                row.appendChild(value);
+                utilHost.appendChild(row);
+            });
+
+            distributionHost.innerHTML = "";
+            const usedPercent = totalCapacity > 0 ? Math.round((totalProducts / totalCapacity) * 100) : 0;
+            const freePercent = Math.max(0, 100 - usedPercent);
+
+            const donutWrap = document.createElement("div");
+            donutWrap.className = "donut-wrap";
+
+            const donut = document.createElement("div");
+            donut.className = "donut-chart";
+            donut.style.background = `conic-gradient(var(--fg) 0% ${usedPercent}%, var(--surface-2) ${usedPercent}% 100%)`;
+            donut.innerHTML = `<span>${usedPercent}%</span>`;
+
+            const legend = document.createElement("ul");
+            legend.className = "legend-list";
+            legend.innerHTML = `
+                <li><span class="dot used"></span>Belegt: ${totalProducts} (${usedPercent}%)</li>
+                <li><span class="dot free"></span>Frei: ${freeCapacity} (${freePercent}%)</li>
+            `;
+
+            donutWrap.appendChild(donut);
+            donutWrap.appendChild(legend);
+            distributionHost.appendChild(donutWrap);
+
+            currencyHost.innerHTML = "";
+            const maxCurrencyValue = Math.max(1, ...currencyEntries.map((entry) => entry[1]));
+            currencyEntries.forEach(([currency, value]) => {
+                const row = document.createElement("div");
+                row.className = "bar-row";
+
+                const label = document.createElement("div");
+                label.className = "bar-label";
+                label.textContent = currency;
+
+                const track = document.createElement("div");
+                track.className = "bar-track";
+
+                const fill = document.createElement("div");
+                fill.className = "bar-fill";
+                fill.style.width = `${Math.round((value / maxCurrencyValue) * 100)}%`;
+
+                const valueNode = document.createElement("div");
+                valueNode.className = "bar-value";
+                valueNode.textContent = `${value.toFixed(2)} ${currency}`;
+
+                track.appendChild(fill);
+                row.appendChild(label);
+                row.appendChild(track);
+                row.appendChild(valueNode);
+                currencyHost.appendChild(row);
+            });
+
+            unitMixHost.innerHTML = "";
+            const unitEntries = Array.from(unitTotals.entries()).sort((a, b) => b[1] - a[1]);
+            unitEntries.forEach(([unit, qty]) => {
+                const li = document.createElement("li");
+                li.className = "list-item";
+
+                const title = document.createElement("strong");
+                title.textContent = unit;
+
+                const pill = document.createElement("span");
+                pill.className = "pill";
+                pill.textContent = `${qty} ${unit}`;
+
+                li.appendChild(title);
+                li.appendChild(pill);
+                unitMixHost.appendChild(li);
+            });
+
+            supplierMixHost.innerHTML = "";
+            supplierEntries.slice(0, 10).forEach(([supplier, qty]) => {
+                const li = document.createElement("li");
+                li.className = "list-item";
+
+                const title = document.createElement("strong");
+                title.textContent = supplier;
+
+                const pill = document.createElement("span");
+                pill.className = "pill";
+                pill.textContent = `${qty} Stück`;
+
+                li.appendChild(title);
+                li.appendChild(pill);
+                supplierMixHost.appendChild(li);
+            });
         } catch (error) {
             warehousesValue.textContent = "!";
             productsValue.textContent = "!";
+            capacityValue.textContent = "!";
+            freeCapacityValue.textContent = "!";
             topProductValue.textContent = "Fehler";
             topProductSub.textContent = error.message;
             maxUtilValue.textContent = "!";
             maxUtilSub.textContent = error.message;
+            avgUtilValue.textContent = "!";
+            activeWarehousesValue.textContent = "!";
+            inventoryValueKpi.textContent = "!";
+            mainCurrencyKpi.textContent = "!";
+            topSupplierKpi.textContent = "!";
+            topSupplierSub.textContent = error.message;
         }
     })();
 }

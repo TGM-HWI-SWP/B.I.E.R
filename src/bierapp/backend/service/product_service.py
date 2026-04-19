@@ -17,13 +17,16 @@ class ProductService(ProductServicePort):
         """
         self.db = db
 
-    def create_product(self, name: str, beschreibung: str, gewicht: float, einheit: str = "Stk") -> Dict:
+    def create_product(self, name: str, beschreibung: str, gewicht: float, preis: float = 0.0, waehrung: str = "EUR", lieferant: str = "", einheit: str = "Stk") -> Dict:
         """Create a new product and store it in the database.
 
         Args:
             name (str): The name of the product.
             beschreibung (str): A description of the product.
             gewicht (float): The weight of the product.
+            preis (float): The price per unit.
+            waehrung (str): The currency for the price.
+            lieferant (str): Supplier name of the product.
             einheit (str): Unit of the product amount.
 
         Returns:
@@ -34,7 +37,17 @@ class ProductService(ProductServicePort):
         """
         if gewicht <= 0:
             raise ValueError("gewicht must be positive")
-        data = {"name": name, "beschreibung": beschreibung, "gewicht": gewicht, "einheit": einheit or "Stk"}
+        if preis < 0:
+            raise ValueError("preis cannot be negative")
+        data = {
+            "name": name,
+            "beschreibung": beschreibung,
+            "gewicht": gewicht,
+            "preis": preis,
+            "waehrung": waehrung or "EUR",
+            "lieferant": lieferant or "",
+            "einheit": einheit or "Stk",
+        }
         product_id = self.db.insert(self.COLLECTION, data)
         data["id"] = product_id
         return data

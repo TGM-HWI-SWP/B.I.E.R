@@ -36,8 +36,29 @@ class PostgresRepository:
                         id SERIAL PRIMARY KEY,
                         name TEXT NOT NULL,
                         beschreibung TEXT DEFAULT '',
-                        gewicht DOUBLE PRECISION NOT NULL CHECK (gewicht > 0)
+                        gewicht DOUBLE PRECISION NOT NULL CHECK (gewicht > 0),
+                        preis DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (preis >= 0),
+                        waehrung TEXT NOT NULL DEFAULT 'EUR',
+                        lieferant TEXT NOT NULL DEFAULT ''
                     )
+                    """
+                )
+                cur.execute(
+                    """
+                    ALTER TABLE products
+                    ADD COLUMN IF NOT EXISTS preis DOUBLE PRECISION NOT NULL DEFAULT 0
+                    """
+                )
+                cur.execute(
+                    """
+                    ALTER TABLE products
+                    ADD COLUMN IF NOT EXISTS waehrung TEXT NOT NULL DEFAULT 'EUR'
+                    """
+                )
+                cur.execute(
+                    """
+                    ALTER TABLE products
+                    ADD COLUMN IF NOT EXISTS lieferant TEXT NOT NULL DEFAULT ''
                     """
                 )
                 cur.execute(

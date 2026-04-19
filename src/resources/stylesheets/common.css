@@ -1014,6 +1014,70 @@ body.page-stats .list-item strong {
   font-size: 14px;
 }
 
+body.page-stats .donut-wrap {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+body.page-stats .donut-chart {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  position: relative;
+  margin: 0 auto;
+}
+
+body.page-stats .donut-chart::after {
+  content: "";
+  position: absolute;
+  inset: 28px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+body.page-stats .donut-chart span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+body.page-stats .legend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  font-size: 14px;
+}
+
+body.page-stats .legend-list li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+body.page-stats .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+body.page-stats .dot.used {
+  background: var(--fg);
+}
+
+body.page-stats .dot.free {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+
 @media (max-width: 980px) {
   body.page-stats .kpis {
     grid-template-columns: repeat(2, 1fr);
@@ -1099,6 +1163,10 @@ body.page-stats .list-item strong {
   }
 
   body.page-stats .split {
+    grid-template-columns: 1fr;
+  }
+
+  body.page-stats .donut-wrap {
     grid-template-columns: 1fr;
   }
 

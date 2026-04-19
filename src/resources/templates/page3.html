@@ -54,6 +54,16 @@
                 <p class="kpi-sub">Gesamt über alle Lager</p>
             </div>
             <div class="card kpi">
+                <p class="kpi-label">Gesamtkapazität</p>
+                <p class="kpi-value" id="kpiCapacity">–</p>
+                <p class="kpi-sub">Maximal verfügbare Plätze</p>
+            </div>
+            <div class="card kpi">
+                <p class="kpi-label">Freie Kapazität</p>
+                <p class="kpi-value" id="kpiFreeCapacity">–</p>
+                <p class="kpi-sub">Noch nicht belegte Plätze</p>
+            </div>
+            <div class="card kpi">
                 <p class="kpi-label">Meisten Stück</p>
                 <p class="kpi-value" id="kpiTopProduct">–</p>
                 <p class="kpi-sub" id="kpiTopProductSub">–</p>
@@ -63,13 +73,38 @@
                 <p class="kpi-value" id="kpiMaxUtil">–</p>
                 <p class="kpi-sub" id="kpiMaxUtilSub">–</p>
             </div>
+            <div class="card kpi">
+                <p class="kpi-label">Durchschnitt Auslastung</p>
+                <p class="kpi-value" id="kpiAvgUtil">–</p>
+                <p class="kpi-sub">Über alle Lager gemittelt</p>
+            </div>
+            <div class="card kpi">
+                <p class="kpi-label">Lager mit Bestand</p>
+                <p class="kpi-value" id="kpiActiveWarehouses">–</p>
+                <p class="kpi-sub">Lager mit mind. 1 Produkt</p>
+            </div>
+            <div class="card kpi">
+                <p class="kpi-label">Bestandswert</p>
+                <p class="kpi-value" id="kpiInventoryValue">–</p>
+                <p class="kpi-sub">Preis x Bestand über alle Lager</p>
+            </div>
+            <div class="card kpi">
+                <p class="kpi-label">Hauptwährung</p>
+                <p class="kpi-value" id="kpiMainCurrency">–</p>
+                <p class="kpi-sub">Währung mit höchstem Bestandswert</p>
+            </div>
+            <div class="card kpi">
+                <p class="kpi-label">Top Lieferant</p>
+                <p class="kpi-value" id="kpiTopSupplier">–</p>
+                <p class="kpi-sub" id="kpiTopSupplierSub">–</p>
+            </div>
         </section>
 
         <section class="grid split split-section" aria-label="Diagramme">
             <div class="card">
                 <div class="card-header">
                     <p class="card-title">Produkte pro Lager</p>
-                    <p class="card-note">Demo-Daten (später aus DB aggregieren).</p>
+                    <p class="card-note">Nach Bestand sortiert.</p>
                 </div>
                 <div class="card-body" id="chartWarehouses"></div>
             </div>
@@ -77,10 +112,60 @@
             <div class="card">
                 <div class="card-header">
                     <p class="card-title">Top Produkte</p>
-                    <p class="card-note">Sortiert nach Menge (Demo).</p>
+                    <p class="card-note">Sortiert nach Menge.</p>
                 </div>
                 <div class="card-body">
                     <ol class="list" id="topProducts"></ol>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid split split-section" aria-label="Weitere Diagramme">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Auslastung pro Lager</p>
+                    <p class="card-note">Prozentuale Belegung je Lager.</p>
+                </div>
+                <div class="card-body" id="chartUtilization"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Bestandsverteilung</p>
+                    <p class="card-note">Anteil belegte vs. freie Kapazität.</p>
+                </div>
+                <div class="card-body" id="chartDistribution"></div>
+            </div>
+        </section>
+
+        <section class="grid split split-section" aria-label="Preis, Währung und Einheit">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Bestandswert nach Währung</p>
+                    <p class="card-note">Summe aus Preis x Bestand je Währung.</p>
+                </div>
+                <div class="card-body" id="chartCurrencyValue"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Einheiten-Verteilung</p>
+                    <p class="card-note">Bestandsmengen je Einheit (Stk, kg, ...).</p>
+                </div>
+                <div class="card-body">
+                    <ol class="list" id="unitMixList"></ol>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid split split-section" aria-label="Lieferanten-Verteilung">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Lieferanten nach Bestand</p>
+                    <p class="card-note">Aggregierte Bestandsmenge je Lieferant.</p>
+                </div>
+                <div class="card-body">
+                    <ol class="list" id="supplierMixList"></ol>
                 </div>
             </div>
         </section>
