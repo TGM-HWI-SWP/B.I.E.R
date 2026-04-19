@@ -55,6 +55,22 @@
                 <a class="btn btn-small" id="backToWarehouseList" href="{{ url_for('page2', theme=selected_theme) }}">Zur Lagerliste</a>
             </div>
 
+            <div class="card-header warehouse-edit-panel">
+                <div class="warehouse-edit-row">
+                    <label for="warehouseNameEdit">Lagername</label>
+                    <input id="warehouseNameEdit" type="text" placeholder="Lagername" />
+                    <button class="btn btn-small" id="saveWarehouseNameBtn" type="button">Name speichern</button>
+                </div>
+                <div class="warehouse-add-row">
+                    <label for="addProductSelect">Produkt hinzufügen</label>
+                    <select id="addProductSelect" aria-label="Produkt auswählen">
+                        <option value="">Produkt wählen</option>
+                    </select>
+                    <input id="addProductQty" type="number" min="1" step="1" value="1" aria-label="Menge" />
+                    <button class="btn btn-small" id="addProductToWarehouseBtn" type="button">Hinzufügen</button>
+                </div>
+            </div>
+
             <div class="table-wrap" role="region" aria-label="Produkte im Lager" tabindex="0">
                 <table>
                     <thead>

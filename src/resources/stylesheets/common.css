@@ -822,6 +822,25 @@ body.page-warehouse-detail .warehouse-detail-header {
   flex-wrap: wrap;
 }
 
+body.page-warehouse-detail .warehouse-edit-panel {
+  display: grid;
+  gap: 10px;
+}
+
+body.page-warehouse-detail .warehouse-edit-row,
+body.page-warehouse-detail .warehouse-add-row {
+  display: grid;
+  grid-template-columns: 140px minmax(160px, 1fr) minmax(90px, 120px) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+body.page-warehouse-detail .warehouse-edit-row label,
+body.page-warehouse-detail .warehouse-add-row label {
+  font-size: 13px;
+  color: var(--muted);
+}
+
 body.page-warehouse-detail table {
   min-width: 0;
   table-layout: fixed;
@@ -1165,6 +1184,11 @@ body.page-stats .dot.free {
 
   body.page-warehouse-detail .detail-inline-actions,
   body.page-warehouse-detail .detail-move-actions {
+    grid-template-columns: 1fr;
+  }
+
+  body.page-warehouse-detail .warehouse-edit-row,
+  body.page-warehouse-detail .warehouse-add-row {
     grid-template-columns: 1fr;
   }
 

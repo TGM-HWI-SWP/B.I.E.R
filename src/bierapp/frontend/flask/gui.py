@@ -434,6 +434,40 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         except Exception as exc:
             return jsonify({"error": "Failed to delete warehouse", "details": str(exc)}), 500
 
+    @app.route("/warehouses/<lager_id>", methods=["PUT"])
+    def update_warehouse(lager_id):
+        """Update a warehouse."""
+
+        try:
+            data = request.get_json()
+            if not data:
+                return jsonify({"error": "Request body must be JSON"}), 400
+
+            payload = {}
+            if "lagername" in data:
+                payload["lagername"] = str(data.get("lagername") or "").strip()
+                if not payload["lagername"]:
+                    return jsonify({"error": "lagername must not be empty"}), 400
+            if "adresse" in data:
+                payload["adresse"] = str(data.get("adresse") or "").strip()
+            if "max_plaetze" in data:
+                payload["max_plaetze"] = int(data.get("max_plaetze"))
+            if "firma_id" in data:
+                payload["firma_id"] = int(data.get("firma_id"))
+
+            if not payload:
+                return jsonify({"error": "No updatable fields provided"}), 400
+
+            updated = warehouse_service.update_warehouse(str(lager_id), payload)
+            _log_history("warehouse", "update", f"Lager {lager_id}: {json.dumps(payload, ensure_ascii=False)}")
+            return jsonify(updated), 200
+        except ValueError as exc:
+            return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
+        except KeyError:
+            return jsonify({"error": "Warehouse not found"}), 404
+        except Exception as exc:
+            return jsonify({"error": "Failed to update warehouse", "details": str(exc)}), 500
+
     @app.route("/inventory", methods=["POST"])
     def add_inventory():
         """Add a product to warehouse inventory.
@@ -480,6 +514,55 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
         except Exception as exc:
             return jsonify({"error": "Failed to set inventory", "details": str(exc)}), 500
+
+    @app.route("/inventory/move", methods=["POST"])
+    def move_inventory_quantity():
+        """Move quantity of a product from one warehouse to another.
+
+        Body: {source_lager_id, target_lager_id, produkt_id, menge}
+        - subtracts menge from source
+        - adds menge to target (never overwrite)
+        """
+
+        try:
+            data = request.get_json()
+            required = ["source_lager_id", "target_lager_id", "produkt_id", "menge"]
+            if not data or not all(k in data for k in required):
+                return jsonify({"error": "Missing required fields: source_lager_id, target_lager_id, produkt_id, menge"}), 400
+
+            source_lager_id = int(data["source_lager_id"])
+            target_lager_id = int(data["target_lager_id"])
+            produkt_id = int(data["produkt_id"])
+            menge = int(data["menge"])
+
+            if source_lager_id == target_lager_id:
+                return jsonify({"error": "Source and target warehouse must be different"}), 400
+            if menge <= 0:
+                return jsonify({"error": "menge must be a positive integer"}), 400
+
+            source_rows = inventory_service.list_inventory(source_lager_id)
+            source_item = next((item for item in source_rows if int(item.get("produkt_id")) == produkt_id), None)
+            source_qty = int(source_item.get("menge", 0)) if source_item else 0
+            if source_qty < menge:
+                return jsonify({"error": "Not enough stock in source warehouse"}), 400
+
+            target_rows = inventory_service.list_inventory(target_lager_id)
+            target_item = next((item for item in target_rows if int(item.get("produkt_id")) == produkt_id), None)
+            target_qty = int(target_item.get("menge", 0)) if target_item else 0
+
+            inventory_service.set_quantity(source_lager_id, produkt_id, source_qty - menge)
+            inventory_service.set_quantity(target_lager_id, produkt_id, target_qty + menge)
+
+            _log_history(
+                "inventory",
+                "move",
+                f"Bestand verschoben: produkt_id={produkt_id} von lager_id={source_lager_id} nach lager_id={target_lager_id} menge={menge}",
+            )
+            return jsonify({"status": "ok", "source_qty": source_qty - menge, "target_qty": target_qty + menge}), 200
+        except ValueError as exc:
+            return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
+        except Exception as exc:
+            return jsonify({"error": "Failed to move inventory", "details": str(exc)}), 500
 
     @app.route("/inventory/<lager_id>/<produkt_id>", methods=["DELETE"])
     def delete_inventory_entry(lager_id, produkt_id):

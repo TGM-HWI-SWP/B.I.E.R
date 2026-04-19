@@ -546,8 +546,13 @@ function initWarehouseDetailPage() {
     const title = document.getElementById("warehouseDetailTitle");
     const subtitle = document.getElementById("warehouseDetailSubtitle");
     const backLink = document.getElementById("backToWarehouseList");
+    const warehouseNameInput = document.getElementById("warehouseNameEdit");
+    const saveWarehouseNameBtn = document.getElementById("saveWarehouseNameBtn");
+    const addProductSelect = document.getElementById("addProductSelect");
+    const addProductQty = document.getElementById("addProductQty");
+    const addProductBtn = document.getElementById("addProductToWarehouseBtn");
 
-    if (!body || !status || !title || !subtitle || !backLink) return;
+    if (!body || !status || !title || !subtitle || !backLink || !warehouseNameInput || !saveWarehouseNameBtn || !addProductSelect || !addProductQty || !addProductBtn) return;
 
     const params = new URLSearchParams(window.location.search);
     const warehouseId = params.get("warehouse_id");
@@ -564,8 +569,22 @@ function initWarehouseDetailPage() {
     }
 
     let productsById = new Map();
+    let products = [];
     let warehouses = [];
     let inventoryRows = [];
+
+    function renderAddProductOptions() {
+        const inStockIds = new Set(inventoryRows.map((row) => String(row.produkt_id)));
+        addProductSelect.innerHTML = '<option value="">Produkt wählen</option>';
+
+        products.forEach((product) => {
+            if (inStockIds.has(String(product.id))) return;
+            const option = document.createElement("option");
+            option.value = String(product.id);
+            option.textContent = `${product.id} - ${product.name || `Produkt ${product.id}`}`;
+            addProductSelect.appendChild(option);
+        });
+    }
 
     function renderTable() {
         body.innerHTML = "";
@@ -621,24 +640,21 @@ function initWarehouseDetailPage() {
         ]);
 
         warehouses = warehousesData;
+        products = productsData;
         productsById = new Map(productsData.map((p) => [String(p.id), p.name || `Produkt ${p.id}`]));
         inventoryRows = inventoryData;
 
         const currentWarehouse = warehouses.find((w) => String(w.id) === String(warehouseId));
         const warehouseName = currentWarehouse?.lagername || `Lager ${warehouseId}`;
         title.textContent = `${warehouseName} (ID ${warehouseId})`;
+        warehouseNameInput.value = currentWarehouse?.lagername || "";
         subtitle.textContent = currentWarehouse
             ? `${currentWarehouse.adresse || "Ohne Adresse"} - Produkte im Lager verwalten`
             : "Produkte im Lager verwalten";
 
         renderTable();
+        renderAddProductOptions();
         status.textContent = `${inventoryRows.length} Produktposition(en) geladen.`;
-    }
-
-    async function getInventoryQuantity(lagerId, productId) {
-        const rows = await api(`/inventory/${lagerId}/products`);
-        const item = rows.find((r) => String(r.produkt_id) === String(productId));
-        return item ? Number(item.menge || 0) : 0;
     }
 
     body.addEventListener("click", async (event) => {
@@ -687,34 +703,65 @@ function initWarehouseDetailPage() {
                     throw new Error("Verschiebemenge muss eine ganze Zahl > 0 sein.");
                 }
 
-                const sourceQty = await getInventoryQuantity(warehouseId, productId);
-                if (moveQty > sourceQty) {
-                    throw new Error("Verschiebemenge ist größer als der Bestand im Quelllager.");
-                }
-
-                const targetQty = await getInventoryQuantity(targetWarehouseId, productId);
-                await Promise.all([
-                    api("/inventory", {
-                        method: "PUT",
-                        body: JSON.stringify({
-                            lager_id: Number(warehouseId),
-                            produkt_id: Number(productId),
-                            menge: sourceQty - moveQty,
-                        }),
+                await api("/inventory/move", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        source_lager_id: Number(warehouseId),
+                        target_lager_id: Number(targetWarehouseId),
+                        produkt_id: Number(productId),
+                        menge: moveQty,
                     }),
-                    api("/inventory", {
-                        method: "PUT",
-                        body: JSON.stringify({
-                            lager_id: Number(targetWarehouseId),
-                            produkt_id: Number(productId),
-                            menge: targetQty + moveQty,
-                        }),
-                    }),
-                ]);
+                });
 
                 await refresh();
                 status.textContent = `Produkt ${productId} nach Lager ${targetWarehouseId} verschoben.`;
             }
+        } catch (error) {
+            status.textContent = `Fehler: ${error.message}`;
+        }
+    });
+
+    saveWarehouseNameBtn.addEventListener("click", async () => {
+        const nextName = String(warehouseNameInput.value || "").trim();
+        if (!nextName) {
+            status.textContent = "Fehler: Lagername darf nicht leer sein.";
+            return;
+        }
+
+        try {
+            await api(`/warehouses/${warehouseId}`, {
+                method: "PUT",
+                body: JSON.stringify({ lagername: nextName }),
+            });
+            await refresh();
+            status.textContent = "Lagername gespeichert.";
+        } catch (error) {
+            status.textContent = `Fehler: ${error.message}`;
+        }
+    });
+
+    addProductBtn.addEventListener("click", async () => {
+        const productId = addProductSelect.value;
+        const qty = Number(addProductQty.value);
+
+        if (!productId) {
+            status.textContent = "Fehler: Bitte ein Produkt auswählen.";
+            return;
+        }
+        if (!Number.isInteger(qty) || qty <= 0) {
+            status.textContent = "Fehler: Menge muss eine ganze Zahl > 0 sein.";
+            return;
+        }
+
+        try {
+            await api("/inventory", {
+                method: "PUT",
+                body: JSON.stringify({ lager_id: Number(warehouseId), produkt_id: Number(productId), menge: qty }),
+            });
+            addProductQty.value = "1";
+            addProductSelect.value = "";
+            await refresh();
+            status.textContent = `Produkt ${productId} hinzugefügt.`;
         } catch (error) {
             status.textContent = `Fehler: ${error.message}`;
         }
