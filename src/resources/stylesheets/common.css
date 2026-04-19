@@ -439,7 +439,7 @@ body.page-index table {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  min-width: 760px;
+  min-width: 940px;
 }
 
 body.page-index thead th {
@@ -467,18 +467,28 @@ body.page-index tbody tr:hover td {
 
 body.page-index .col-id { width: 76px; }
 body.page-index .col-name { width: 190px; }
+body.page-index .col-price { width: 140px; }
 body.page-index .col-weight { width: 110px; }
+body.page-index .col-unit { width: 90px; }
 body.page-index .col-action { width: 140px; }
 
 body.page-index tbody td:nth-child(1),
 body.page-index tbody td:nth-child(4),
-body.page-index tbody td:nth-child(5) {
+body.page-index tbody td:nth-child(5),
+body.page-index tbody td:nth-child(6),
+body.page-index tbody td:nth-child(7) {
   white-space: nowrap;
 }
 
 body.page-index tbody td:nth-child(3) {
   word-break: break-word;
   hyphens: auto;
+}
+
+body.page-index .row-actions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
 }
 
 body.page-product {

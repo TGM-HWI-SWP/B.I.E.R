@@ -46,19 +46,32 @@ function initIndexPage() {
         body.innerHTML = "";
         if (filtered.length === 0) {
             const row = document.createElement("tr");
-            row.innerHTML = '<td colspan="5">Keine Produkte gefunden.</td>';
+            row.innerHTML = '<td colspan="7">Keine Produkte gefunden.</td>';
             body.appendChild(row);
             return;
         }
 
         filtered.forEach((product) => {
+            const currency = product.waehrung || "EUR";
+            const price = Number(product.preis ?? 0);
+            const formattedPrice = Number.isFinite(price) ? `${price.toFixed(2)} ${currency}` : `0.00 ${currency}`;
+            const params = new URLSearchParams(window.location.search);
+            params.set("edit_product_id", String(product.id));
+            const editHref = `/page1?${params.toString()}`;
             const row = document.createElement("tr");
             row.innerHTML = `
                 <td>${product.id ?? ""}</td>
                 <td>${product.name ?? ""}</td>
                 <td>${product.beschreibung ?? ""}</td>
+                <td>${formattedPrice}</td>
                 <td>${product.gewicht ?? ""}</td>
-                <td><button class="btn btn-small" type="button" data-id="${product.id}">Löschen</button></td>
+                <td>${product.einheit || "Stk"}</td>
+                <td>
+                    <div class="row-actions">
+                        <a class="btn btn-small" href="${editHref}">Bearbeiten</a>
+                        <button class="btn btn-small" type="button" data-id="${product.id}">Löschen</button>
+                    </div>
+                </td>
             `;
             body.appendChild(row);
         });
@@ -120,6 +133,7 @@ function initProductPage() {
 
     const title = document.querySelector(".product-title");
     const subtitle = document.querySelector(".product-subtitle");
+    const requestedEditId = new URLSearchParams(window.location.search).get("edit_product_id");
 
     let products = [];
     let warehouses = [];
@@ -346,6 +360,9 @@ function initProductPage() {
         try {
             status.textContent = "Lade Produkt- und Lagerdaten ...";
             await Promise.all([loadProducts(), loadWarehouses()]);
+            if (requestedEditId && products.some((product) => String(product.id) === String(requestedEditId))) {
+                productSelect.value = String(requestedEditId);
+            }
             fillProductForm(productSelect.value);
             await loadInventoryForProduct(productSelect.value);
             status.textContent = "Bereit.";
