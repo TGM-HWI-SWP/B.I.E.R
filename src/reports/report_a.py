@@ -36,34 +36,77 @@ def _products_to_movements(product_list: List[Dict]) -> List[Dict]:
             numeric_seed = abs(hash(product_id)) % ID_MODULO
 
         initial_quantity = (numeric_seed % ID_MODULO) + INITIAL_OFFSET
-        initial_timestamp = (SAMPLE_BASE_DATE + timedelta(days=numeric_seed % MAX_DAY_SPAN)).isoformat()
 
-        # carry over any warehouse/location-like fields from the original
-        warehouse_keys = (
-            "from",
-            "quelle",
-            "von",
-            "source",
-            "origin",
-            "from_location",
-            "to",
-            "ziel",
-            "zu",
-            "target",
-            "destination",
-            "to_location",
-            "lager_id",
-            "source_lager",
-            "from_warehouse",
-            "ziel_lager",
-            "target_lager",
-            "to_warehouse",
-        )
-        extras = {}
-        for k in warehouse_keys:
+        # Try to reuse any timestamp-like field on the product record.
+        def _parse_possible_ts(src: Dict):
+            for k in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
+                if k in src and src.get(k) is not None:
+                    val = src.get(k)
+                    if not isinstance(raw, dict):
+                        raw = {}
+
+                    keys = {
+                        "from": ("from", "quelle", "von", "source", "origin", "from_location"),
+                        "to": ("to", "ziel", "zu", "target", "destination", "to_location"),
+                        "from_id": ("lager_id", "source_lager", "from_warehouse"),
+                        "to_id": ("ziel_lager", "target_lager", "to_warehouse"),
+                    }
+
+                    def resolve(side: str):
+                        for k in keys[side]:
+                            v = raw.get(k)
+                            if v:
+                                return str(v)
+                        return None
+
+                    src = resolve("from") or None
+                    dst = resolve("to") or None
+
+                    # Try to map explicit 'from'/'to' values to warehouse names.
+                    def _map_value(v):
+                        if not v:
+                            return None
+                        if str(v).lower() == "neu":
+                            return str(v)
+                        s = str(v)
+                        if isinstance(self.warehouses, dict):
+                            mapped = self.warehouses.get(s)
+                            if mapped:
+                                return mapped
+                            try:
+                                si = str(int(float(s)))
+                                mapped = self.warehouses.get(si)
+                                if mapped:
+                                    return mapped
+                            except Exception:
+                                pass
+                        return s
+
+                    try:
+                        src = _map_value(src)
+                        dst = _map_value(dst)
+                    except Exception:
+                        pass
+
+                    if not src:
+                        src_id = resolve("from_id")
+                        if src_id:
+                            src = self.warehouses.get(str(src_id)) or str(src_id)
+
+                    if not dst:
+                        dst_id = resolve("to_id")
+                        if dst_id:
+                            dst = self.warehouses.get(str(dst_id)) or str(dst_id)
+
+                    if not src and not dst:
+                        return "Nicht angegeben"
+
+                    src = src or "(nicht angegeben)"
+                    dst = dst or "(nicht angegeben)"
+                    return f"{src} -> {dst}"
             if k in item and item.get(k) is not None:
                 extras[k] = item.get(k)
-        # if no warehouse/location info present, provide deterministic seeded defaults
+
         if not any(k in extras for k in (
             "from",
             "quelle",
@@ -84,10 +127,11 @@ def _products_to_movements(product_list: List[Dict]) -> List[Dict]:
             "target_lager",
             "to_warehouse",
         )):
-            # deterministic assignment based on numeric_seed so results are repeatable
-            src_label = f"Lager {numeric_seed % 5 + 1}"
+
+            
             dst_label = f"Filiale {numeric_seed % 3 + 1}"
-            extras["from"] = src_label
+            
+            extras["from"] = "Neu"
             extras["to"] = dst_label
         movements.append({
             "id": f"init-{product_id}",
@@ -100,7 +144,11 @@ def _products_to_movements(product_list: List[Dict]) -> List[Dict]:
 
         outbound_quantity = -(numeric_seed % OUT_QUANTITY_MOD)
         if outbound_quantity != 0:
-            outbound_timestamp = (SAMPLE_BASE_DATE + timedelta(days=(numeric_seed % MAX_DAY_SPAN) + OUT_DAYS_OFFSET)).isoformat()
+            parsed_out = _parse_possible_ts(item)
+            if parsed_out and isinstance(parsed_out, datetime):
+                outbound_timestamp = parsed_out + timedelta(days=OUT_DAYS_OFFSET)
+            else:
+                outbound_timestamp = (SAMPLE_BASE_DATE + timedelta(days=(numeric_seed % MAX_DAY_SPAN) + OUT_DAYS_OFFSET))
             out_extras = {k: item.get(k) for k in warehouse_keys if k in item and item.get(k) is not None}
             if not out_extras:
                 out_extras = {}
@@ -132,7 +180,7 @@ class ReportA(ReportPort):
         if self.db:
             try:
                 self.db.connect()
-                # load warehouse lookup (id -> display name)
+
                 self._load_warehouses()
             except Exception:
                 self.db = None
@@ -151,10 +199,20 @@ class ReportA(ReportPort):
                 wid = w.get("id") or w.get("lager_id") or w.get("warehouse_id")
                 if wid is None:
                     continue
-                name = w.get("name") or w.get("bezeichnung") or w.get("label") or wid
+              
+                name = (
+                    w.get("name")
+                    or w.get("lagername")
+                    or w.get("lager_name")
+                    or w.get("bezeichnung")
+                    or w.get("label")
+                    or w.get("lager")
+                    or w.get("warehouse")
+                    or wid
+                )
                 self.warehouses[str(wid)] = str(name)
         except Exception:
-            # keep warehouses empty on any DB error
+
             self.warehouses = {}
 
     def _movement_direction(self, raw: Dict, quantity: float) -> str:
@@ -186,6 +244,19 @@ class ReportA(ReportPort):
 
         src = resolve("from") or None
         dst = resolve("to") or None
+
+        # If explicit values look like warehouse IDs, try resolve them to names
+        try:
+            if src and isinstance(self.warehouses, dict):
+                mapped = self.warehouses.get(str(src))
+                if mapped:
+                    src = mapped
+            if dst and isinstance(self.warehouses, dict):
+                mapped = self.warehouses.get(str(dst))
+                if mapped:
+                    dst = mapped
+        except Exception:
+            pass
 
         if not src:
             src_id = resolve("from_id")
@@ -219,6 +290,77 @@ class ReportA(ReportPort):
                 try:
                     rows = self.db.find_all(candidate_table)
                     if rows:
+                        for r in rows:
+                            found = False
+                            for k in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
+                                if k in r and r.get(k) is not None:
+                                    r["timestamp"] = r.get(k)
+                                    found = True
+                                    break
+                            if not found:
+                                # No timestamp in DB row: use 'created_at' if present,
+                                # otherwise leave timestamp unset (do not use current time).
+                                r["timestamp"] = r.get("created_at") or None
+                        # Enrich rows: parse timestamps, attach product names, resolve warehouses
+                        for r in rows:
+                            # Normalize timestamp into datetime object
+                            parsed = None
+                            for k in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
+                                if k in r and r.get(k) is not None:
+                                    v = r.get(k)
+                                    if isinstance(v, datetime):
+                                        parsed = v
+                                    else:
+                                        try:
+                                            parsed = datetime.fromisoformat(str(v))
+                                        except Exception:
+                                            try:
+                                                parsed = datetime.fromtimestamp(float(v))
+                                            except Exception:
+                                                parsed = None
+                                    break
+                            # fallback from history matching already set earlier
+                            if r.get("timestamp") is None and parsed is not None:
+                                r["timestamp"] = parsed
+
+                            # Attach product name if possible
+                            pid = r.get("product_id") or r.get("produkt_id") or r.get("id")
+                            if pid and getattr(self, "db", None):
+                                try:
+                                    prod = self.db.find_by_id("products", pid)
+                                except Exception:
+                                    prod = None
+                                if not prod:
+                                    try:
+                                        prod = self.db.find_by_id("products", int(pid))
+                                    except Exception:
+                                        prod = None
+                                if prod:
+                                    pname = prod.get("name") or prod.get("product") or prod.get("bezeichnung") or prod.get("label")
+                                    if pname:
+                                        r["product_name"] = str(pname)
+                                    r.setdefault("product", {})
+                                    r["product"]["id"] = prod.get("id")
+                                    r["product"]["name"] = pname or r["product"].get("name")
+
+                            # Resolve warehouse ids to names when possible
+                            try:
+                                if getattr(self, "warehouses", None):
+                                    # source id keys
+                                    for sk in ("lager_id", "from_warehouse", "source_lager"):
+                                        if sk in r and r.get(sk) is not None:
+                                            rid = r.get(sk)
+                                            r["from"] = self.warehouses.get(str(rid)) or r.get("from")
+                                            break
+                                    # target id keys
+                                    for tk in ("ziel_lager", "to_warehouse", "target_lager"):
+                                        if tk in r and r.get(tk) is not None:
+                                            tid = r.get(tk)
+                                            r["to"] = self.warehouses.get(str(tid)) or r.get("to")
+                                            break
+                            except Exception:
+                                pass
+
                         return rows
                 except Exception:
                     continue
@@ -336,16 +478,19 @@ class ReportA(ReportPort):
             except Exception:
                 quantity = 0.0
 
-            timestamp_value = row.get("timestamp") or row.get("time") or row.get("created_at")
+            timestamp_value = row.get("timestamp") or row.get("time") or row.get("created_at") or row.get("createdAt") or row.get("created")
             parsed_ts = None
             if timestamp_value:
-                try:
-                    parsed_ts = datetime.fromisoformat(timestamp_value)
-                except Exception:
+                if isinstance(timestamp_value, datetime):
+                    parsed_ts = timestamp_value
+                else:
                     try:
-                        parsed_ts = datetime.fromtimestamp(float(timestamp_value))
+                        parsed_ts = datetime.fromisoformat(str(timestamp_value))
                     except Exception:
-                        parsed_ts = None
+                        try:
+                            parsed_ts = datetime.fromtimestamp(float(timestamp_value))
+                        except Exception:
+                            parsed_ts = None
 
             entry = {
                 "product_id": product_id,
@@ -359,6 +504,28 @@ class ReportA(ReportPort):
 
         for pid, entries in movements_by_product.items():
             entries.sort(key=lambda e: e["timestamp"] or datetime.max)
+
+        if getattr(self, "db", None):
+            try:
+                for pid, pdata in products_map.items():
+                    current_name = pdata.get("name")
+                    if not current_name or str(current_name) == str(pid):
+                        prod = None
+                        try:
+                            prod = self.db.find_by_id("products", pid)
+                        except Exception:
+                            prod = None
+                        if not prod:
+                            try:
+                                prod = self.db.find_by_id("products", int(pid))
+                            except Exception:
+                                prod = None
+                        if prod:
+                            pname = prod.get("name") or prod.get("product") or prod.get("bezeichnung") or prod.get("label") or prod.get("product_name")
+                            if pname:
+                                products_map[pid]["name"] = str(pname)
+            except Exception:
+                pass
 
         return {"products": products_map, "by_product": dict(movements_by_product)}
 
@@ -385,8 +552,40 @@ class ReportA(ReportPort):
             change = float(movement.get("quantity") or 0)
             previous = running_totals[pid]
             current = previous + change
-            ts = movement.get("timestamp")
-            time_str = ts.strftime("%Y-%m-%d %H:%M") if isinstance(ts, datetime) else (getattr(ts, "isoformat", lambda: str(ts))()) if ts else ""
+            # Build a robust timestamp string for the Datum column. Check
+            # parsed entry timestamp first, then several common raw fields.
+            def _find_raw_ts(mov: Dict):
+                # prefer already-parsed datetime
+                ts = mov.get("timestamp")
+                if ts:
+                    return ts
+                raw = mov.get("raw") or {}
+                for key in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
+                    if key in raw and raw.get(key) is not None:
+                        return raw.get(key)
+                return None
+
+            raw_ts = _find_raw_ts(movement)
+            time_str = ""
+            if isinstance(raw_ts, datetime):
+                try:
+                    if raw_ts.tzinfo:
+                        time_str = raw_ts.strftime("%Y-%m-%d %H:%M:%S %z")
+                    else:
+                        time_str = raw_ts.strftime("%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    time_str = raw_ts.isoformat(sep=" ")
+            elif raw_ts:
+                # try ISO parse then unix timestamp fallback
+                try:
+                    parsed = datetime.fromisoformat(str(raw_ts))
+                    time_str = parsed.strftime("%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    try:
+                        parsed = datetime.fromtimestamp(float(raw_ts))
+                        time_str = parsed.strftime("%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        time_str = str(raw_ts)
            
             movement_direction = self._movement_direction(movement.get("raw", {}), change)
             table_rows.append([time_str, name, movement_direction, f"{previous:g}", f"{change:g}", f"{current:g}"])
