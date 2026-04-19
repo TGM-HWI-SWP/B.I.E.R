@@ -10,35 +10,44 @@
 <body class="page-index">
     <header class="topbar">
         <div class="topbar-inner">
+            <a class="brand-logo" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Startseite">
+                <img src="{{ url_for('picture', filename='BIER_LOGO_SCHWARZ_COMPRESSED.png') }}" alt="B.I.E.R Logo" />
+            </a>
             <nav class="tabs" aria-label="Page Auswahl">
                 <a class="tab" href="{{ url_for('index', theme=selected_theme) }}" aria-current="page">Produkte</a>
                 <a class="tab" href="{{ url_for('page1', theme=selected_theme) }}">Produkt bearbeiten</a>
                 <a class="tab" href="{{ url_for('page2', theme=selected_theme) }}">Lagerliste</a>
                 <a class="tab" href="{{ url_for('page3', theme=selected_theme) }}">Statistik</a>
                 <a class="tab" href="{{ url_for('page4', theme=selected_theme) }}">Historie</a>
-                <span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
+                <a class="tab" href="{{ url_for('page6', theme=selected_theme) }}">Reports</a>
             </nav>
 
             <form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
-                <label class="theme-label" for="themeSelect">Style</label>
-                <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
-                    {% for theme in theme_options %}
-                    <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
-                    {% endfor %}
-                </select>
-                <noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+                <details class="settings-menu">
+                    <summary class="settings-trigger" aria-label="Einstellungen öffnen" title="Einstellungen">⚙</summary>
+                    <div class="settings-panel">
+                        <label class="theme-label" for="themeSelect">Style</label>
+                        <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+                            {% for theme in theme_options %}
+                            <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
+                            {% endfor %}
+                        </select>
+                        <noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+                    </div>
+                </details>
             </form>
         </div>
     </header>
 
     <main class="container">
-        <h1 class="page-title">Produktverwaltung</h1>
-
-        <section class="search-row" aria-label="Produktverwaltung">
+        <div class="title-row">
+            <h1 class="page-title">Produktverwaltung</h1>
             <a class="add-button" href="{{ url_for('page1', theme=selected_theme) }}" aria-label="Neues Produkt anlegen" title="Neues Produkt anlegen">
                 <span class="sr-only">Neues Produkt anlegen</span>
             </a>
+        </div>
 
+        <section class="search-row" aria-label="Produktverwaltung">
             <div class="search-wrap">
                 <label class="search-label" for="productSearch">Produktsuche</label>
                 <input

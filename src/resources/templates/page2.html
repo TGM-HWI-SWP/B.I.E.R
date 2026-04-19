@@ -10,23 +10,31 @@
 <body class="page-warehouse">
 	<header class="topbar">
 		<div class="topbar-inner">
+			<a class="brand-logo" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Startseite">
+				<img src="{{ url_for('picture', filename='BIER_LOGO_SCHWARZ_COMPRESSED.png') }}" alt="B.I.E.R Logo" />
+			</a>
 			<nav class="tabs" aria-label="Page Auswahl">
 				<a class="tab" href="{{ url_for('index', theme=selected_theme) }}">Produkte</a>
 				<a class="tab" href="{{ url_for('page1', theme=selected_theme) }}">Produkt bearbeiten</a>
 				<a class="tab" href="{{ url_for('page2', theme=selected_theme) }}" aria-current="page">Lagerliste</a>
 				<a class="tab" href="{{ url_for('page3', theme=selected_theme) }}">Statistik</a>
 				<a class="tab" href="{{ url_for('page4', theme=selected_theme) }}">Historie</a>
-				<span class="tab is-disabled" aria-disabled="true" title="Noch nicht implementiert">Reports</span>
+				<a class="tab" href="{{ url_for('page6', theme=selected_theme) }}">Reports</a>
 			</nav>
 
 			<form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
-				<label class="theme-label" for="themeSelect">Style</label>
-				<select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
-					{% for theme in theme_options %}
-					<option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
-					{% endfor %}
-				</select>
-				<noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+				<details class="settings-menu">
+					<summary class="settings-trigger" aria-label="Einstellungen öffnen" title="Einstellungen">⚙</summary>
+					<div class="settings-panel">
+						<label class="theme-label" for="themeSelect">Style</label>
+						<select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+							{% for theme in theme_options %}
+							<option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
+							{% endfor %}
+						</select>
+						<noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+					</div>
+				</details>
 			</form>
 		</div>
 	</header>
@@ -36,7 +44,7 @@
 
 		<section class="card" aria-label="Lagerliste">
 			<div class="card-header">
-				<p class="note">Übersicht aller angelegten Lager aus der PostgreSQL-Datenbank.</p>
+				<p class="note">Übersicht aller angelegten Lager aus der PostgreSQL-Datenbank. Ein Klick auf ein Lager öffnet die Produktverwaltung.</p>
 			</div>
 
 			<div class="create" aria-label="Lager erstellen">
@@ -52,11 +60,18 @@
 					Kapazität (max. Produkte)
 					<input id="warehouseCapacity" type="number" min="1" step="1" placeholder="z.B. 500" />
 				</label>
-				<label>
-					Firma-ID
-					<input id="warehouseCompany" type="number" min="1" step="1" value="1" />
-				</label>
-				<button class="btn" id="createWarehouseBtn" type="button">Lager erstellen</button>
+				<div class="create-actions">
+					<label>
+						Firma-ID
+						<input id="warehouseCompany" type="number" min="1" step="1" value="1" />
+					</label>
+					<button class="btn" id="createWarehouseBtn" type="button">Lager erstellen</button>
+				</div>
+			</div>
+
+			<div class="warehouse-search" aria-label="Lager suchen">
+				<label for="warehouseSearch">Lager suchen</label>
+				<input id="warehouseSearch" type="search" placeholder="Nach Lagername, Ort, ID oder Firma-ID suchen ..." />
 			</div>
 
 			<div class="table-wrap" role="region" aria-label="Tabelle: Lager" tabindex="0">

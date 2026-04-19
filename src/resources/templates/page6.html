@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/favicon.ico">
     <link rel="stylesheet" href="{{ url_for('stylesheet', filename=selected_theme) }}">
-    <title>B.I.E.R – Statistik</title>
+    <title>B.I.E.R - Reports</title>
 </head>
-<body class="page-stats">
+<body class="page-reports">
     <header class="topbar">
         <div class="topbar-inner">
             <a class="brand-logo" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Startseite">
@@ -17,9 +17,9 @@
                 <a class="tab" href="{{ url_for('index', theme=selected_theme) }}">Produkte</a>
                 <a class="tab" href="{{ url_for('page1', theme=selected_theme) }}">Produkt bearbeiten</a>
                 <a class="tab" href="{{ url_for('page2', theme=selected_theme) }}">Lagerliste</a>
-                <a class="tab" href="{{ url_for('page3', theme=selected_theme) }}" aria-current="page">Statistik</a>
+                <a class="tab" href="{{ url_for('page3', theme=selected_theme) }}">Statistik</a>
                 <a class="tab" href="{{ url_for('page4', theme=selected_theme) }}">Historie</a>
-                <a class="tab" href="{{ url_for('page6', theme=selected_theme) }}">Reports</a>
+                <a class="tab" href="{{ url_for('page6', theme=selected_theme) }}" aria-current="page">Reports</a>
             </nav>
 
             <form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
@@ -40,52 +40,44 @@
     </header>
 
     <main class="container">
-        <h1 class="page-title">Statistik</h1>
+        <h1 class="page-title">Reports</h1>
 
-        <section class="grid kpis" aria-label="Kennzahlen">
-            <div class="card kpi">
-                <p class="kpi-label">Anzahl Lager</p>
-                <p class="kpi-value" id="kpiWarehouses">–</p>
-                <p class="kpi-sub">Alle angelegten Lager</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Anzahl Produkte</p>
-                <p class="kpi-value" id="kpiProducts">–</p>
-                <p class="kpi-sub">Gesamt über alle Lager</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Meisten Stück</p>
-                <p class="kpi-value" id="kpiTopProduct">–</p>
-                <p class="kpi-sub" id="kpiTopProductSub">–</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Größte Auslastung</p>
-                <p class="kpi-value" id="kpiMaxUtil">–</p>
-                <p class="kpi-sub" id="kpiMaxUtilSub">–</p>
-            </div>
-        </section>
-
-        <section class="grid split split-section" aria-label="Diagramme">
-            <div class="card">
-                <div class="card-header">
-                    <p class="card-title">Produkte pro Lager</p>
-                    <p class="card-note">Demo-Daten (später aus DB aggregieren).</p>
-                </div>
-                <div class="card-body" id="chartWarehouses"></div>
+        <section class="card reports-card" aria-label="Report Aktionen">
+            <div class="card-header">
+                <p class="note">Fuer jeden Report gibt es Vorschau und Download als PDF.</p>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <p class="card-title">Top Produkte</p>
-                    <p class="card-note">Sortiert nach Menge (Demo).</p>
+            <div class="reports-grid">
+                <article class="report-item" aria-label="Report A Aktionen">
+                    <h2>Report A</h2>
+                    <p class="note">Historie und Bestandsbewegungen.</p>
+                    <div class="report-actions">
+                        <button class="btn" type="button" data-report-preview="a">Preview</button>
+                        <button class="btn" type="button" data-report-download="a">Download</button>
+                    </div>
+                </article>
+
+                <article class="report-item" aria-label="Report B Aktionen">
+                    <h2>Report B</h2>
+                    <p class="note">Lagerauslastung und Kapazitaeten.</p>
+                    <div class="report-actions">
+                        <button class="btn" type="button" data-report-preview="b">Preview</button>
+                        <button class="btn" type="button" data-report-download="b">Download</button>
+                    </div>
+                </article>
+            </div>
+
+            <div class="report-preview" aria-label="PDF Vorschau">
+                <div class="preview-top">
+                    <strong id="reportsPreviewTitle">Preview</strong>
+                    <small id="reportsPreviewStatus">Bitte einen Report fuer die Vorschau auswaehlen.</small>
                 </div>
-                <div class="card-body">
-                    <ol class="list" id="topProducts"></ol>
-                </div>
+                <canvas id="reportPreviewCanvas" aria-label="PDF Vorschau Canvas"></canvas>
             </div>
         </section>
     </main>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script src="{{ url_for('app_script') }}"></script>
 </body>
 </html>
