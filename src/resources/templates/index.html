@@ -32,13 +32,14 @@
     </header>
 
     <main class="container">
-        <h1 class="page-title">Produktverwaltung</h1>
-
-        <section class="search-row" aria-label="Produktverwaltung">
+        <div class="title-row">
+            <h1 class="page-title">Produktverwaltung</h1>
             <a class="add-button" href="{{ url_for('page1', theme=selected_theme) }}" aria-label="Neues Produkt anlegen" title="Neues Produkt anlegen">
                 <span class="sr-only">Neues Produkt anlegen</span>
             </a>
+        </div>
 
+        <section class="search-row" aria-label="Produktverwaltung">
             <div class="search-wrap">
                 <label class="search-label" for="productSearch">Produktsuche</label>
                 <input
