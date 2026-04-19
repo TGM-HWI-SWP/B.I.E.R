@@ -5,8 +5,8 @@ import sys
 import json
 from datetime import datetime, timedelta
 from collections import defaultdict
-from src.bierapp.db.postgress import PostgresRepository
-from src.bierapp.contracts import ReportPort
+from bierapp.db.postgress import PostgresRepository
+from bierapp.contracts import ReportPort
 from reports.report_format import create_cover_page, create_table_pages, create_bar_chart, create_summary_page
 
 
@@ -37,7 +37,6 @@ def _products_to_movements(product_list: List[Dict]) -> List[Dict]:
 
         initial_quantity = (numeric_seed % ID_MODULO) + INITIAL_OFFSET
 
-        # Try to reuse any timestamp-like field on the product record.
         def _parse_possible_ts(src: Dict):
             for k in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
                 if k in src and src.get(k) is not None:
@@ -62,7 +61,7 @@ def _products_to_movements(product_list: List[Dict]) -> List[Dict]:
                     src = resolve("from") or None
                     dst = resolve("to") or None
 
-                    # Try to map explicit 'from'/'to' values to warehouse names.
+                    
                     def _map_value(v):
                         if not v:
                             return None
@@ -245,7 +244,6 @@ class ReportA(ReportPort):
         src = resolve("from") or None
         dst = resolve("to") or None
 
-        # If explicit values look like warehouse IDs, try resolve them to names
         try:
             if src and isinstance(self.warehouses, dict):
                 mapped = self.warehouses.get(str(src))
@@ -298,12 +296,11 @@ class ReportA(ReportPort):
                                     found = True
                                     break
                             if not found:
-                                # No timestamp in DB row: use 'created_at' if present,
-                                # otherwise leave timestamp unset (do not use current time).
+                               
                                 r["timestamp"] = r.get("created_at") or None
-                        # Enrich rows: parse timestamps, attach product names, resolve warehouses
+                        
                         for r in rows:
-                            # Normalize timestamp into datetime object
+                           
                             parsed = None
                             for k in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
                                 if k in r and r.get(k) is not None:
@@ -319,11 +316,11 @@ class ReportA(ReportPort):
                                             except Exception:
                                                 parsed = None
                                     break
-                            # fallback from history matching already set earlier
+                           
                             if r.get("timestamp") is None and parsed is not None:
                                 r["timestamp"] = parsed
 
-                            # Attach product name if possible
+                        
                             pid = r.get("product_id") or r.get("produkt_id") or r.get("id")
                             if pid and getattr(self, "db", None):
                                 try:
@@ -343,16 +340,16 @@ class ReportA(ReportPort):
                                     r["product"]["id"] = prod.get("id")
                                     r["product"]["name"] = pname or r["product"].get("name")
 
-                            # Resolve warehouse ids to names when possible
+                           
                             try:
                                 if getattr(self, "warehouses", None):
-                                    # source id keys
+                                  
                                     for sk in ("lager_id", "from_warehouse", "source_lager"):
                                         if sk in r and r.get(sk) is not None:
                                             rid = r.get(sk)
                                             r["from"] = self.warehouses.get(str(rid)) or r.get("from")
                                             break
-                                    # target id keys
+                                    
                                     for tk in ("ziel_lager", "to_warehouse", "target_lager"):
                                         if tk in r and r.get(tk) is not None:
                                             tid = r.get(tk)
@@ -552,10 +549,9 @@ class ReportA(ReportPort):
             change = float(movement.get("quantity") or 0)
             previous = running_totals[pid]
             current = previous + change
-            # Build a robust timestamp string for the Datum column. Check
-            # parsed entry timestamp first, then several common raw fields.
+           
             def _find_raw_ts(mov: Dict):
-                # prefer already-parsed datetime
+                
                 ts = mov.get("timestamp")
                 if ts:
                     return ts
@@ -576,7 +572,7 @@ class ReportA(ReportPort):
                 except Exception:
                     time_str = raw_ts.isoformat(sep=" ")
             elif raw_ts:
-                # try ISO parse then unix timestamp fallback
+                
                 try:
                     parsed = datetime.fromisoformat(str(raw_ts))
                     time_str = parsed.strftime("%Y-%m-%d %H:%M:%S")
