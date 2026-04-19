@@ -52,11 +52,18 @@
 					Kapazität (max. Produkte)
 					<input id="warehouseCapacity" type="number" min="1" step="1" placeholder="z.B. 500" />
 				</label>
-				<label>
-					Firma-ID
-					<input id="warehouseCompany" type="number" min="1" step="1" value="1" />
-				</label>
-				<button class="btn" id="createWarehouseBtn" type="button">Lager erstellen</button>
+				<div class="create-actions">
+					<label>
+						Firma-ID
+						<input id="warehouseCompany" type="number" min="1" step="1" value="1" />
+					</label>
+					<button class="btn" id="createWarehouseBtn" type="button">Lager erstellen</button>
+				</div>
+			</div>
+
+			<div class="warehouse-search" aria-label="Lager suchen">
+				<label for="warehouseSearch">Lager suchen</label>
+				<input id="warehouseSearch" type="search" placeholder="Nach Lagername, Ort, ID oder Firma-ID suchen ..." />
 			</div>
 
 			<div class="table-wrap" role="region" aria-label="Tabelle: Lager" tabindex="0">

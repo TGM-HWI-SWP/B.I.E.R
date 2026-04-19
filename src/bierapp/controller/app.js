@@ -347,23 +347,44 @@ function initWarehousePage() {
     const body = document.getElementById("warehousesTableBody");
     const status = document.getElementById("warehousesStatus");
     const createBtn = document.getElementById("createWarehouseBtn");
+    const searchInput = document.getElementById("warehouseSearch");
     const nameInput = document.getElementById("warehouseName");
     const addressInput = document.getElementById("warehouseAddress");
     const capacityInput = document.getElementById("warehouseCapacity");
     const companyInput = document.getElementById("warehouseCompany");
 
-    if (!body || !status || !createBtn || !nameInput || !addressInput || !capacityInput || !companyInput) return;
+    if (!body || !status || !createBtn || !searchInput || !nameInput || !addressInput || !capacityInput || !companyInput) return;
 
-    function renderRows(warehouses) {
+    let warehouses = [];
+
+    function filteredWarehouses() {
+        const query = String(searchInput.value || "").trim().toLowerCase();
+        if (!query) return warehouses;
+        return warehouses.filter((warehouse) => {
+            const haystack = [
+                warehouse.id,
+                warehouse.lagername,
+                warehouse.adresse,
+                warehouse.firma_id,
+                warehouse.max_plaetze,
+            ]
+                .map((v) => String(v ?? "").toLowerCase())
+                .join(" | ");
+            return haystack.includes(query);
+        });
+    }
+
+    function renderRows() {
+        const visibleWarehouses = filteredWarehouses();
         body.innerHTML = "";
-        if (!warehouses.length) {
+        if (!visibleWarehouses.length) {
             const row = document.createElement("tr");
-            row.innerHTML = '<td colspan="6">Noch keine Lager vorhanden.</td>';
+            row.innerHTML = '<td colspan="6">Keine Lager zur Suche gefunden.</td>';
             body.appendChild(row);
             return;
         }
 
-        warehouses.forEach((warehouse) => {
+        visibleWarehouses.forEach((warehouse) => {
             const products = Number(warehouse.products || 0);
             const capacity = Number(warehouse.max_plaetze || 0);
             const utilization = capacity > 0 ? Math.round((products / capacity) * 100) : 0;
@@ -399,9 +420,10 @@ function initWarehousePage() {
 
     async function loadWarehouses() {
         status.textContent = "Lade Lager ...";
-        const warehouses = await api("/warehouses");
-        renderRows(warehouses);
-        status.textContent = `${warehouses.length} Lager geladen.`;
+        warehouses = await api("/warehouses");
+        renderRows();
+        const visibleCount = filteredWarehouses().length;
+        status.textContent = `${visibleCount} von ${warehouses.length} Lager(n) angezeigt.`;
     }
 
     async function createWarehouse() {
@@ -439,6 +461,12 @@ function initWarehousePage() {
         } catch (error) {
             status.textContent = `Fehler: ${error.message}`;
         }
+    });
+
+    searchInput.addEventListener("input", () => {
+        renderRows();
+        const visibleCount = filteredWarehouses().length;
+        status.textContent = `${visibleCount} von ${warehouses.length} Lager(n) angezeigt.`;
     });
 
     body.addEventListener("click", async (event) => {

@@ -628,15 +628,35 @@ body.page-warehouse .note {
 
 body.page-warehouse .create {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 160px;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 10px;
   padding: 12px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
 
-body.page-warehouse .create .btn {
-  align-self: end;
+body.page-warehouse .create-actions {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+body.page-warehouse .create-actions .btn {
+  min-width: 160px;
+}
+
+body.page-warehouse .warehouse-search {
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  display: grid;
+  gap: 6px;
+}
+
+body.page-warehouse .warehouse-search label {
+  font-size: 13px;
+  color: var(--muted);
 }
 
 body.page-warehouse label {
@@ -917,6 +937,14 @@ body.page-stats .list-item strong {
 
   body.page-warehouse .create {
     grid-template-columns: 1fr;
+  }
+
+  body.page-warehouse .create-actions {
+    grid-template-columns: 1fr;
+  }
+
+  body.page-warehouse .create-actions .btn {
+    width: 100%;
   }
 
   body.page-warehouse table {
