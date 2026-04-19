@@ -763,6 +763,57 @@ body.page-warehouse-detail td:nth-child(5) .btn-small {
   width: 100%;
 }
 
+body.page-reports .reports-card {
+  display: grid;
+  gap: 0;
+}
+
+body.page-reports .reports-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+body.page-reports .report-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: color-mix(in oklab, var(--surface) 96%, var(--bg));
+}
+
+body.page-reports .report-item h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+body.page-reports .report-actions {
+  margin-top: 10px;
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+body.page-reports .report-preview {
+  padding: 12px;
+}
+
+body.page-reports .preview-top {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+body.page-reports #reportPreviewCanvas {
+  width: 100%;
+  max-width: 900px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #ffffff;
+  display: block;
+}
+
 body.page-stats .grid {
   display: grid;
   gap: 12px;
@@ -961,6 +1012,10 @@ body.page-stats .list-item strong {
   }
 
   body.page-stats .split {
+    grid-template-columns: 1fr;
+  }
+
+  body.page-reports .reports-grid {
     grid-template-columns: 1fr;
   }
 

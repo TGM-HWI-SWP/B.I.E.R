@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.ico">
+    <link rel="stylesheet" href="{{ url_for('stylesheet', filename=selected_theme) }}">
+    <title>B.I.E.R - Reports</title>
+</head>
+<body class="page-reports">
+    <header class="topbar">
+        <div class="topbar-inner">
+            <nav class="tabs" aria-label="Page Auswahl">
+                <a class="tab" href="{{ url_for('index', theme=selected_theme) }}">Produkte</a>
+                <a class="tab" href="{{ url_for('page1', theme=selected_theme) }}">Produkt bearbeiten</a>
+                <a class="tab" href="{{ url_for('page2', theme=selected_theme) }}">Lagerliste</a>
+                <a class="tab" href="{{ url_for('page3', theme=selected_theme) }}">Statistik</a>
+                <a class="tab" href="{{ url_for('page4', theme=selected_theme) }}">Historie</a>
+                <a class="tab" href="{{ url_for('page6', theme=selected_theme) }}" aria-current="page">Reports</a>
+            </nav>
+
+            <form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
+                <label class="theme-label" for="themeSelect">Style</label>
+                <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+                    {% for theme in theme_options %}
+                    <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
+                    {% endfor %}
+                </select>
+                <noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+            </form>
+        </div>
+    </header>
+
+    <main class="container">
+        <h1 class="page-title">Reports</h1>
+
+        <section class="card reports-card" aria-label="Report Aktionen">
+            <div class="card-header">
+                <p class="note">Fuer jeden Report gibt es Vorschau und Download als PDF.</p>
+            </div>
+
+            <div class="reports-grid">
+                <article class="report-item" aria-label="Report A Aktionen">
+                    <h2>Report A</h2>
+                    <p class="note">Historie und Bestandsbewegungen.</p>
+                    <div class="report-actions">
+                        <button class="btn" type="button" data-report-preview="a">Preview</button>
+                        <button class="btn" type="button" data-report-download="a">Download</button>
+                    </div>
+                </article>
+
+                <article class="report-item" aria-label="Report B Aktionen">
+                    <h2>Report B</h2>
+                    <p class="note">Lagerauslastung und Kapazitaeten.</p>
+                    <div class="report-actions">
+                        <button class="btn" type="button" data-report-preview="b">Preview</button>
+                        <button class="btn" type="button" data-report-download="b">Download</button>
+                    </div>
+                </article>
+            </div>
+
+            <div class="report-preview" aria-label="PDF Vorschau">
+                <div class="preview-top">
+                    <strong id="reportsPreviewTitle">Preview</strong>
+                    <small id="reportsPreviewStatus">Bitte einen Report fuer die Vorschau auswaehlen.</small>
+                </div>
+                <canvas id="reportPreviewCanvas" aria-label="PDF Vorschau Canvas"></canvas>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="{{ url_for('app_script') }}"></script>
+</body>
+</html>

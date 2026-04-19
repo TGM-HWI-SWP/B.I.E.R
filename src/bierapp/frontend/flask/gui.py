@@ -2,7 +2,10 @@
 
 import os
 import json
-from flask import Flask, render_template, jsonify, request, send_from_directory
+import io
+import tempfile
+import pathlib
+from flask import Flask, render_template, jsonify, request, send_from_directory, send_file
 from bierapp.backend.service.product_service import ProductService, InventoryService
 from bierapp.backend.service.warehouse_service import WarehouseService
 
@@ -61,6 +64,44 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             "action": row.get("action"),
             "details": row.get("details"),
         }
+
+    def _generate_report_pdf(report_key: str) -> tuple[io.BytesIO, str]:
+        report_id = str(report_key or "").lower()
+        try:
+            if report_id == "a":
+                from reports.report_a import ReportA
+
+                report_runner = ReportA(db_repo=inventory_service.db)
+                filename = "report_a.pdf"
+            elif report_id == "b":
+                from reports.report_b import ReportB
+
+                report_runner = ReportB()  # type: ignore[abstract]
+                filename = "report_b.pdf"
+            else:
+                raise ValueError("Unknown report key")
+        except ModuleNotFoundError as exc:
+            raise RuntimeError("Report dependencies missing: install matplotlib and Pillow") from exc
+        except TypeError as exc:
+            raise NotImplementedError("Report B is not fully implemented in colleague code") from exc
+
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            output_path = pathlib.Path(tmp.name)
+
+        try:
+            raw_data = report_runner.get_data(None)
+            processed = report_runner.process_data(raw_data)
+            report_runner.generate_report(processed, output_path=output_path)
+
+            pdf_bytes = output_path.read_bytes()
+            buffer = io.BytesIO(pdf_bytes)
+            buffer.seek(0)
+            return buffer, filename
+        finally:
+            try:
+                output_path.unlink(missing_ok=True)
+            except Exception:
+                pass
     @app.route("/stylesheets/<path:filename>", endpoint="stylesheet", methods=["GET"])
     def stylesheet(filename: str):
         """Serve a stylesheet file from the resources directory.
@@ -143,6 +184,42 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         """
         selected_theme = _selected_theme()
         return render_template("page5.html", selected_theme=selected_theme, theme_options=_theme_options())
+
+    @app.route("/page6", methods=["GET"])
+    def page6():
+        """Render the reports page.
+
+        Returns:
+            str: Rendered HTML template for report preview and download.
+        """
+        selected_theme = _selected_theme()
+        return render_template("page6.html", selected_theme=selected_theme, theme_options=_theme_options())
+
+    @app.route("/reports/<report_key>/preview", methods=["GET"])
+    def preview_report(report_key: str):
+        """Generate and return a report as inline PDF preview."""
+        try:
+            stream, filename = _generate_report_pdf(report_key)
+            return send_file(stream, mimetype="application/pdf", as_attachment=False, download_name=filename)
+        except ValueError as exc:
+            return jsonify({"error": "Unknown report", "details": str(exc)}), 404
+        except NotImplementedError as exc:
+            return jsonify({"error": "Report not implemented", "details": str(exc)}), 501
+        except Exception as exc:
+            return jsonify({"error": "Failed to generate report", "details": str(exc)}), 500
+
+    @app.route("/reports/<report_key>/download", methods=["GET"])
+    def download_report(report_key: str):
+        """Generate and return a report as downloadable PDF."""
+        try:
+            stream, filename = _generate_report_pdf(report_key)
+            return send_file(stream, mimetype="application/pdf", as_attachment=True, download_name=filename)
+        except ValueError as exc:
+            return jsonify({"error": "Unknown report", "details": str(exc)}), 404
+        except NotImplementedError as exc:
+            return jsonify({"error": "Report not implemented", "details": str(exc)}), 501
+        except Exception as exc:
+            return jsonify({"error": "Failed to generate report", "details": str(exc)}), 500
 
     @app.route("/history", methods=["GET"])
     def get_history():

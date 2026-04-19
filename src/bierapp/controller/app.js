@@ -989,6 +989,68 @@ function initHistoryPage() {
     load();
 }
 
+function initReportsPage() {
+    const previewTitle = document.getElementById("reportsPreviewTitle");
+    const previewStatus = document.getElementById("reportsPreviewStatus");
+    const previewCanvas = document.getElementById("reportPreviewCanvas");
+
+    if (!previewTitle || !previewStatus || !previewCanvas) return;
+    if (typeof window.pdfjsLib === "undefined") {
+        previewStatus.textContent = "PDF Vorschau-Bibliothek konnte nicht geladen werden.";
+        return;
+    }
+
+    const pdfjsLib = window.pdfjsLib;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+
+    async function renderPreview(reportKey) {
+        previewTitle.textContent = `Preview: Report ${String(reportKey).toUpperCase()}`;
+        previewStatus.textContent = "Lade PDF Vorschau ...";
+
+        try {
+            const response = await fetch(`/reports/${reportKey}/preview`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const bytes = await response.arrayBuffer();
+            const loadingTask = pdfjsLib.getDocument({ data: bytes });
+            const pdf = await loadingTask.promise;
+            const page = await pdf.getPage(1);
+
+            const maxWidth = 900;
+            const initialViewport = page.getViewport({ scale: 1 });
+            const scale = Math.min(1.5, maxWidth / initialViewport.width);
+            const viewport = page.getViewport({ scale });
+
+            const ctx = previewCanvas.getContext("2d");
+            previewCanvas.width = Math.ceil(viewport.width);
+            previewCanvas.height = Math.ceil(viewport.height);
+
+            await page.render({ canvasContext: ctx, viewport }).promise;
+            previewStatus.textContent = `Seite 1 von ${pdf.numPages} gerendert.`;
+        } catch (error) {
+            previewStatus.textContent = `Vorschau fehlgeschlagen: ${error.message}`;
+        }
+    }
+
+    document.querySelectorAll("button[data-report-preview]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const reportKey = button.dataset.reportPreview;
+            if (!reportKey) return;
+            renderPreview(reportKey);
+        });
+    });
+
+    document.querySelectorAll("button[data-report-download]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const reportKey = button.dataset.reportDownload;
+            if (!reportKey) return;
+            window.location.href = `/reports/${reportKey}/download`;
+        });
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     if (document.body.classList.contains("page-index")) initIndexPage();
     if (document.body.classList.contains("page-product")) initProductPage();
@@ -996,4 +1058,5 @@ document.addEventListener("DOMContentLoaded", () => {
     if (document.body.classList.contains("page-warehouse-detail")) initWarehouseDetailPage();
     if (document.body.classList.contains("page-stats")) initStatsPage();
     if (document.body.classList.contains("page-history")) initHistoryPage();
+    if (document.body.classList.contains("page-reports")) initReportsPage();
 });

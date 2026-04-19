@@ -17,6 +17,7 @@
                 <a class="tab" href="{{ url_for('page5', theme=selected_theme) }}" aria-current="page">Lager bearbeiten</a>
                 <a class="tab" href="{{ url_for('page3', theme=selected_theme) }}">Statistik</a>
                 <a class="tab" href="{{ url_for('page4', theme=selected_theme) }}">Historie</a>
+                <a class="tab" href="{{ url_for('page6', theme=selected_theme) }}">Reports</a>
             </nav>
 
             <form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
