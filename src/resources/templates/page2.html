@@ -23,13 +23,18 @@
 			</nav>
 
 			<form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
-				<label class="theme-label" for="themeSelect">Style</label>
-				<select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
-					{% for theme in theme_options %}
-					<option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
-					{% endfor %}
-				</select>
-				<noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+				<details class="settings-menu">
+					<summary class="settings-trigger" aria-label="Einstellungen öffnen" title="Einstellungen">⚙</summary>
+					<div class="settings-panel">
+						<label class="theme-label" for="themeSelect">Style</label>
+						<select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+							{% for theme in theme_options %}
+							<option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
+							{% endfor %}
+						</select>
+						<noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
+					</div>
+				</details>
 			</form>
 		</div>
 	</header>

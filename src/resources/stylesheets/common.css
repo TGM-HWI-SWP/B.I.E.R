@@ -70,12 +70,61 @@ body {
 }
 
 .theme-switcher {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 220px;
+  min-width: 44px;
   margin-left: auto;
   margin: 0;
+}
+
+.settings-menu {
+  position: relative;
+}
+
+.settings-trigger {
+  list-style: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.settings-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.settings-trigger:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--focus) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.settings-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 8px;
+  z-index: 30;
+}
+
+.settings-menu:not([open]) .settings-panel {
+  display: none;
 }
 
 .theme-label {
@@ -982,9 +1031,9 @@ body.page-stats .list-item strong {
   }
 
   .theme-switcher {
-    min-width: 0;
-    width: 100%;
-    margin-left: 0;
+    min-width: 44px;
+    width: auto;
+    margin-left: auto;
   }
 }
 
