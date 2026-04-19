@@ -42,6 +42,12 @@ class PostgresRepository:
                 )
                 cur.execute(
                     """
+                    ALTER TABLE products
+                    ADD COLUMN IF NOT EXISTS einheit TEXT NOT NULL DEFAULT 'Stk'
+                    """
+                )
+                cur.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS warehouses (
                         id SERIAL PRIMARY KEY,
                         lagername TEXT NOT NULL,

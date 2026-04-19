@@ -368,16 +368,33 @@ function initWarehousePage() {
             const capacity = Number(warehouse.max_plaetze || 0);
             const utilization = capacity > 0 ? Math.round((products / capacity) * 100) : 0;
             const row = document.createElement("tr");
+            row.dataset.id = String(warehouse.id);
+            row.className = "warehouse-row-clickable";
+            row.tabIndex = 0;
+            row.setAttribute("aria-label", `Lager ${warehouse.lagername ?? warehouse.id} öffnen`);
             row.innerHTML = `
                 <td>${warehouse.lagername ?? ""}</td>
                 <td>${warehouse.adresse ?? ""}</td>
                 <td><span class="pill">${products} Produkte</span></td>
                 <td><span class="pill">${capacity} max.</span></td>
                 <td><span class="pill">${utilization}%</span></td>
-                <td><button class="btn btn-small" type="button" data-id="${warehouse.id}">Löschen</button></td>
+                <td class="actions">
+                    <button class="btn btn-small" type="button" data-open-id="${warehouse.id}">Öffnen</button>
+                    <button class="btn btn-small" type="button" data-delete-id="${warehouse.id}">Löschen</button>
+                </td>
             `;
             body.appendChild(row);
         });
+    }
+
+    function selectedThemeQuery() {
+        const params = new URLSearchParams(window.location.search);
+        const theme = params.get("theme");
+        return theme ? `&theme=${encodeURIComponent(theme)}` : "";
+    }
+
+    function openWarehouseDetail(id) {
+        window.location.href = `/page5?warehouse_id=${encodeURIComponent(id)}${selectedThemeQuery()}`;
     }
 
     async function loadWarehouses() {
@@ -426,19 +443,229 @@ function initWarehousePage() {
 
     body.addEventListener("click", async (event) => {
         const target = event.target;
-        if (!(target instanceof HTMLButtonElement)) return;
-        const id = target.dataset.id;
+        if (target instanceof HTMLButtonElement) {
+            const openId = target.dataset.openId;
+            if (openId) {
+                openWarehouseDetail(openId);
+                return;
+            }
+
+            const deleteId = target.dataset.deleteId;
+            if (deleteId) {
+                if (!confirm(`Lager ${deleteId} wirklich löschen?`)) return;
+                try {
+                    await deleteWarehouse(deleteId);
+                } catch (error) {
+                    status.textContent = `Fehler: ${error.message}`;
+                }
+            }
+            return;
+        }
+
+        const row = target instanceof Element ? target.closest("tr[data-id]") : null;
+        if (!row) return;
+        const id = row.dataset.id;
         if (!id) return;
-        if (!confirm(`Lager ${id} wirklich löschen?`)) return;
+        openWarehouseDetail(id);
+    });
+
+    body.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const row = target.closest("tr[data-id]");
+        if (!row || !row.dataset.id) return;
+        openWarehouseDetail(row.dataset.id);
+    });
+
+    loadWarehouses().catch((error) => {
+        status.textContent = `Fehler beim Laden: ${error.message}`;
+    });
+}
+
+function initWarehouseDetailPage() {
+    const body = document.getElementById("warehouseDetailTableBody");
+    const status = document.getElementById("warehouseDetailStatus");
+    const title = document.getElementById("warehouseDetailTitle");
+    const subtitle = document.getElementById("warehouseDetailSubtitle");
+    const backLink = document.getElementById("backToWarehouseList");
+
+    if (!body || !status || !title || !subtitle || !backLink) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const warehouseId = params.get("warehouse_id");
+    const selectedTheme = params.get("theme");
+
+    if (selectedTheme) {
+        backLink.href = `/page2?theme=${encodeURIComponent(selectedTheme)}`;
+    }
+
+    if (!warehouseId) {
+        status.textContent = "Bitte ein Lager aus der Lagerliste auswählen.";
+        body.innerHTML = '<tr><td colspan="5">Keine Lager-ID übergeben.</td></tr>';
+        return;
+    }
+
+    let productsById = new Map();
+    let warehouses = [];
+    let inventoryRows = [];
+
+    function renderTable() {
+        body.innerHTML = "";
+
+        if (!inventoryRows.length) {
+            body.innerHTML = '<tr><td colspan="5">In diesem Lager sind aktuell keine Produkte.</td></tr>';
+            return;
+        }
+
+        const targetWarehouses = warehouses.filter((w) => String(w.id) !== String(warehouseId));
+
+        inventoryRows.forEach((row) => {
+            const productId = String(row.produkt_id);
+            const quantity = Number(row.menge || 0);
+            const productName = productsById.get(productId) || `Produkt ${productId}`;
+
+            const tr = document.createElement("tr");
+            tr.dataset.productId = productId;
+            tr.innerHTML = `
+                <td>${productId}</td>
+                <td>${productName}</td>
+                <td>
+                    <div class="detail-inline-actions">
+                        <input type="number" min="0" step="1" value="${quantity}" data-edit-qty="${productId}" aria-label="Neue Menge für Produkt ${productId}" />
+                        <button class="btn btn-small" type="button" data-action="edit" data-product-id="${productId}">Speichern</button>
+                    </div>
+                </td>
+                <td>
+                    <div class="detail-inline-actions detail-move-actions">
+                        <input type="number" min="1" max="${quantity}" step="1" value="1" data-move-qty="${productId}" aria-label="Menge verschieben für Produkt ${productId}" />
+                        <select data-target-warehouse="${productId}" aria-label="Ziellager für Produkt ${productId}">
+                            <option value="">Ziellager wählen</option>
+                            ${targetWarehouses
+                                .map((w) => `<option value="${w.id}">${w.lagername ?? `Lager ${w.id}`}</option>`)
+                                .join("")}
+                        </select>
+                        <button class="btn btn-small" type="button" data-action="move" data-product-id="${productId}">Verschieben</button>
+                    </div>
+                </td>
+                <td>
+                    <button class="btn btn-small btn-danger" type="button" data-action="remove" data-product-id="${productId}">Entfernen</button>
+                </td>
+            `;
+            body.appendChild(tr);
+        });
+    }
+
+    async function refresh() {
+        const [warehousesData, productsData, inventoryData] = await Promise.all([
+            api("/warehouses"),
+            api("/products"),
+            api(`/inventory/${warehouseId}/products`),
+        ]);
+
+        warehouses = warehousesData;
+        productsById = new Map(productsData.map((p) => [String(p.id), p.name || `Produkt ${p.id}`]));
+        inventoryRows = inventoryData;
+
+        const currentWarehouse = warehouses.find((w) => String(w.id) === String(warehouseId));
+        const warehouseName = currentWarehouse?.lagername || `Lager ${warehouseId}`;
+        title.textContent = `${warehouseName} (ID ${warehouseId})`;
+        subtitle.textContent = currentWarehouse
+            ? `${currentWarehouse.adresse || "Ohne Adresse"} - Produkte im Lager verwalten`
+            : "Produkte im Lager verwalten";
+
+        renderTable();
+        status.textContent = `${inventoryRows.length} Produktposition(en) geladen.`;
+    }
+
+    async function getInventoryQuantity(lagerId, productId) {
+        const rows = await api(`/inventory/${lagerId}/products`);
+        const item = rows.find((r) => String(r.produkt_id) === String(productId));
+        return item ? Number(item.menge || 0) : 0;
+    }
+
+    body.addEventListener("click", async (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLButtonElement)) return;
+
+        const action = target.dataset.action;
+        const productId = target.dataset.productId;
+        if (!action || !productId) return;
+
         try {
-            await deleteWarehouse(id);
+            if (action === "remove") {
+                if (!confirm(`Produkt ${productId} aus Lager ${warehouseId} entfernen?`)) return;
+                await api(`/inventory/${warehouseId}/${productId}`, { method: "DELETE" });
+                await refresh();
+                status.textContent = `Produkt ${productId} entfernt.`;
+                return;
+            }
+
+            if (action === "edit") {
+                const qtyInput = body.querySelector(`input[data-edit-qty="${productId}"]`);
+                const newQty = Number(qtyInput?.value);
+                if (!Number.isInteger(newQty) || newQty < 0) {
+                    throw new Error("Menge muss eine ganze Zahl >= 0 sein.");
+                }
+
+                await api("/inventory", {
+                    method: "PUT",
+                    body: JSON.stringify({ lager_id: Number(warehouseId), produkt_id: Number(productId), menge: newQty }),
+                });
+                await refresh();
+                status.textContent = `Menge für Produkt ${productId} aktualisiert.`;
+                return;
+            }
+
+            if (action === "move") {
+                const qtyInput = body.querySelector(`input[data-move-qty="${productId}"]`);
+                const targetSelect = body.querySelector(`select[data-target-warehouse="${productId}"]`);
+                const moveQty = Number(qtyInput?.value);
+                const targetWarehouseId = targetSelect?.value;
+
+                if (!targetWarehouseId) {
+                    throw new Error("Bitte ein Ziellager auswählen.");
+                }
+                if (!Number.isInteger(moveQty) || moveQty <= 0) {
+                    throw new Error("Verschiebemenge muss eine ganze Zahl > 0 sein.");
+                }
+
+                const sourceQty = await getInventoryQuantity(warehouseId, productId);
+                if (moveQty > sourceQty) {
+                    throw new Error("Verschiebemenge ist größer als der Bestand im Quelllager.");
+                }
+
+                const targetQty = await getInventoryQuantity(targetWarehouseId, productId);
+                await Promise.all([
+                    api("/inventory", {
+                        method: "PUT",
+                        body: JSON.stringify({
+                            lager_id: Number(warehouseId),
+                            produkt_id: Number(productId),
+                            menge: sourceQty - moveQty,
+                        }),
+                    }),
+                    api("/inventory", {
+                        method: "PUT",
+                        body: JSON.stringify({
+                            lager_id: Number(targetWarehouseId),
+                            produkt_id: Number(productId),
+                            menge: targetQty + moveQty,
+                        }),
+                    }),
+                ]);
+
+                await refresh();
+                status.textContent = `Produkt ${productId} nach Lager ${targetWarehouseId} verschoben.`;
+            }
         } catch (error) {
             status.textContent = `Fehler: ${error.message}`;
         }
     });
 
-    loadWarehouses().catch((error) => {
+    refresh().catch((error) => {
         status.textContent = `Fehler beim Laden: ${error.message}`;
+        body.innerHTML = '<tr><td colspan="5">Lagerdaten konnten nicht geladen werden.</td></tr>';
     });
 }
 
@@ -737,7 +964,8 @@ function initHistoryPage() {
 document.addEventListener("DOMContentLoaded", () => {
     if (document.body.classList.contains("page-index")) initIndexPage();
     if (document.body.classList.contains("page-product")) initProductPage();
-    if (document.body.classList.contains("page-warehouse") && !document.body.classList.contains("page-history")) initWarehousePage();
+    if (document.body.classList.contains("page-warehouse") && !document.body.classList.contains("page-history") && !document.body.classList.contains("page-warehouse-detail")) initWarehousePage();
+    if (document.body.classList.contains("page-warehouse-detail")) initWarehouseDetailPage();
     if (document.body.classList.contains("page-stats")) initStatsPage();
     if (document.body.classList.contains("page-history")) initHistoryPage();
 });

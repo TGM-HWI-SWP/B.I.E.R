@@ -687,10 +687,60 @@ body.page-warehouse tbody tr:hover td {
   background: var(--surface-2);
 }
 
+body.page-warehouse .warehouse-row-clickable {
+  cursor: pointer;
+}
+
+body.page-warehouse .warehouse-row-clickable:focus-within td {
+  background: var(--surface-2);
+}
+
 body.page-warehouse .actions {
   display: inline-flex;
   gap: 8px;
   align-items: center;
+}
+
+body.page-warehouse-detail .warehouse-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+body.page-warehouse-detail table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+body.page-warehouse-detail tbody td {
+  vertical-align: top;
+}
+
+body.page-warehouse-detail thead th:nth-child(1) { width: 11%; }
+body.page-warehouse-detail thead th:nth-child(2) { width: 24%; }
+body.page-warehouse-detail thead th:nth-child(3) { width: 20%; }
+body.page-warehouse-detail thead th:nth-child(4) { width: 30%; }
+body.page-warehouse-detail thead th:nth-child(5) { width: 15%; }
+
+body.page-warehouse-detail tbody td:nth-child(2) {
+  word-break: break-word;
+}
+
+body.page-warehouse-detail .detail-inline-actions {
+  display: grid;
+  grid-template-columns: minmax(78px, 108px) 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+body.page-warehouse-detail .detail-move-actions {
+  grid-template-columns: minmax(66px, 88px) minmax(86px, 1fr) minmax(90px, 1fr);
+}
+
+body.page-warehouse-detail td:nth-child(5) .btn-small {
+  width: 100%;
 }
 
 body.page-stats .grid {
@@ -871,6 +921,15 @@ body.page-stats .list-item strong {
 
   body.page-warehouse table {
     min-width: 540px;
+  }
+
+  body.page-warehouse-detail .detail-inline-actions,
+  body.page-warehouse-detail .detail-move-actions {
+    grid-template-columns: 1fr;
+  }
+
+  body.page-warehouse-detail table {
+    min-width: 0;
   }
 
   body.page-stats .split {
