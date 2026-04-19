@@ -104,6 +104,7 @@ function initProductPage() {
     const nameInput = document.getElementById("productName");
     const descriptionInput = document.getElementById("productDescription");
     const weightInput = document.getElementById("productWeight");
+    const unitInput = document.getElementById("productUnit");
     const status = document.getElementById("page1Status");
 
     const saveBtn = document.getElementById("saveProductBtn");
@@ -112,7 +113,7 @@ function initProductPage() {
     const deleteBtn = document.getElementById("deleteAttributeBtn");
     const addAttrBtn = document.getElementById("addAttributeBtn");
 
-    if (!productSelect || !warehouseStocks || !nameInput || !descriptionInput || !weightInput || !status || !saveBtn || !discardBtn || !resetBtn || !deleteBtn || !addAttrBtn) return;
+    if (!productSelect || !warehouseStocks || !nameInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !resetBtn || !deleteBtn || !addAttrBtn) return;
 
     const title = document.querySelector(".product-title");
     const subtitle = document.querySelector(".product-subtitle");
@@ -136,6 +137,7 @@ function initProductPage() {
         nameInput.value = "";
         descriptionInput.value = "";
         weightInput.value = "";
+        unitInput.value = "Stk";
         for (const input of warehouseStocks.querySelectorAll("input[data-warehouse-id]")) {
             input.value = "0";
         }
@@ -148,6 +150,7 @@ function initProductPage() {
             name: nameInput.value.trim(),
             beschreibung: descriptionInput.value.trim(),
             gewicht: Number(weightInput.value),
+            einheit: unitInput.value || "Stk",
         };
     }
 
@@ -160,6 +163,7 @@ function initProductPage() {
         nameInput.value = product.name || "";
         descriptionInput.value = product.beschreibung || "";
         weightInput.value = product.gewicht ?? "";
+        unitInput.value = product.einheit || "Stk";
         setHeader(productId);
     }
 

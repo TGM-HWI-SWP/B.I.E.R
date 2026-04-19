@@ -177,7 +177,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             data = request.get_json()
             if not data or "name" not in data or "gewicht" not in data:
                 return jsonify({"error": "Missing required fields: name, gewicht"}), 400
-            product = product_service.create_product(name=data["name"], beschreibung=data.get("beschreibung", ""), gewicht=float(data["gewicht"]))
+            product = product_service.create_product(
+                name=data["name"],
+                beschreibung=data.get("beschreibung", ""),
+                gewicht=float(data["gewicht"]),
+                einheit=data.get("einheit", "Stk"),
+            )
             _log_history("product", "create", f"Produkt {product.get('id')}: {product.get('name', '')}")
             return jsonify(product), 201
         except ValueError as exc:

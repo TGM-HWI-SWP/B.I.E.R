@@ -116,11 +116,30 @@
                         <div class="field-label">
                             <span class="field-label-inner">
                                 <span class="field-label-icon" aria-hidden="true">⚖️</span>
-                                <span>Gewicht (kg)</span>
+                                <span>Gewicht</span>
                             </span>
                         </div>
                         <div class="field-control">
                             <input id="productWeight" type="number" min="0.01" step="0.001" placeholder="0.000" required />
+                        </div>
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field-label">
+                            <span class="field-label-inner">
+                                <span class="field-label-icon" aria-hidden="true">📏</span>
+                                <span>Einheit</span>
+                            </span>
+                        </div>
+                        <div class="field-control">
+                            <select id="productUnit" aria-label="Einheit auswählen">
+                                <option value="Stk" selected>Stk</option>
+                                <option value="kg">kg</option>
+                                <option value="g">g</option>
+                                <option value="l">l</option>
+                                <option value="ml">ml</option>
+                                <option value="Packung">Packung</option>
+                            </select>
                         </div>
                     </div>
 

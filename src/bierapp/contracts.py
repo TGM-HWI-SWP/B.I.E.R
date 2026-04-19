@@ -92,13 +92,14 @@ class ProductServicePort(ABC):
     """Abstract interface for product-related business logic."""
 
     @abstractmethod
-    def create_product(self, name: str, beschreibung: str, gewicht: float) -> Dict:
+    def create_product(self, name: str, beschreibung: str, gewicht: float, einheit: str = "Stk") -> Dict:
         """Create a new product and persist it.
 
         Args:
             name (str): Human-readable product name.
             beschreibung (str): Short description of the product.
             gewicht (float): Weight of the product in kilograms.
+            einheit (str): Unit of the product amount, e.g. Stk or kg.
 
         Returns:
             Dict: Representation of the newly created product.
