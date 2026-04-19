@@ -115,6 +115,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         styles_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "stylesheets"))
         return send_from_directory(styles_dir, filename)
 
+    @app.route("/pictures/<path:filename>", endpoint="picture", methods=["GET"])
+    def picture(filename: str):
+        """Serve image assets from the resources pictures directory."""
+        pictures_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "pictures"))
+        return send_from_directory(pictures_dir, filename)
+
     @app.route("/scripts/app.js", endpoint="app_script", methods=["GET"])
     def app_script():
         """Serve the centralized frontend JavaScript bundle.

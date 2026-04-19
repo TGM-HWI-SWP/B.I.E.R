@@ -10,6 +10,9 @@
 <body class="page-reports">
     <header class="topbar">
         <div class="topbar-inner">
+            <a class="brand-logo" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Startseite">
+                <img src="{{ url_for('picture', filename='BIER_LOGO_SCHWARZ_COMPRESSED.png') }}" alt="B.I.E.R Logo" />
+            </a>
             <nav class="tabs" aria-label="Page Auswahl">
                 <a class="tab" href="{{ url_for('index', theme=selected_theme) }}">Produkte</a>
                 <a class="tab" href="{{ url_for('page1', theme=selected_theme) }}">Produkt bearbeiten</a>
