@@ -1,539 +1,1450 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="dark">
+<html lang="de" data-theme="dark" data-theme-id="bier-dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}B.I.E.R — Lagerverwaltung{% endblock %}</title>
+  <title>{% block title %}B.I.E.R - Lagerverwaltung{% endblock %}</title>
 
-  <!-- Bootstrap 5 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-  <!-- Bootstrap Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <!-- Chart.js (global, no defer so it is ready for page scripts) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Manrope:wght@400;600;700&display=swap" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 
   <style>
-    /* ─── Design Tokens ─────────────────────────────────────── */
     :root {
-      /* Dark theme (default) */
-      --bg:          #050608;
-      --surface:     #101218;
-      --surface-2:   #171925;
-      --surface-3:   #202335;
-      --border:      #262a3c;
-      --accent:      #f97373;   /* soft red accent */
-      --accent-soft: rgba(249,115,115,.16);
-      --accent-hover:#fb7f7f;
-      --danger:      #ef4444;
-      --danger-soft: rgba(239,68,68,.18);
-      --success:     #22c55e;
-      --success-soft:rgba(34,197,94,.14);
-      /* Haupttext im Dark Mode bewusst sehr hell */
-      --text:        #ffffff;
-      /* etwas helleres "muted" für bessere Lesbarkeit im Dark Mode */
-      --text-muted:  #e5e7eb;
-      --radius:      12px;
-      --radius-sm:   8px;
-      --nav-h:       60px;
-      --transition:  .18s ease;
+      --font-scale: 1;
+      --nav-h: 64px;
+      --side-w: 252px;
+      --radius: 14px;
+      --radius-sm: 10px;
+      --transition: .2s ease;
+
+      --bg: #0a0d14;
+      --surface: #121826;
+      --surface-2: #1b2334;
+      --surface-3: #263349;
+      --border: #32435f;
+
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, .18);
+      --accent-hover: #0ea5e9;
+      --danger: #ef4444;
+      --danger-soft: rgba(239, 68, 68, .16);
+      --success: #22c55e;
+      --success-soft: rgba(34, 197, 94, .14);
+
+      --text: #f8fafc;
+      --text-muted: #cbd5e1;
+
+      --bg-grad-1: rgba(56, 189, 248, .22);
+      --bg-grad-2: rgba(59, 130, 246, .16);
+      --bg-dot: rgba(148, 163, 184, .18);
+      --shadow-1: 0 18px 36px rgba(2, 6, 23, .34);
+      --shadow-2: 0 10px 24px rgba(2, 6, 23, .24);
     }
 
-    /* Light theme overrides */
-    :root[data-theme="light"] {
-      --bg:          #f5f5f7;
-      --surface:     #ffffff;
-      --surface-2:   #f3f4f6;
-      --surface-3:   #e5e7eb;
-      --border:      #d1d5db;
-      --accent:      #dc2626;
-      --accent-soft: rgba(220,38,38,.08);
-      --accent-hover:#b91c1c;
-      --danger:      #b91c1c;
-      --danger-soft: rgba(185,28,28,.12);
-      --success:     #16a34a;
-      --success-soft:rgba(22,163,74,.10);
-      --text:        #111827;
-      --text-muted:  #6b7280;
-    }
-
-    /* ─── Reset / Base ──────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
     html, body {
       height: 100%;
       margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      font-size: 15px;
+      font-family: 'Manrope', 'Segoe UI', sans-serif;
+      font-size: calc(15px * var(--font-scale));
       line-height: 1.6;
+      color: var(--text);
+      background: var(--bg);
     }
 
-    /* ─── Scrollbar ─────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-    /* ─── Fixed Top Nav ─────────────────────────────────────── */
-    .top-nav {
+    body::before {
+      content: '';
       position: fixed;
-      top: 0; left: 0; right: 0;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      background:
+        radial-gradient(1200px 680px at 8% 10%, var(--bg-grad-1), transparent 60%),
+        radial-gradient(920px 560px at 100% 0%, var(--bg-grad-2), transparent 56%),
+        linear-gradient(180deg, color-mix(in srgb, var(--bg) 86%, #000) 0%, var(--bg) 100%);
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      opacity: .25;
+      background-image: radial-gradient(var(--bg-dot) .75px, transparent .75px);
+      background-size: 22px 22px;
+    }
+
+    body.reduce-motion *,
+    body.reduce-motion *::before,
+    body.reduce-motion *::after {
+      transition: none !important;
+      animation: none !important;
+    }
+
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
       height: var(--nav-h);
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      gap: 8px;
-      z-index: 1000;
-      backdrop-filter: blur(12px);
-    }
-
-    .top-nav .brand {
-      font-weight: 700;
-      font-size: 18px;
-      color: var(--accent);
-      letter-spacing: -.5px;
-      margin-right: 16px;
-      text-decoration: none;
-      flex-shrink: 0;
-    }
-
-    .nav-tabs-custom {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex: 1;
-    }
-
-    .nav-right {
-      display: flex;
+      padding: 0 18px;
+      z-index: 1200;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
       gap: 12px;
-      margin-left: 12px;
+      background: color-mix(in srgb, var(--surface) 78%, transparent);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow-2);
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text);
+      font-family: 'Space Grotesk', 'Manrope', sans-serif;
+      font-weight: 700;
+      letter-spacing: -.02em;
     }
 
     .nav-logo {
       height: 34px;
       width: auto;
       object-fit: contain;
-      opacity: 0.95;
+      opacity: .96;
     }
 
-    .nav-tab {
+    .brand-title {
+      font-size: 16px;
+      color: var(--text);
+      opacity: .94;
+    }
+
+    .top-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .quick-open {
+      width: min(620px, 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+      color: var(--text-muted);
+      padding: 9px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .quick-open:hover {
+      border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+      color: var(--text);
+      background: color-mix(in srgb, var(--surface-2) 65%, var(--accent-soft));
+    }
+
+    .quick-kbd {
+      border: 1px solid var(--border);
+      border-bottom-width: 2px;
+      padding: 1px 7px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--surface);
+    }
+
+    .top-right {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 8px 20px;
-      border-radius: var(--radius-sm);
-      text-decoration: none;
-      color: var(--text-muted);
-      font-size: 14px;
-      font-weight: 500;
-      transition: color var(--transition), background var(--transition);
-      white-space: nowrap;
     }
-    .nav-tab:hover {
-      color: var(--text);
-      background: var(--surface-2);
-    }
-    .nav-tab.active {
-      color: var(--accent);
-      background: var(--accent-soft);
-    }
-    .nav-tab i { font-size: 16px; }
 
-    /* ─── Page Wrapper ──────────────────────────────────────── */
-    .page-wrapper {
+    .user-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 999px;
+      padding: 6px 11px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .user-chip .role {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .app-shell {
       margin-top: var(--nav-h);
       min-height: calc(100vh - var(--nav-h));
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: var(--side-w) minmax(0, 1fr);
     }
 
-    .page-content {
-      flex: 1;
-      padding: 32px 40px;
-      max-width: 1400px;
-      width: 100%;
+    .side-nav {
+      position: sticky;
+      top: var(--nav-h);
+      height: calc(100vh - var(--nav-h));
+      border-right: 1px solid var(--border);
+      background: color-mix(in srgb, var(--surface) 80%, transparent);
+      backdrop-filter: blur(12px);
+      padding: 16px 12px 16px;
+      overflow-y: auto;
+    }
+
+    .nav-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .09em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin: 8px 10px;
+    }
+
+    .nav-link-app {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-muted);
+      padding: 9px 12px;
+      border-radius: 10px;
+      margin: 2px 0;
+      border: 1px solid transparent;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all var(--transition);
+    }
+
+    .nav-link-app:hover {
+      color: var(--text);
+      border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+      background: color-mix(in srgb, var(--surface-2) 70%, transparent);
+      transform: translateX(1px);
+    }
+
+    .nav-link-app.active {
+      color: var(--text);
+      border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+      background: linear-gradient(90deg, var(--accent-soft), transparent 90%);
+      box-shadow: inset 2px 0 0 var(--accent);
+    }
+
+    .content-area {
+      min-width: 0;
+      padding: 22px;
+    }
+
+    .page-wrapper {
+      width: min(1560px, 100%);
       margin: 0 auto;
     }
 
-    /* ─── Flash Messages ────────────────────────────────────── */
+    .page-content {
+      width: 100%;
+      animation: pageReveal .26s ease;
+    }
+
+    @keyframes pageReveal {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .flash-container {
       position: fixed;
       top: calc(var(--nav-h) + 12px);
       left: 50%;
       transform: translateX(-50%);
-      z-index: 999;
+      z-index: 1500;
       display: flex;
       flex-direction: column;
-      align-items: center;
       gap: 8px;
-      max-width: 520px;
-      width: max-content;
+      width: min(680px, calc(100vw - 20px));
     }
 
     .flash-msg {
-      padding: 12px 16px;
-      border-radius: var(--radius-sm);
-      font-size: 13.5px;
-      font-weight: 500;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      font-size: 13px;
       display: flex;
       align-items: center;
-      gap: 10px;
-      animation: fadeSlide .25s ease;
-      backdrop-filter: blur(8px);
-    }
-    .flash-msg.success { background: var(--success-soft); border: 1px solid var(--success); color: var(--success); }
-    .flash-msg.danger  { background: var(--danger-soft);  border: 1px solid var(--danger);  color: var(--danger);  }
-    .flash-msg.info    { background: var(--accent-soft);  border: 1px solid var(--accent);  color: var(--accent);  }
-
-    @keyframes fadeSlide {
-      from { opacity: 0; transform: translateY(-8px); }
-      to   { opacity: 1; transform: translateY(0); }
+      gap: 9px;
+      box-shadow: var(--shadow-2);
+      background: var(--surface-2);
+      color: var(--text);
     }
 
-    /* ─── Card / Surface ────────────────────────────────────── */
+    .flash-msg.success {
+      border-color: color-mix(in srgb, var(--success) 55%, var(--border));
+      background: color-mix(in srgb, var(--success-soft) 55%, var(--surface-2));
+      color: color-mix(in srgb, var(--success) 84%, white);
+    }
+
+    .flash-msg.danger {
+      border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+      background: color-mix(in srgb, var(--danger-soft) 55%, var(--surface-2));
+      color: color-mix(in srgb, var(--danger) 84%, white);
+    }
+
+    .flash-msg.info {
+      border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+      background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface-2));
+      color: color-mix(in srgb, var(--accent) 84%, white);
+    }
+
     .card {
-      background: var(--surface);
+      background: linear-gradient(160deg, var(--surface), color-mix(in srgb, var(--surface-2) 34%, var(--surface)));
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 24px;
+      padding: 20px;
+      box-shadow: var(--shadow-1);
     }
-    .card-sm { padding: 16px; }
 
-    /* ─── Buttons ───────────────────────────────────────────── */
+    body.glass-cards .card {
+      background: color-mix(in srgb, var(--surface) 74%, transparent);
+      backdrop-filter: blur(12px);
+    }
+
     .btn {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 9px 20px;
+      border: 1px solid transparent;
       border-radius: var(--radius-sm);
-      font-size: 14px;
-      font-weight: 500;
-      border: none;
-      cursor: pointer;
-      transition: all var(--transition);
       text-decoration: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all var(--transition);
+      cursor: pointer;
       white-space: nowrap;
     }
-    .btn-primary   { background: var(--accent); color: #fff; }
-    .btn-primary:hover { background: var(--accent-hover); color: #fff; }
-    .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover { background: var(--surface-3); color: var(--text); }
-    .btn-danger    { background: var(--danger-soft); color: var(--danger); border: 1px solid var(--danger); }
-    .btn-danger:hover { background: var(--danger); color: #fff; }
-    .btn-success   { background: var(--success-soft); color: var(--success); border: 1px solid var(--success); }
-    .btn-success:hover { background: var(--success); color: #000; }
-    .btn-ghost     { background: transparent; color: var(--text-muted); }
-    .btn-ghost:hover { background: var(--surface-2); color: var(--text); }
-    .btn-icon      { padding: 9px; }
-    .btn-lg { padding: 12px 28px; font-size: 15px; }
-    .btn-sm { padding: 6px 14px; font-size: 13px; }
-    .btn:disabled { opacity: .4; cursor: not-allowed; }
 
-    /* ─── Form Controls ─────────────────────────────────────── */
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); color: #fff; transform: translateY(-1px); }
+    .btn-secondary { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+    .btn-secondary:hover { background: var(--surface-3); color: var(--text); }
+    .btn-success { background: var(--success-soft); color: var(--success); border-color: var(--success); }
+    .btn-success:hover { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-ghost { background: transparent; color: var(--text-muted); border-color: var(--border); }
+    .btn-ghost:hover { color: var(--text); background: var(--surface-2); }
+    .btn-icon { padding: 8px 10px; }
+    .btn-sm { padding: 6px 11px; font-size: 13px; }
+    .btn-lg { padding: 11px 20px; font-size: 15px; }
+
     .form-control, .form-select {
-      background: var(--surface-2);
+      width: 100%;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
+      background: var(--surface-2);
       color: var(--text);
       font-size: 14px;
-      padding: 10px 14px;
-      width: 100%;
-      transition: border-color var(--transition), box-shadow var(--transition);
+      padding: 9px 12px;
+      transition: all var(--transition);
     }
+
+    .form-control::placeholder { color: var(--text-muted); }
     .form-control:focus, .form-select:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-soft);
+      border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+    }
+
+    .form-select option {
       background: var(--surface-2);
       color: var(--text);
     }
-    .form-control::placeholder { color: var(--text-muted); }
-    .form-select option { background: var(--surface-2); color: var(--text); }
 
     .form-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-bottom: 6px;
       display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: var(--text-muted);
     }
 
-    /* ─── Table ─────────────────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .page-title {
+      margin: 0 0 6px;
+      font-size: 31px;
+      line-height: 1.15;
+      font-family: 'Space Grotesk', 'Manrope', sans-serif;
+      letter-spacing: -.03em;
+      color: var(--text);
+    }
+
+    .page-subtitle {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Force readable heading contrast in dark mode across all pages. */
+    html[data-theme='dark'] .page-content h1,
+    html[data-theme='dark'] .page-content h2,
+    html[data-theme='dark'] .page-content h3,
+    html[data-theme='dark'] .page-content h4,
+    html[data-theme='dark'] .page-content .page-title {
+      color: var(--text) !important;
+    }
+
+    html[data-theme='dark'] .page-content .page-subtitle,
+    html[data-theme='dark'] .page-content p.page-subtitle {
+      color: var(--text-muted) !important;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+    }
+
+    .badge-accent { background: var(--accent-soft); color: var(--accent); }
+    .badge-muted { background: var(--surface-3); color: var(--text); }
+    .badge-danger { background: var(--danger-soft); color: var(--danger); }
+
     .data-table {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
     }
+
     .data-table thead th {
-      background: var(--surface-2);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: color-mix(in srgb, var(--surface-2) 88%, transparent);
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--border);
       color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: .07em;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-    }
-    .data-table thead th:first-child { border-radius: var(--radius-sm) 0 0 0; }
-    .data-table thead th:last-child  { border-radius: 0 var(--radius-sm) 0 0; }
-    .data-table tbody tr {
-      border-bottom: 1px solid var(--border);
-      transition: background var(--transition);
-    }
-    .data-table tbody tr:last-child { border-bottom: none; }
-    .data-table tbody tr:hover { background: var(--surface-2); }
-    .data-table tbody td {
-      padding: 14px 16px;
-      font-size: 14px;
-      vertical-align: middle;
-      color: var(--text);
-    }
-
-    /* ─── Badge ─────────────────────────────────────────────── */
-    .badge {
-      display: inline-block;
-      padding: 3px 10px;
-      border-radius: 99px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-    .badge-accent { background: var(--accent-soft); color: var(--accent); }
-    /* Badge-Texte bewusst hell halten */
-    .badge-muted  { background: var(--surface-3);   color: var(--text); }
-
-    /* ─── Page Title ────────────────────────────────────────── */
-    .page-title {
-      font-size: 28px;
+      letter-spacing: .08em;
+      font-size: 11px;
       font-weight: 700;
-      letter-spacing: -.5px;
-      color: var(--text);
-      margin: 0 0 8px;
+      padding: 11px 12px;
+      text-align: left;
     }
-    .page-subtitle {
-      color: var(--text-muted);
+
+    .data-table tbody td {
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+      padding: 11px 12px;
       font-size: 14px;
-      margin: 0;
+      color: var(--text);
+      vertical-align: middle;
     }
 
-    /* ─── Section header row ────────────────────────────────── */
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
+    .data-table tbody tr:hover { background: color-mix(in srgb, var(--surface-2) 86%, transparent); }
+
+    body.table-striped-enabled .data-table tbody tr:nth-child(even) {
+      background: color-mix(in srgb, var(--surface-2) 70%, transparent);
     }
 
-    /* ─── Divider ───────────────────────────────────────────── */
-    .divider { border-color: var(--border); margin: 20px 0; }
+    body.density-compact .card { padding: 14px; }
+    body.density-compact .btn { padding: 6px 11px; font-size: 13px; }
+    body.density-compact .data-table thead th { padding: 8px 10px; }
+    body.density-compact .data-table tbody td { padding: 8px 10px; font-size: 13px; }
 
-    /* ─── Empty State ───────────────────────────────────────── */
+    .divider { border-color: var(--border); margin: 18px 0; }
+
     .empty-state {
       text-align: center;
-      padding: 64px 24px;
       color: var(--text-muted);
+      padding: 44px 18px;
     }
-    .empty-state i { font-size: 48px; margin-bottom: 16px; display: block; }
-    .empty-state p { font-size: 15px; }
 
-    /* ─── Sticky action bar ─────────────────────────────────── */
-    .action-bar {
-      position: sticky;
-      bottom: 0;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 14px 40px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      z-index: 100;
-      backdrop-filter: blur(12px);
+    .empty-state i {
+      display: block;
+      font-size: 44px;
+      margin-bottom: 10px;
+      color: color-mix(in srgb, var(--accent) 55%, var(--text-muted));
     }
-    .action-bar .spacer { flex: 1; }
 
-    /* ─── Modal overlay ─────────────────────────────────────── */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.6);
+      z-index: 1900;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 2000;
+      background: rgba(2, 6, 23, .62);
       opacity: 0;
       pointer-events: none;
       transition: opacity var(--transition);
     }
+
     .modal-overlay.open {
       opacity: 1;
       pointer-events: all;
     }
-    .modal-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px;
-      max-width: 420px;
-      width: 90%;
-      text-align: center;
-    }
-    .modal-box h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; }
-    .modal-box p  { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
-    .modal-actions { display: flex; gap: 12px; justify-content: center; }
 
-    /* ─── Autocomplete dropdown ─────────────────────────────── */
+    .modal-box {
+      width: min(540px, 94vw);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: linear-gradient(155deg, var(--surface), var(--surface-2));
+      box-shadow: var(--shadow-1);
+      padding: 22px;
+    }
+
     .autocomplete-wrap { position: relative; }
     .autocomplete-list {
       position: absolute;
       top: calc(100% + 6px);
-      left: 0; right: 0;
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      z-index: 500;
-      max-height: 260px;
-      overflow-y: auto;
+      left: 0;
+      right: 0;
       display: none;
-      box-shadow: 0 8px 32px rgba(0,0,0,.4);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-2);
+      max-height: 280px;
+      overflow-y: auto;
+      z-index: 500;
+      box-shadow: var(--shadow-2);
     }
+
     .autocomplete-list.open { display: block; }
+
     .autocomplete-item {
-      padding: 10px 16px;
-      font-size: 14px;
-      cursor: pointer;
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: background var(--transition);
+      padding: 9px 11px;
       color: var(--text);
+      cursor: pointer;
+      transition: background var(--transition);
     }
-    .autocomplete-item:hover, .autocomplete-item.highlighted { background: var(--surface-3); }
-    .autocomplete-item .item-id { font-size: 11px; color: var(--text-muted); }
 
-    /* ─── Responsive ────────────────────────────────────────── */
-    @media (max-width: 768px) {
-      .page-content { padding: 20px 16px; }
-      .action-bar   { padding: 12px 16px; }
-      .page-title   { font-size: 22px; }
-      .top-nav      { padding: 0 16px; }
-      .nav-tab span { display: none; }
+    .autocomplete-item:hover,
+    .autocomplete-item.highlighted { background: var(--surface-3); }
+
+    .autocomplete-item .item-id { color: var(--text-muted); font-size: 11px; }
+
+    .cmdk-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 2300;
+      background: rgba(2, 6, 23, .56);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 10vh;
+    }
+
+    .cmdk-overlay.open { display: flex; }
+
+    .cmdk-box {
+      width: min(740px, 94vw);
+      border: 1px solid var(--border);
+      background: linear-gradient(165deg, var(--surface), var(--surface-2));
+      border-radius: 14px;
+      box-shadow: var(--shadow-1);
+      overflow: hidden;
+    }
+
+    .cmdk-input {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-size: 14px;
+      padding: 12px 14px;
+      outline: none;
+    }
+
+    .cmdk-list {
+      max-height: 360px;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .cmdk-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      padding: 9px 11px;
+      background: transparent;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .cmdk-item:hover,
+    .cmdk-item.active {
+      border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+      background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+    }
+
+    @media (max-width: 1080px) {
+      .app-shell {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .side-nav {
+        height: auto;
+        top: var(--nav-h);
+        position: sticky;
+        z-index: 1100;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 8px;
+      }
+
+      .side-nav-inner {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+      }
+
+      .nav-group-title { display: none; }
+      .nav-link-app { white-space: nowrap; margin: 0; }
+      .content-area { padding: 14px; }
+      .top-center { justify-content: stretch; }
+      .quick-open { width: 100%; }
+    }
+
+    @media (max-width: 760px) {
+      .top-bar {
+        grid-template-columns: auto 1fr;
+      }
+      .top-right {
+        grid-column: span 2;
+        justify-content: flex-end;
+      }
+      .brand-title { display: none; }
+      .user-chip { display: none; }
     }
   </style>
 
   {% block extra_head %}{% endblock %}
 </head>
-<body>
-
-  <!-- ─── Top Navigation ─────────────────────── -->
-  <nav class="top-nav">
+<body data-current-role="{{ current_role|default('', true) }}" data-current-username="{{ current_username|default('', true) }}" data-auth-enabled="{{ '1' if auth_enabled else '0' }}">
+  <nav class="top-bar">
     <a href="{{ url_for('page1_products') }}" class="brand">
       <img src="{{ url_for('logo', variant='dark') }}" alt="" class="nav-logo" id="navLogo" />
+      <span class="brand-title">B.I.E.R Workspace</span>
     </a>
-    <div class="nav-tabs-custom">
-      <a href="{{ url_for('page1_products') }}"
-         class="nav-tab {% if active_page == 1 %}active{% endif %}">
-        <i class="bi bi-boxes"></i><span>Produkte</span>
-      </a>
-      <a href="{{ url_for('page2_product_edit') }}"
-         class="nav-tab {% if active_page == 2 %}active{% endif %}">
-        <i class="bi bi-pencil-square"></i><span>Produkt&nbsp;bearbeiten</span>
-      </a>
-      <a href="{{ url_for('page3_warehouse_list') }}"
-         class="nav-tab {% if active_page == 3 %}active{% endif %}">
-        <i class="bi bi-building"></i><span>Lagerliste</span>
-      </a>
-      <a href="{{ url_for('page4_statistics') }}"
-         class="nav-tab {% if active_page == 4 %}active{% endif %}">
-        <i class="bi bi-bar-chart-line"></i><span>Statistik</span>
-      </a>
-      <a href="{{ url_for('page5_history') }}"
-         class="nav-tab {% if active_page == 5 %}active{% endif %}">
-        <i class="bi bi-clock-history"></i><span>Historie</span>
-      </a>
-    </div>
-    <div class="nav-right">
-      <button class="btn btn-ghost btn-icon" id="themeToggle" type="button" title="Light Mode aktivieren">
-        <i class="bi bi-moon-stars" id="themeIcon"></i>
+
+    <div class="top-center">
+      <button class="quick-open" type="button" id="quickOpenBtn" title="Schnellaktionen öffnen">
+        <span><i class="bi bi-lightning-charge"></i> Schnellaktionen, Navigation, Themes</span>
+        <span class="quick-kbd">Ctrl+K</span>
       </button>
+    </div>
+
+    <div class="top-right">
+      {% if auth_enabled and current_user %}
+      <span class="user-chip">
+        <i class="bi bi-person-circle"></i>
+        <span>{{ current_user }}</span>
+        <span class="role">{{ current_role }}</span>
+      </span>
+      {% endif %}
+
+      <button class="btn btn-ghost btn-icon" type="button" id="themeToggle" title="Theme wechseln">
+        <i class="bi bi-palette2" id="themeIcon"></i>
+      </button>
+
+      {% if auth_enabled and current_user %}
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('page8_settings') }}">
+        <i class="bi bi-sliders"></i>
+        Einstellungen
+      </a>
+      {% if is_manager %}
+      <a class="btn btn-secondary btn-sm" href="{{ url_for('page9_user_admin') }}">
+        <i class="bi bi-people"></i>
+        User-Admin
+      </a>
+      {% endif %}
+      <form method="post" action="{{ url_for('logout_submit') }}" style="margin:0;">
+        <button class="btn btn-secondary btn-sm" type="submit">
+          <i class="bi bi-box-arrow-right"></i>
+          Logout
+        </button>
+      </form>
+      {% endif %}
     </div>
   </nav>
 
-  <!-- ─── Flash Messages ─────────────────────── -->
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="flash-container" id="flashContainer">
         {% for category, message in messages %}
           <div class="flash-msg {{ category }}">
             <i class="bi bi-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
-            {{ message }}
+            <span>{{ message }}</span>
           </div>
         {% endfor %}
       </div>
     {% endif %}
   {% endwith %}
 
-  <!-- ─── Page Wrapper ────────────────────────── -->
-  <div class="page-wrapper">
-    {% block content %}{% endblock %}
+  <div class="app-shell">
+    {% if not auth_enabled or current_user %}
+    <aside class="side-nav">
+      <div class="side-nav-inner">
+        <div>
+          <div class="nav-group-title">Stammdaten</div>
+          <a href="{{ url_for('page1_products') }}" class="nav-link-app {% if active_page == 1 %}active{% endif %}">
+            <i class="bi bi-boxes"></i><span>Produkte</span>
+          </a>
+          <a href="{{ url_for('page2_product_edit') }}" class="nav-link-app {% if active_page == 2 %}active{% endif %}">
+            <i class="bi bi-pencil-square"></i><span>Produkt bearbeiten</span>
+          </a>
+          <a href="{{ url_for('page3_warehouse_list') }}" class="nav-link-app {% if active_page == 3 %}active{% endif %}">
+            <i class="bi bi-building"></i><span>Lager</span>
+          </a>
+        </div>
+
+        <div>
+          <div class="nav-group-title">Steuerung</div>
+          <a href="{{ url_for('page6_procurement') }}" class="nav-link-app {% if active_page == 6 %}active{% endif %}">
+            <i class="bi bi-clipboard2-check"></i><span>Bestellungen</span>
+          </a>
+          <a href="{{ url_for('page7_picking') }}" class="nav-link-app {% if active_page == 7 %}active{% endif %}">
+            <i class="bi bi-signpost-split"></i><span>Kommissionierung</span>
+          </a>
+        </div>
+
+        <div>
+          <div class="nav-group-title">Analytik</div>
+          <a href="{{ url_for('page4_statistics') }}" class="nav-link-app {% if active_page == 4 %}active{% endif %}">
+            <i class="bi bi-bar-chart-line"></i><span>Statistik</span>
+          </a>
+          <a href="{{ url_for('page5_history') }}" class="nav-link-app {% if active_page == 5 %}active{% endif %}">
+            <i class="bi bi-clock-history"></i><span>Historie</span>
+          </a>
+        </div>
+      </div>
+    </aside>
+    {% endif %}
+
+    <main class="content-area">
+      <div class="page-wrapper">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
   </div>
 
-  <!-- Bootstrap JS -->
+  <div class="cmdk-overlay" id="cmdkOverlay" aria-hidden="true">
+    <div class="cmdk-box" role="dialog" aria-modal="true" aria-label="Schnellaktionen">
+      <input id="cmdkInput" class="cmdk-input" type="text" placeholder="Befehl suchen... z.B. Statistik, Theme, Bestellungen" />
+      <div id="cmdkList" class="cmdk-list"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    // Theme handling (dark / light)
     (function () {
-      const root = document.documentElement;
-      const stored = localStorage.getItem('bier_theme');
-      const prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-      const initial = stored || (prefersLight ? 'light' : 'dark');
-      root.setAttribute('data-theme', initial);
+      const THEME_PRESETS = {
+        'bier-dark': {
+          name: 'B.I.E.R Dark+',
+          mode: 'dark',
+          vars: {
+            '--bg': '#0a0d14', '--surface': '#121826', '--surface-2': '#1b2334', '--surface-3': '#263349',
+            '--border': '#32435f', '--accent': '#38bdf8', '--accent-soft': 'rgba(56,189,248,.18)', '--accent-hover': '#0ea5e9',
+            '--danger': '#ef4444', '--danger-soft': 'rgba(239,68,68,.16)', '--success': '#22c55e', '--success-soft': 'rgba(34,197,94,.14)',
+            '--text': '#f8fafc', '--text-muted': '#cbd5e1', '--bg-grad-1': 'rgba(56,189,248,.22)', '--bg-grad-2': 'rgba(59,130,246,.16)', '--bg-dot': 'rgba(148,163,184,.18)'
+          }
+        },
+        'bier-light': {
+          name: 'B.I.E.R Light+',
+          mode: 'light',
+          vars: {
+            '--bg': '#f4f8fc', '--surface': '#ffffff', '--surface-2': '#f1f5f9', '--surface-3': '#e2e8f0',
+            '--border': '#cbd5e1', '--accent': '#0284c7', '--accent-soft': 'rgba(2,132,199,.14)', '--accent-hover': '#0369a1',
+            '--danger': '#dc2626', '--danger-soft': 'rgba(220,38,38,.11)', '--success': '#16a34a', '--success-soft': 'rgba(22,163,74,.10)',
+            '--text': '#0f172a', '--text-muted': '#475569', '--bg-grad-1': 'rgba(56,189,248,.12)', '--bg-grad-2': 'rgba(2,132,199,.09)', '--bg-dot': 'rgba(71,85,105,.16)'
+          }
+        },
+        'nord-night': {
+          name: 'Nord Night',
+          mode: 'dark',
+          vars: {
+            '--bg': '#2b3444', '--surface': '#333f52', '--surface-2': '#3a495f', '--surface-3': '#4a5d77',
+            '--border': '#607895', '--accent': '#88c0d0', '--accent-soft': 'rgba(136,192,208,.2)', '--accent-hover': '#5e81ac',
+            '--danger': '#bf616a', '--danger-soft': 'rgba(191,97,106,.16)', '--success': '#a3be8c', '--success-soft': 'rgba(163,190,140,.14)',
+            '--text': '#eceff4', '--text-muted': '#d8dee9', '--bg-grad-1': 'rgba(94,129,172,.20)', '--bg-grad-2': 'rgba(136,192,208,.14)', '--bg-dot': 'rgba(216,222,233,.16)'
+          }
+        },
+        'oceanic': {
+          name: 'Oceanic Blue',
+          mode: 'dark',
+          vars: {
+            '--bg': '#061423', '--surface': '#0d2238', '--surface-2': '#12304d', '--surface-3': '#1a4166',
+            '--border': '#2a5b86', '--accent': '#00c2ff', '--accent-soft': 'rgba(0,194,255,.18)', '--accent-hover': '#16a6d3',
+            '--danger': '#fb7185', '--danger-soft': 'rgba(251,113,133,.15)', '--success': '#34d399', '--success-soft': 'rgba(52,211,153,.14)',
+            '--text': '#ecfeff', '--text-muted': '#bae6fd', '--bg-grad-1': 'rgba(0,194,255,.24)', '--bg-grad-2': 'rgba(34,211,238,.16)', '--bg-dot': 'rgba(125,211,252,.18)'
+          }
+        },
+        'forest-ops': {
+          name: 'Forest Ops',
+          mode: 'dark',
+          vars: {
+            '--bg': '#0a1510', '--surface': '#11221a', '--surface-2': '#173328', '--surface-3': '#214736',
+            '--border': '#2d5f4b', '--accent': '#34d399', '--accent-soft': 'rgba(52,211,153,.18)', '--accent-hover': '#10b981',
+            '--danger': '#f87171', '--danger-soft': 'rgba(248,113,113,.14)', '--success': '#86efac', '--success-soft': 'rgba(134,239,172,.14)',
+            '--text': '#ecfdf5', '--text-muted': '#bbf7d0', '--bg-grad-1': 'rgba(52,211,153,.2)', '--bg-grad-2': 'rgba(16,185,129,.15)', '--bg-dot': 'rgba(167,243,208,.18)'
+          }
+        },
+        'graphite-pro': {
+          name: 'Graphite Pro',
+          mode: 'dark',
+          vars: {
+            '--bg': '#111213', '--surface': '#1a1d20', '--surface-2': '#23272d', '--surface-3': '#2d333b',
+            '--border': '#4a5664', '--accent': '#f59e0b', '--accent-soft': 'rgba(245,158,11,.17)', '--accent-hover': '#d97706',
+            '--danger': '#f87171', '--danger-soft': 'rgba(248,113,113,.14)', '--success': '#4ade80', '--success-soft': 'rgba(74,222,128,.13)',
+            '--text': '#f4f4f5', '--text-muted': '#d4d4d8', '--bg-grad-1': 'rgba(245,158,11,.16)', '--bg-grad-2': 'rgba(100,116,139,.16)', '--bg-dot': 'rgba(161,161,170,.17)'
+          }
+        },
+        'solar-dawn': {
+          name: 'Solar Dawn',
+          mode: 'light',
+          vars: {
+            '--bg': '#fffdf6', '--surface': '#fffaf0', '--surface-2': '#fef3c7', '--surface-3': '#fde68a',
+            '--border': '#f59e0b', '--accent': '#d97706', '--accent-soft': 'rgba(217,119,6,.17)', '--accent-hover': '#b45309',
+            '--danger': '#dc2626', '--danger-soft': 'rgba(220,38,38,.11)', '--success': '#15803d', '--success-soft': 'rgba(21,128,61,.11)',
+            '--text': '#422006', '--text-muted': '#78350f', '--bg-grad-1': 'rgba(245,158,11,.15)', '--bg-grad-2': 'rgba(234,88,12,.1)', '--bg-dot': 'rgba(120,53,15,.12)'
+          }
+        },
+        'paper-ink': {
+          name: 'Paper Ink',
+          mode: 'light',
+          vars: {
+            '--bg': '#f9fafb', '--surface': '#ffffff', '--surface-2': '#f3f4f6', '--surface-3': '#e5e7eb',
+            '--border': '#9ca3af', '--accent': '#1d4ed8', '--accent-soft': 'rgba(29,78,216,.14)', '--accent-hover': '#1e40af',
+            '--danger': '#b91c1c', '--danger-soft': 'rgba(185,28,28,.11)', '--success': '#047857', '--success-soft': 'rgba(4,120,87,.1)',
+            '--text': '#111827', '--text-muted': '#4b5563', '--bg-grad-1': 'rgba(29,78,216,.08)', '--bg-grad-2': 'rgba(75,85,99,.07)', '--bg-dot': 'rgba(31,41,55,.10)'
+          }
+        },
+        'high-contrast': {
+          name: 'High Contrast',
+          mode: 'dark',
+          vars: {
+            '--bg': '#000000', '--surface': '#0d0d0d', '--surface-2': '#171717', '--surface-3': '#262626',
+            '--border': '#6b7280', '--accent': '#facc15', '--accent-soft': 'rgba(250,204,21,.2)', '--accent-hover': '#eab308',
+            '--danger': '#fb7185', '--danger-soft': 'rgba(251,113,133,.16)', '--success': '#4ade80', '--success-soft': 'rgba(74,222,128,.14)',
+            '--text': '#ffffff', '--text-muted': '#e5e7eb', '--bg-grad-1': 'rgba(250,204,21,.14)', '--bg-grad-2': 'rgba(255,255,255,.06)', '--bg-dot': 'rgba(255,255,255,.12)'
+          }
+        },
+        'ember-steel': {
+          name: 'Ember Steel',
+          mode: 'dark',
+          vars: {
+            '--bg': '#140f11', '--surface': '#20171a', '--surface-2': '#2b1f23', '--surface-3': '#3b2a31',
+            '--border': '#6b3d47', '--accent': '#fb7185', '--accent-soft': 'rgba(251,113,133,.18)', '--accent-hover': '#f43f5e',
+            '--danger': '#ef4444', '--danger-soft': 'rgba(239,68,68,.16)', '--success': '#34d399', '--success-soft': 'rgba(52,211,153,.14)',
+            '--text': '#fff1f2', '--text-muted': '#fecdd3', '--bg-grad-1': 'rgba(244,63,94,.2)', '--bg-grad-2': 'rgba(251,113,133,.14)', '--bg-dot': 'rgba(251,113,133,.14)'
+          }
+        },
+        'monokai': {
+          name: 'Monokai',
+          mode: 'dark',
+          vars: {
+            '--bg': '#272822', '--surface': '#2f3129', '--surface-2': '#3a3d33', '--surface-3': '#4a4d42',
+            '--border': '#75715e', '--accent': '#a6e22e', '--accent-soft': 'rgba(166,226,46,.18)', '--accent-hover': '#94d826',
+            '--danger': '#f92672', '--danger-soft': 'rgba(249,38,114,.16)', '--success': '#66d9ef', '--success-soft': 'rgba(102,217,239,.14)',
+            '--text': '#f8f8f2', '--text-muted': '#cfcfb8', '--bg-grad-1': 'rgba(166,226,46,.18)', '--bg-grad-2': 'rgba(102,217,239,.14)', '--bg-dot': 'rgba(248,248,242,.12)'
+          }
+        },
+        'one-dark': {
+          name: 'One Dark',
+          mode: 'dark',
+          vars: {
+            '--bg': '#282c34', '--surface': '#2f343f', '--surface-2': '#3a404d', '--surface-3': '#4b5363',
+            '--border': '#5c6370', '--accent': '#61afef', '--accent-soft': 'rgba(97,175,239,.18)', '--accent-hover': '#4ea1e3',
+            '--danger': '#e06c75', '--danger-soft': 'rgba(224,108,117,.16)', '--success': '#98c379', '--success-soft': 'rgba(152,195,121,.14)',
+            '--text': '#e6edf3', '--text-muted': '#c8d1dc', '--bg-grad-1': 'rgba(97,175,239,.18)', '--bg-grad-2': 'rgba(152,195,121,.14)', '--bg-dot': 'rgba(198,208,221,.13)'
+          }
+        },
+        'quiet-light': {
+          name: 'Quiet Light',
+          mode: 'light',
+          vars: {
+            '--bg': '#f8f8f8', '--surface': '#ffffff', '--surface-2': '#f1f1f1', '--surface-3': '#e5e5e5',
+            '--border': '#c7c7c7', '--accent': '#0b62d6', '--accent-soft': 'rgba(11,98,214,.14)', '--accent-hover': '#074ba5',
+            '--danger': '#c72e0f', '--danger-soft': 'rgba(199,46,15,.11)', '--success': '#0f7b45', '--success-soft': 'rgba(15,123,69,.10)',
+            '--text': '#333333', '--text-muted': '#616161', '--bg-grad-1': 'rgba(11,98,214,.08)', '--bg-grad-2': 'rgba(99,99,99,.07)', '--bg-dot': 'rgba(63,63,63,.10)'
+          }
+        },
+        'abyss': {
+          name: 'Abyss',
+          mode: 'dark',
+          vars: {
+            '--bg': '#000c18', '--surface': '#001428', '--surface-2': '#00223f', '--surface-3': '#00335b',
+            '--border': '#1f4f78', '--accent': '#0090ff', '--accent-soft': 'rgba(0,144,255,.2)', '--accent-hover': '#0070c9',
+            '--danger': '#ff5f5f', '--danger-soft': 'rgba(255,95,95,.16)', '--success': '#66d9ef', '--success-soft': 'rgba(102,217,239,.14)',
+            '--text': '#d7e9ff', '--text-muted': '#a9c7e6', '--bg-grad-1': 'rgba(0,144,255,.22)', '--bg-grad-2': 'rgba(0,90,180,.16)', '--bg-dot': 'rgba(169,199,230,.14)'
+          }
+        }
+      };
 
-      function updateThemeUI(theme) {
-        const icon = document.getElementById('themeIcon');
-        const logo = document.getElementById('navLogo');
-        const toggle = document.getElementById('themeToggle');
-        if (!icon || !logo || !toggle) return;
-        if (theme === 'light') {
-          icon.classList.remove('bi-moon-stars');
-          icon.classList.add('bi-sun');
-          toggle.title = 'Dark Mode aktivieren';
-          logo.src = '{{ url_for('logo', variant='light') }}';
-        } else {
-          icon.classList.remove('bi-sun');
-          icon.classList.add('bi-moon-stars');
-          toggle.title = 'Light Mode aktivieren';
-          logo.src = '{{ url_for('logo', variant='dark') }}';
+      const defaultSettings = {
+        themeId: 'bier-dark',
+        density: 'comfortable',
+        motion: 'full',
+        tableStripes: true,
+        glassCards: false,
+        fontScale: 'normal',
+        startPage: '/ui/produkte',
+        compactSidebar: false,
+        flashDurationMs: 4000
+      };
+
+      const allowedSettingKeys = new Set(Object.keys(defaultSettings));
+
+      const roleRaw = (document.body.dataset.currentRole || '').trim().toLowerCase();
+      const currentUsername = (document.body.dataset.currentUsername || '').trim();
+      const authEnabled = document.body.dataset.authEnabled === '1';
+      const effectiveRole = roleRaw || (authEnabled ? 'clerk' : 'manager');
+      const isManager = effectiveRole === 'manager';
+      const canPersistToDb = authEnabled && !!currentUsername;
+      let activeProfileRole = effectiveRole;
+
+      const settingsCacheKey = `bier_settings_cache_v3_${currentUsername || 'guest'}`;
+      const policyCacheKey = `bier_role_policy_cache_v3_${currentUsername || 'guest'}`;
+
+      let runtimeState = {
+        profiles: {
+          manager: { ...defaultSettings },
+          clerk: { ...defaultSettings }
+        },
+        rolePolicy: {
+          clerk_defaults: { ...defaultSettings },
+          clerk_locked_keys: []
+        }
+      };
+
+      function sanitizeSettings(source) {
+        const out = {};
+        if (!source || typeof source !== 'object') return out;
+        Object.keys(source).forEach((key) => {
+          if (allowedSettingKeys.has(key)) {
+            out[key] = source[key];
+          }
+        });
+        return out;
+      }
+
+      function readRoleDefaults() {
+        const policy = runtimeState.rolePolicy || {};
+        const defaults = sanitizeSettings(policy.clerk_defaults || {});
+        return {
+          manager: { ...defaultSettings },
+          clerk: { ...defaultSettings, ...defaults },
+        };
+      }
+
+      function readRoleLocks() {
+        const policy = runtimeState.rolePolicy || {};
+        const keys = Array.isArray(policy.clerk_locked_keys) ? policy.clerk_locked_keys : [];
+        return {
+          clerkLockedKeys: keys.filter(key => allowedSettingKeys.has(key))
+        };
+      }
+
+      function readCacheSettings() {
+        try {
+          const raw = localStorage.getItem(settingsCacheKey);
+          const parsed = raw ? JSON.parse(raw) : {};
+          return {
+            manager: { ...defaultSettings, ...sanitizeSettings(parsed.manager || {}) },
+            clerk: { ...defaultSettings, ...sanitizeSettings(parsed.clerk || {}) },
+          };
+        } catch (_err) {
+          return {
+            manager: { ...defaultSettings },
+            clerk: { ...defaultSettings },
+          };
         }
       }
 
-      window.addEventListener('DOMContentLoaded', function () {
-        updateThemeUI(root.getAttribute('data-theme') || initial);
-        const btn = document.getElementById('themeToggle');
-        if (btn) {
-          btn.addEventListener('click', function () {
-            const current = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-            const next = current === 'light' ? 'dark' : 'light';
-            root.setAttribute('data-theme', next);
-            localStorage.setItem('bier_theme', next);
-            updateThemeUI(next);
+      function readCachePolicy() {
+        try {
+          const raw = localStorage.getItem(policyCacheKey);
+          const parsed = raw ? JSON.parse(raw) : {};
+          const defaults = sanitizeSettings(parsed.clerk_defaults || {});
+          const keys = Array.isArray(parsed.clerk_locked_keys) ? parsed.clerk_locked_keys : [];
+          return {
+            clerk_defaults: { ...defaultSettings, ...defaults },
+            clerk_locked_keys: keys.filter(key => allowedSettingKeys.has(key))
+          };
+        } catch (_err) {
+          return {
+            clerk_defaults: { ...defaultSettings },
+            clerk_locked_keys: []
+          };
+        }
+      }
+
+      function writeCacheSettings(payload) {
+        localStorage.setItem(settingsCacheKey, JSON.stringify(payload));
+      }
+
+      function writeCachePolicy(payload) {
+        localStorage.setItem(policyCacheKey, JSON.stringify(payload));
+      }
+
+      function hydrateRuntimeFromCache() {
+        runtimeState.profiles = readCacheSettings();
+        runtimeState.rolePolicy = readCachePolicy();
+      }
+
+      function readSettings(roleName = activeProfileRole) {
+        const roleKey = roleName === 'manager' ? 'manager' : 'clerk';
+        let merged = { ...defaultSettings, ...sanitizeSettings(runtimeState.profiles[roleKey] || {}) };
+        if (roleKey === 'clerk') {
+          const roleDefaults = readRoleDefaults();
+          const roleLocks = readRoleLocks();
+          const clerkDefaults = roleDefaults.clerk || {};
+          merged = { ...clerkDefaults, ...merged };
+
+          if (effectiveRole === 'clerk' && roleLocks.clerkLockedKeys.length) {
+            roleLocks.clerkLockedKeys.forEach((key) => {
+              merged[key] = clerkDefaults[key];
+            });
+          }
+        }
+        return merged;
+      }
+
+      function writeSettings(next, roleName = activeProfileRole) {
+        const roleKey = roleName === 'manager' ? 'manager' : 'clerk';
+        runtimeState.profiles[roleKey] = { ...defaultSettings, ...sanitizeSettings(next) };
+        writeCacheSettings(runtimeState.profiles);
+      }
+
+      function writeRolePolicy(nextPolicy) {
+        runtimeState.rolePolicy = {
+          clerk_defaults: {
+            ...defaultSettings,
+            ...sanitizeSettings((nextPolicy && nextPolicy.clerk_defaults) || {})
+          },
+          clerk_locked_keys: Array.isArray(nextPolicy?.clerk_locked_keys)
+            ? nextPolicy.clerk_locked_keys.filter(key => allowedSettingKeys.has(key))
+            : []
+        };
+        writeCachePolicy(runtimeState.rolePolicy);
+      }
+
+      function syncProfileToDb(roleName) {
+        if (!canPersistToDb) return;
+        const roleKey = roleName === 'manager' ? 'manager' : 'clerk';
+        fetch(`/api/ui-settings/profile/${roleKey}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ settings: sanitizeSettings(runtimeState.profiles[roleKey]) })
+        }).catch(() => null);
+      }
+
+      function syncRolePolicyToDb() {
+        if (!canPersistToDb || !isManager) return;
+        fetch('/api/ui-settings/role-policy', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(runtimeState.rolePolicy)
+        }).catch(() => null);
+      }
+
+      async function loadBootstrapFromDb() {
+        if (!canPersistToDb) return;
+        try {
+          const response = await fetch('/api/ui-settings/bootstrap', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
           });
+          if (!response.ok) return;
+          const payload = await response.json();
+          if (!payload || !payload.ok) return;
+
+          const profiles = payload.profiles || {};
+          runtimeState.profiles = {
+            manager: { ...defaultSettings, ...sanitizeSettings(profiles.manager || {}) },
+            clerk: { ...defaultSettings, ...sanitizeSettings(profiles.clerk || {}) }
+          };
+          writeRolePolicy(payload.role_policy || {});
+          writeCacheSettings(runtimeState.profiles);
+
+          const live = readSettings(effectiveRole);
+          applyAll(live);
+          window.dispatchEvent(new CustomEvent('bier-settings-updated', { detail: live }));
+          window.dispatchEvent(new CustomEvent('bier-role-defaults-updated', { detail: readRoleDefaults() }));
+          window.dispatchEvent(new CustomEvent('bier-role-locks-updated', { detail: readRoleLocks() }));
+        } catch (_err) {
+          // Ignore fetch errors: local cache keeps UI working offline.
+        }
+      }
+
+      function applyTheme(themeId) {
+        const theme = THEME_PRESETS[themeId] || THEME_PRESETS['bier-dark'];
+        const root = document.documentElement;
+        root.setAttribute('data-theme', theme.mode);
+        root.setAttribute('data-theme-id', themeId);
+
+        Object.entries(theme.vars).forEach(([key, value]) => {
+          root.style.setProperty(key, value);
+        });
+
+        const logo = document.getElementById('navLogo');
+        if (logo) {
+          logo.src = theme.mode === 'light' ? "{{ url_for('logo', variant='light') }}" : "{{ url_for('logo', variant='dark') }}";
+        }
+
+        const icon = document.getElementById('themeIcon');
+        if (icon) {
+          icon.className = 'bi ' + (theme.mode === 'light' ? 'bi-sun' : 'bi-moon-stars');
+        }
+      }
+
+      function applyBehavior(settings) {
+        const body = document.body;
+        body.classList.toggle('density-compact', settings.density === 'compact');
+        body.classList.toggle('reduce-motion', settings.motion === 'reduced');
+        body.classList.toggle('table-striped-enabled', !!settings.tableStripes);
+        body.classList.toggle('glass-cards', !!settings.glassCards);
+
+        if (settings.fontScale === 'small') {
+          document.documentElement.style.setProperty('--font-scale', '.94');
+        } else if (settings.fontScale === 'large') {
+          document.documentElement.style.setProperty('--font-scale', '1.07');
+        } else {
+          document.documentElement.style.setProperty('--font-scale', '1');
+        }
+      }
+
+      function applyAll(settings) {
+        applyTheme(settings.themeId || 'bier-dark');
+        applyBehavior(settings);
+      }
+
+      function getThemeList() {
+        return Object.entries(THEME_PRESETS).map(([id, cfg]) => ({
+          id,
+          name: cfg.name,
+          mode: cfg.mode,
+          accent: cfg.vars['--accent']
+        }));
+      }
+
+      const uiApi = {
+        getThemeList,
+        getCurrentRole: () => effectiveRole,
+        getEditableRoles: () => (isManager ? ['manager', 'clerk'] : [effectiveRole]),
+        getActiveProfileRole: () => activeProfileRole,
+        setActiveProfileRole: (roleName) => {
+          const allowed = uiApi.getEditableRoles();
+          activeProfileRole = allowed.includes(roleName) ? roleName : effectiveRole;
+          const profileSettings = readSettings(activeProfileRole);
+          if (activeProfileRole === effectiveRole) {
+            applyAll(profileSettings);
+          }
+          window.dispatchEvent(new CustomEvent('bier-profile-role-changed', { detail: activeProfileRole }));
+          return activeProfileRole;
+        },
+        getSettings: (roleName) => ({ ...readSettings(roleName || activeProfileRole) }),
+        saveSettings: (patch, options = {}) => {
+          const roleName = options.role || activeProfileRole;
+          let merged = { ...readSettings(roleName), ...sanitizeSettings(patch || {}) };
+
+          if (effectiveRole === 'clerk' && roleName === 'clerk') {
+            const roleDefaults = readRoleDefaults();
+            const roleLocks = readRoleLocks();
+            roleLocks.clerkLockedKeys.forEach((key) => {
+              merged[key] = roleDefaults.clerk[key];
+            });
+          }
+
+          writeSettings(merged, roleName);
+          syncProfileToDb(roleName);
+          if (roleName === effectiveRole) {
+            applyAll(merged);
+          }
+          window.dispatchEvent(new CustomEvent('bier-settings-updated', { detail: merged }));
+          return merged;
+        },
+        resetSettings: (options = {}) => {
+          const roleName = options.role || activeProfileRole;
+          writeSettings({ ...defaultSettings }, roleName);
+          syncProfileToDb(roleName);
+          const next = readSettings(roleName);
+          if (roleName === effectiveRole) {
+            applyAll(next);
+          }
+          window.dispatchEvent(new CustomEvent('bier-settings-updated', { detail: next }));
+          return { ...next };
+        },
+        getRoleDefaults: () => ({ ...readRoleDefaults() }),
+        saveRoleDefaults: (patch) => {
+          if (!isManager) return readRoleDefaults();
+          const current = readRoleDefaults();
+          const next = {
+            manager: { ...current.manager, ...sanitizeSettings((patch && patch.manager) || {}) },
+            clerk: { ...current.clerk, ...sanitizeSettings((patch && patch.clerk) || {}) },
+          };
+          writeRolePolicy({
+            clerk_defaults: next.clerk,
+            clerk_locked_keys: readRoleLocks().clerkLockedKeys
+          });
+          syncRolePolicyToDb();
+          window.dispatchEvent(new CustomEvent('bier-role-defaults-updated', { detail: next }));
+          return next;
+        },
+        getRoleLocks: () => ({ ...readRoleLocks() }),
+        saveRoleLocks: (payload) => {
+          if (!isManager) return readRoleLocks();
+          const keys = Array.isArray(payload?.clerkLockedKeys) ? payload.clerkLockedKeys : [];
+          const next = { clerkLockedKeys: keys.filter(key => allowedSettingKeys.has(key)) };
+          writeRolePolicy({
+            clerk_defaults: readRoleDefaults().clerk,
+            clerk_locked_keys: next.clerkLockedKeys
+          });
+          syncRolePolicyToDb();
+          window.dispatchEvent(new CustomEvent('bier-role-locks-updated', { detail: next }));
+          return next;
+        },
+        exportProfile: (options = {}) => {
+          const roleName = options.role || activeProfileRole;
+          return {
+            app: 'B.I.E.R',
+            type: 'ui-profile',
+            version: 1,
+            actorRole: effectiveRole,
+            profileRole: roleName,
+            exportedAt: new Date().toISOString(),
+            settings: { ...readSettings(roleName) },
+          };
+        },
+        importProfile: (profile, options = {}) => {
+          if (!profile || typeof profile !== 'object') {
+            throw new Error('Ungültiges Profilformat.');
+          }
+
+          const imported = sanitizeSettings(profile.settings || {});
+          if (!Object.keys(imported).length) {
+            throw new Error('Profil enthält keine unterstützten Einstellungen.');
+          }
+
+          const roleName = options.role || profile.profileRole || activeProfileRole;
+          const allowedRoles = uiApi.getEditableRoles();
+          const resolvedRole = allowedRoles.includes(roleName) ? roleName : effectiveRole;
+
+          const merged = { ...readSettings(resolvedRole), ...imported };
+          writeSettings(merged, resolvedRole);
+          syncProfileToDb(resolvedRole);
+          if (resolvedRole === effectiveRole) {
+            applyAll(merged);
+          }
+          window.dispatchEvent(new CustomEvent('bier-settings-updated', { detail: merged }));
+          return merged;
+        },
+        applyTheme
+      };
+
+      window.BIER_UI = uiApi;
+
+      hydrateRuntimeFromCache();
+      const initialSettings = readSettings(effectiveRole);
+      applyAll(initialSettings);
+      loadBootstrapFromDb();
+
+      const themeToggle = document.getElementById('themeToggle');
+      if (themeToggle) {
+        themeToggle.addEventListener('click', function () {
+          const s = readSettings(effectiveRole);
+          const current = s.themeId || 'bier-dark';
+          const next = current === 'bier-dark' ? 'bier-light' : 'bier-dark';
+          uiApi.saveSettings({ themeId: next }, { role: effectiveRole });
+        });
+      }
+
+      const quickOpenBtn = document.getElementById('quickOpenBtn');
+      const cmdkOverlay = document.getElementById('cmdkOverlay');
+      const cmdkInput = document.getElementById('cmdkInput');
+      const cmdkList = document.getElementById('cmdkList');
+
+      const COMMANDS = [
+        { label: 'Produkte', action: () => location.href = "{{ url_for('page1_products') }}" },
+        { label: 'Lager', action: () => location.href = "{{ url_for('page3_warehouse_list') }}" },
+        { label: 'Bestellungen', action: () => location.href = "{{ url_for('page6_procurement') }}" },
+        { label: 'Kommissionierung', action: () => location.href = "{{ url_for('page7_picking') }}" },
+        { label: 'Statistik', action: () => location.href = "{{ url_for('page4_statistics') }}" },
+        { label: 'Historie', action: () => location.href = "{{ url_for('page5_history') }}" },
+        { label: 'Einstellungen', action: () => location.href = "{{ url_for('page8_settings') }}" },
+        { label: 'Theme: Dark+', action: () => uiApi.saveSettings({ themeId: 'bier-dark' }) },
+        { label: 'Theme: Light+', action: () => uiApi.saveSettings({ themeId: 'bier-light' }) },
+        { label: 'Theme: Monokai', action: () => uiApi.saveSettings({ themeId: 'monokai' }) },
+        { label: 'Theme: One Dark', action: () => uiApi.saveSettings({ themeId: 'one-dark' }) },
+        { label: 'Theme: Quiet Light', action: () => uiApi.saveSettings({ themeId: 'quiet-light' }) },
+        { label: 'Theme: Abyss', action: () => uiApi.saveSettings({ themeId: 'abyss' }) },
+        { label: 'Theme: Nord Night', action: () => uiApi.saveSettings({ themeId: 'nord-night' }) },
+        { label: 'Theme: Oceanic Blue', action: () => uiApi.saveSettings({ themeId: 'oceanic' }) },
+        { label: 'Theme: Forest Ops', action: () => uiApi.saveSettings({ themeId: 'forest-ops' }) },
+        { label: 'Theme: Graphite Pro', action: () => uiApi.saveSettings({ themeId: 'graphite-pro' }) },
+        { label: 'Theme: Solar Dawn', action: () => uiApi.saveSettings({ themeId: 'solar-dawn' }) },
+        { label: 'Theme: Paper Ink', action: () => uiApi.saveSettings({ themeId: 'paper-ink' }) },
+        { label: 'Theme: High Contrast', action: () => uiApi.saveSettings({ themeId: 'high-contrast' }) },
+        { label: 'Theme: Ember Steel', action: () => uiApi.saveSettings({ themeId: 'ember-steel' }) },
+        { label: 'Dichte: Kompakt', action: () => uiApi.saveSettings({ density: 'compact' }) },
+        { label: 'Dichte: Komfort', action: () => uiApi.saveSettings({ density: 'comfortable' }) },
+        { label: 'Animationen reduzieren', action: () => uiApi.saveSettings({ motion: 'reduced' }) },
+        { label: 'Animationen normal', action: () => uiApi.saveSettings({ motion: 'full' }) }
+      ];
+
+      if (isManager) {
+        COMMANDS.splice(7, 0, { label: 'User-Admin', action: () => location.href = "{{ url_for('page9_user_admin') }}" });
+      }
+
+      let activeIndex = 0;
+
+      function renderCommandList(filterText) {
+        const text = (filterText || '').trim().toLowerCase();
+        const rows = COMMANDS.filter(c => c.label.toLowerCase().includes(text));
+
+        if (!rows.length) {
+          cmdkList.innerHTML = '<div class="empty-state" style="padding:20px;"><i class="bi bi-search"></i><p>Keine Aktion gefunden.</p></div>';
+          return;
+        }
+
+        activeIndex = Math.min(activeIndex, rows.length - 1);
+        cmdkList.innerHTML = rows.map((c, i) => `
+          <button class="cmdk-item ${i === activeIndex ? 'active' : ''}" data-index="${i}">
+            <span><i class="bi bi-arrow-return-right"></i> ${c.label}</span>
+            <span class="quick-kbd">Enter</span>
+          </button>
+        `).join('');
+
+        [...cmdkList.querySelectorAll('.cmdk-item')].forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.dataset.index || '0');
+            rows[idx].action();
+            closePalette();
+          });
+        });
+      }
+
+      function openPalette() {
+        if (!cmdkOverlay || !cmdkInput) return;
+        cmdkOverlay.classList.add('open');
+        cmdkOverlay.setAttribute('aria-hidden', 'false');
+        activeIndex = 0;
+        renderCommandList('');
+        setTimeout(() => cmdkInput.focus(), 20);
+      }
+
+      function closePalette() {
+        if (!cmdkOverlay) return;
+        cmdkOverlay.classList.remove('open');
+        cmdkOverlay.setAttribute('aria-hidden', 'true');
+      }
+
+      if (quickOpenBtn) {
+        quickOpenBtn.addEventListener('click', openPalette);
+      }
+
+      if (cmdkInput) {
+        cmdkInput.addEventListener('input', () => {
+          activeIndex = 0;
+          renderCommandList(cmdkInput.value);
+        });
+
+        cmdkInput.addEventListener('keydown', (event) => {
+          const items = [...cmdkList.querySelectorAll('.cmdk-item')];
+          if (!items.length) return;
+
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            activeIndex = Math.min(activeIndex + 1, items.length - 1);
+            renderCommandList(cmdkInput.value);
+          } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+            renderCommandList(cmdkInput.value);
+          } else if (event.key === 'Enter') {
+            event.preventDefault();
+            items[activeIndex]?.click();
+          } else if (event.key === 'Escape') {
+            closePalette();
+          }
+        });
+      }
+
+      if (cmdkOverlay) {
+        cmdkOverlay.addEventListener('click', (event) => {
+          if (event.target === cmdkOverlay) closePalette();
+        });
+      }
+
+      document.addEventListener('keydown', (event) => {
+        const cmdk = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k';
+        if (cmdk) {
+          event.preventDefault();
+          openPalette();
+          return;
+        }
+
+        if (event.key === 'Escape' && cmdkOverlay && cmdkOverlay.classList.contains('open')) {
+          closePalette();
         }
       });
-    })();
 
-    // Auto-dismiss flash messages
-    setTimeout(() => {
-      const fc = document.getElementById('flashContainer');
-      if (fc) fc.style.transition = 'opacity .5s'; fc && (fc.style.opacity = '0');
-      setTimeout(() => fc && fc.remove(), 500);
-    }, 4000);
+      if (location.pathname === '/') {
+        const settings = readSettings(effectiveRole);
+        if (settings.startPage && settings.startPage !== '/') {
+          location.replace(settings.startPage);
+        }
+      }
+
+      const flashContainer = document.getElementById('flashContainer');
+      if (flashContainer) {
+        const timeout = Number(readSettings(effectiveRole).flashDurationMs || 4000);
+        setTimeout(() => {
+          flashContainer.style.transition = 'opacity .35s ease';
+          flashContainer.style.opacity = '0';
+          setTimeout(() => flashContainer.remove(), 360);
+        }, timeout);
+      }
+    })();
   </script>
 
   {% block extra_scripts %}{% endblock %}

@@ -7,13 +7,20 @@ class WarehouseServicePort(ABC):
     """Abstract interface for warehouse-related business logic."""
 
     @abstractmethod
-    def create_warehouse(self, warehouse_name: str, address: str, max_slots: int) -> Dict:
+    def create_warehouse(
+        self,
+        warehouse_name: str,
+        address: str,
+        max_slots: int,
+        performed_by: str = "system",
+    ) -> Dict:
         """Create a new warehouse and persist it.
 
         Args:
             warehouse_name: Human-readable warehouse name.
             address: Physical address of the warehouse.
             max_slots: Maximum number of storage slots. Must be > 0.
+            performed_by: Name or identifier of the user performing the action.
 
         Returns:
             A dictionary representing the newly created warehouse.
@@ -45,12 +52,13 @@ class WarehouseServicePort(ABC):
         ...
 
     @abstractmethod
-    def update_warehouse(self, warehouse_id: str, data: Dict) -> Dict:
+    def update_warehouse(self, warehouse_id: str, data: Dict, performed_by: str = "system") -> Dict:
         """Update fields of an existing warehouse.
 
         Args:
             warehouse_id: Unique warehouse identifier.
             data: Dictionary of fields to update.
+            performed_by: Name or identifier of the user performing the action.
 
         Returns:
             The updated warehouse representation.
@@ -62,11 +70,12 @@ class WarehouseServicePort(ABC):
         ...
 
     @abstractmethod
-    def delete_warehouse(self, warehouse_id: str) -> None:
+    def delete_warehouse(self, warehouse_id: str, performed_by: str = "system") -> None:
         """Permanently delete a warehouse.
 
         Args:
             warehouse_id: Unique warehouse identifier.
+            performed_by: Name or identifier of the user performing the action.
 
         Raises:
             KeyError: If no warehouse with the given ID exists.

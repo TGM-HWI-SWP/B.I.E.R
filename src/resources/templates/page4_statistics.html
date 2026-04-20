@@ -133,6 +133,12 @@
       <h1 class="page-title">Statistik</h1>
       <p class="page-subtitle">Überblick über Bestände, Auslastung und Produktverteilung</p>
     </div>
+    <form method="post" action="{{ url_for('export_statistics_pdf') }}">
+      <button type="submit" class="btn btn-secondary">
+        <i class="bi bi-file-earmark-pdf"></i>
+        Statistik als PDF
+      </button>
+    </form>
   </div>
 
   <!-- ─── Filter Bar ───────────────────────────────────── -->
@@ -182,6 +188,11 @@
       <i class="bi bi-currency-euro stat-icon"></i>
       <div class="stat-value">{{ "%.2f"|format(total_value) }} €</div>
       <div class="stat-label">Gesamtwert Lager</div>
+    </div>
+    <div class="stat-card">
+      <i class="bi bi-exclamation-triangle stat-icon"></i>
+      <div class="stat-value">{{ low_stock_count }}</div>
+      <div class="stat-label">Niedrigbestand</div>
     </div>
   </div>
 

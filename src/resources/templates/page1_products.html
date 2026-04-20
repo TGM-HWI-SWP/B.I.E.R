@@ -10,14 +10,27 @@
       <h1 class="page-title">Produktverwaltung</h1>
       <p class="page-subtitle">
         {{ produkte | length }} Produkt{% if produkte | length != 1 %}e{% endif %} gespeichert
+        {% if low_stock_count and low_stock_count > 0 %}
+          <span class="badge" style="background:var(--danger-soft); color:var(--danger); margin-left:6px;">
+            {{ low_stock_count }} Niedrigbestand
+          </span>
+        {% endif %}
         {% if active_lager_filter %}
           <span class="badge badge-accent">Filter: {{ active_lager_filter.lagername }}</span>
         {% endif %}
       </p>
     </div>
-    <a href="{{ url_for('page2_product_edit') }}" class="btn btn-primary btn-lg" id="addProductBtn">
-      <i class="bi bi-plus-lg"></i> Neues Produkt
-    </a>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <form method="post" action="{{ url_for('export_inventory_pdf') }}" style="margin:0;">
+        <input type="hidden" name="lager_id" value="{{ active_lager_filter._id if active_lager_filter else '' }}" />
+        <button type="submit" class="btn btn-secondary btn-lg">
+          <i class="bi bi-file-earmark-pdf"></i> Inventar als PDF
+        </button>
+      </form>
+      <a href="{{ url_for('page2_product_edit') }}" class="btn btn-primary btn-lg" id="addProductBtn">
+        <i class="bi bi-plus-lg"></i> Neues Produkt
+      </a>
+    </div>
   </div>
 
   <!-- ─── Search ───────────────────────────────────────── -->
@@ -60,6 +73,8 @@
               <th>Produktname</th>
               <th>Beschreibung</th>
               <th>Gewicht</th>
+              <th>Bestand</th>
+              <th>Status</th>
               <th style="width:120px; text-align:right;">Aktion</th>
             </tr>
           </thead>
@@ -82,7 +97,25 @@
                   <span style="color:var(--text-muted);">—</span>
                 {% endif %}
               </td>
+              <td>
+                <span class="badge badge-accent">{{ p.menge | default(0) }} Stk.</span>
+              </td>
+              <td>
+                {% if p.is_low_stock %}
+                  <span class="badge" style="background:var(--danger-soft);color:var(--danger);">Niedrig</span>
+                {% else %}
+                  <span class="badge badge-muted">OK</span>
+                {% endif %}
+              </td>
               <td style="text-align:right;" onclick="event.stopPropagation();">
+                <button type="button" class="btn btn-success btn-sm" title="Bestand zubuchen"
+                        onclick="openBookingModal('in', '{{ p._id }}', '{{ p.name | e }}', '{{ p.lager_id | default('') }}')">
+                  <i class="bi bi-plus-lg"></i>
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" title="Bestand abbuchen"
+                        onclick="openBookingModal('out', '{{ p._id }}', '{{ p.name | e }}', '{{ p.lager_id | default('') }}')">
+                  <i class="bi bi-dash-lg"></i>
+                </button>
                 <button type="button" class="btn btn-secondary btn-sm" title="In anderes Lager verschieben"
                         onclick="openMoveModal('{{ p._id }}', '{{ p.name | e }}', {{ p.menge | default(0) }}, '{{ p.lager_id | default('') }}')">
                   <i class="bi bi-arrow-left-right"></i>
@@ -104,6 +137,38 @@
     </div>
   </div>
 
+</div>
+
+<!-- ─── Stock Booking Modal ──────────────────────── -->
+<div class="modal-overlay" id="bookingModal">
+  <div class="modal-box" style="text-align:left;max-width:480px;">
+    <h3 id="bookingModalTitle" style="margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+      <i class="bi bi-box-seam" style="color:var(--accent);"></i>
+      Bestand buchen
+    </h3>
+    <form method="POST" id="bookingForm">
+      <div style="margin-bottom:14px;">
+        <label class="form-label">Lager *</label>
+        <select name="lager_id" class="form-select" required>
+          <option value="">Lager auswählen…</option>
+          {% for l in lager %}
+            <option value="{{ l._id }}">{{ l.lagername }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label class="form-label">Menge *</label>
+        <input type="number" name="menge" class="form-control" min="1" value="1" required />
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeBookingModal()">Abbrechen</button>
+        <button type="submit" class="btn btn-primary" id="bookingSubmitBtn">
+          <i class="bi bi-check-lg"></i>
+          Buchen
+        </button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <!-- ─── Move Product Modal ───────────────────────── -->
@@ -149,6 +214,41 @@
 
   function openProduct(id) {
     window.location = '/ui/produkt/' + id + '/bearbeiten';
+  }
+
+  function openBookingModal(mode, productId, productName, defaultWarehouseId) {
+    const overlay = document.getElementById('bookingModal');
+    const title = document.getElementById('bookingModalTitle');
+    const form = document.getElementById('bookingForm');
+    const submitBtn = document.getElementById('bookingSubmitBtn');
+    if (!overlay || !title || !form || !submitBtn) return;
+
+    const isIn = mode === 'in';
+    title.innerHTML = isIn
+      ? '<i class="bi bi-plus-circle" style="color:var(--success);"></i> Bestand zubuchen: ' + productName
+      : '<i class="bi bi-dash-circle" style="color:var(--danger);"></i> Bestand abbuchen: ' + productName;
+    submitBtn.innerHTML = isIn
+      ? '<i class="bi bi-check-lg"></i> Zubuchen'
+      : '<i class="bi bi-check-lg"></i> Abbuchen';
+
+    form.action = isIn ? `/ui/produkt/${productId}/zubuchen` : `/ui/produkt/${productId}/abbuchen`;
+
+    const select = form.querySelector('select[name="lager_id"]');
+    if (select) {
+      select.value = defaultWarehouseId || '';
+    }
+
+    const qtyInput = form.querySelector('input[name="menge"]');
+    if (qtyInput) {
+      qtyInput.value = '1';
+    }
+
+    overlay.classList.add('open');
+  }
+
+  function closeBookingModal() {
+    const overlay = document.getElementById('bookingModal');
+    if (overlay) overlay.classList.remove('open');
   }
 
   // ── Live search filter ─────────────────────────────────────
@@ -242,6 +342,12 @@
     const overlay = document.getElementById('moveModal');
     if (overlay) overlay.classList.remove('open');
   }
+
+  document.getElementById('bookingModal').addEventListener('click', e => {
+    if (e.target === e.currentTarget) {
+      closeBookingModal();
+    }
+  });
 
   document.getElementById('moveModal').addEventListener('click', e => {
     if (e.target === e.currentTarget) {

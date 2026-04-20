@@ -140,6 +140,13 @@ class TestProductService:
         with raises(KeyError):
             product_service.delete_product("gone")
 
+    def test_create_product_stores_performed_by_in_event(self, product_service, mock_db):
+        """create_product stores performed_by in the generated event."""
+        product_service.create_product("Papier", "A4", 2.5, performed_by="Max")
+        event_call = mock_db.insert.call_args_list[-1]
+        assert event_call[0][0] == "events"
+        assert event_call[0][1]["performed_by"] == "Max"
+
 class TestWarehouseService:
     """Tests for WarehouseService business logic."""
 
@@ -203,6 +210,13 @@ class TestWarehouseService:
         mock_db.find_by_id.return_value = None
         with raises(KeyError):
             warehouse_service.delete_warehouse("missing")
+
+    def test_create_warehouse_stores_performed_by_in_event(self, warehouse_service, mock_db):
+        """create_warehouse stores performed_by in the generated event."""
+        warehouse_service.create_warehouse("Lager X", "Wien", 10, performed_by="Lea")
+        event_call = mock_db.insert.call_args_list[-1]
+        assert event_call[0][0] == "events"
+        assert event_call[0][1]["performed_by"] == "Lea"
 
 class TestInventoryService:
     """Tests for InventoryService business logic."""

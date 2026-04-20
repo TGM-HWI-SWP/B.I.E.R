@@ -24,6 +24,7 @@ class ProductService(ProductServicePort):
         description: str,
         weight: float,
         price: float = 0.0,
+        performed_by: str = "system",
     ) -> Dict:
         """Validate inputs and persist a new product document.
 
@@ -32,6 +33,7 @@ class ProductService(ProductServicePort):
             description: Short description of the product.
             weight: Weight of the product in kilograms. Must be >= 0.
             price: Unit price of the product. Must be >= 0. Defaults to 0.0.
+            performed_by: Name or identifier of the user performing the action.
 
         Returns:
             The newly created product document including its generated _id.
@@ -51,6 +53,7 @@ class ProductService(ProductServicePort):
             action="create",
             entity_id=product_id,
             summary=f"Produkt '{product.name}' angelegt.",
+            performed_by=performed_by,
         )
         self._db.insert(COLLECTION_EVENTS, event.to_doc())
 
@@ -75,7 +78,7 @@ class ProductService(ProductServicePort):
         """
         return self._db.find_all(COLLECTION_PRODUKTE)
 
-    def update_product(self, product_id: str, data: Dict) -> Dict:
+    def update_product(self, product_id: str, data: Dict, performed_by: str = "system") -> Dict:
         """Apply a partial update to an existing product.
 
         Only known and valid fields are applied. Unrecognised keys are stored
@@ -84,6 +87,7 @@ class ProductService(ProductServicePort):
         Args:
             product_id: Unique product identifier.
             data: Fields to update.
+            performed_by: Name or identifier of the user performing the action.
 
         Returns:
             The updated product document.
@@ -127,16 +131,18 @@ class ProductService(ProductServicePort):
             action="update",
             entity_id=product_id,
             summary=f"Produkt '{updated_product.get('name', product_id)}' aktualisiert.",
+            performed_by=performed_by,
         )
         self._db.insert(COLLECTION_EVENTS, event.to_doc())
 
         return updated_product
 
-    def delete_product(self, product_id: str) -> None:
+    def delete_product(self, product_id: str, performed_by: str = "system") -> None:
         """Permanently delete a product from the database.
 
         Args:
             product_id: Unique product identifier.
+            performed_by: Name or identifier of the user performing the action.
 
         Raises:
             KeyError: If no product with product_id exists.
@@ -153,5 +159,6 @@ class ProductService(ProductServicePort):
             action="delete",
             entity_id=product_id,
             summary=f"Produkt '{existing.get('name', product_id)}' gelöscht.",
+            performed_by=performed_by,
         )
         self._db.insert(COLLECTION_EVENTS, event.to_doc())

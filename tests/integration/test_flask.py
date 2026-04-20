@@ -398,3 +398,336 @@ class TestNewUIRoutes:
         assert response.status_code == 200
         body = response.data.decode("utf-8")
         assert "Historie" in body
+
+    def test_page8_settings_returns_200(self, flask_client, mock_db):
+        """GET /ui/einstellungen renders the settings workspace."""
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/einstellungen")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        assert "Einstellungen" in body
+
+    def test_page9_user_admin_returns_200_for_manager(self, flask_client, mock_db):
+        """GET /ui/admin/benutzer renders user admin page for manager sessions."""
+        flask_client.application.config["AUTH_REQUIRED"] = True
+        try:
+            with flask_client.session_transaction() as session_store:
+                session_store["user_name"] = "admin"
+                session_store["display_name"] = "Administrator"
+                session_store["user_role"] = "manager"
+
+            def find_all_by_collection(collection_name):
+                if collection_name == "users":
+                    return [
+                        {
+                            "_id": FAKE_ID,
+                            "username": "admin",
+                            "display_name": "Administrator",
+                            "role": "manager",
+                            "active": True,
+                        }
+                    ]
+                if collection_name == "events":
+                    return [
+                        {
+                            "timestamp": "2026-04-20T12:00:00Z",
+                            "entity_type": "user_admin",
+                            "action": "update_role",
+                            "summary": "Rolle für admin geändert.",
+                            "performed_by": "admin",
+                            "details": {"target_username": "admin"},
+                        }
+                    ]
+                return []
+
+            mock_db.find_all.side_effect = find_all_by_collection
+            response = flask_client.get("/ui/admin/benutzer")
+            assert response.status_code == 200
+            body = response.data.decode("utf-8")
+            assert "User-Administration" in body
+            assert "Audit-Log" in body
+        finally:
+            flask_client.application.config["AUTH_REQUIRED"] = False
+
+    def test_page9_user_admin_redirects_for_clerk(self, flask_client, mock_db):
+        """GET /ui/admin/benutzer redirects when user is not manager."""
+        flask_client.application.config["AUTH_REQUIRED"] = True
+        try:
+            with flask_client.session_transaction() as session_store:
+                session_store["user_name"] = "lager"
+                session_store["display_name"] = "Lager Team"
+                session_store["user_role"] = "clerk"
+
+            response = flask_client.get("/ui/admin/benutzer")
+            assert response.status_code == 302
+            assert "/ui/produkte" in response.headers["Location"]
+        finally:
+            flask_client.application.config["AUTH_REQUIRED"] = False
+
+    def test_page9_user_create_redirects(self, flask_client, mock_db):
+        """POST /ui/admin/benutzer/neu creates a new user and redirects."""
+        flask_client.application.config["AUTH_REQUIRED"] = True
+        try:
+            with flask_client.session_transaction() as session_store:
+                session_store["user_name"] = "admin"
+                session_store["display_name"] = "Administrator"
+                session_store["user_role"] = "manager"
+
+            mock_db.find_all.return_value = []
+            response = flask_client.post(
+                "/ui/admin/benutzer/neu",
+                data={
+                    "username": "newuser",
+                    "display_name": "Neuer User",
+                    "role": "clerk",
+                    "password": "pw1234",
+                    "active": "1",
+                },
+            )
+            assert response.status_code == 302
+            assert "/ui/admin/benutzer" in response.headers["Location"]
+            insert_calls = mock_db.insert.call_args_list
+            user_insert = next(call_item for call_item in insert_calls if call_item[0][0] == "users")
+            inserted_user = user_insert[0][1]
+            assert inserted_user["username"] == "newuser"
+            assert inserted_user["role"] == "clerk"
+            assert inserted_user["active"] is True
+            assert inserted_user["password_hash"] != "pw1234"
+
+            event_insert = next(call_item for call_item in insert_calls if call_item[0][0] == "events")
+            inserted_event = event_insert[0][1]
+            assert inserted_event["entity_type"] == "user_admin"
+            assert inserted_event["action"] == "create"
+            assert inserted_event["details"]["target_username"] == "newuser"
+        finally:
+            flask_client.application.config["AUTH_REQUIRED"] = False
+
+
+class TestAuthAndPdfExport:
+    """Tests for authentication flow and PDF export endpoints."""
+
+    def test_auth_redirects_to_login_when_enabled(self, flask_client, mock_db):
+        """GET /ui/produkte redirects to /login when auth is enabled and user is anonymous."""
+        flask_client.application.config["AUTH_REQUIRED"] = True
+        try:
+            response = flask_client.get("/ui/produkte")
+            assert response.status_code == 302
+            assert "/login" in response.headers["Location"]
+        finally:
+            flask_client.application.config["AUTH_REQUIRED"] = False
+
+    def test_login_page_returns_200(self, flask_client):
+        """GET /login renders the login form."""
+        flask_client.application.config["AUTH_REQUIRED"] = True
+        try:
+            response = flask_client.get("/login")
+            assert response.status_code == 200
+            assert "Anmelden" in response.data.decode("utf-8")
+        finally:
+            flask_client.application.config["AUTH_REQUIRED"] = False
+
+    def test_history_pdf_export_returns_pdf(self, flask_client, mock_db):
+        """POST /ui/historie/export-pdf returns a PDF response."""
+        mock_db.find_all.return_value = [
+            {
+                "timestamp": "2026-04-20T12:00:00Z",
+                "entity_type": "produkt",
+                "action": "create",
+                "summary": "Produkt X angelegt",
+                "performed_by": "admin",
+            }
+        ]
+        response = flask_client.post("/ui/historie/export-pdf")
+        assert response.status_code == 200
+        assert response.mimetype == "application/pdf"
+
+    def test_statistics_pdf_export_returns_pdf(self, flask_client, mock_db):
+        """POST /ui/statistik/export-pdf returns a PDF response."""
+        mock_db.find_all.return_value = []
+        response = flask_client.post("/ui/statistik/export-pdf")
+        assert response.status_code == 200
+        assert response.mimetype == "application/pdf"
+
+    def test_inventory_pdf_export_returns_pdf(self, flask_client, mock_db):
+        """POST /ui/produkte/export-pdf returns a PDF response."""
+        mock_db.find_all.return_value = []
+        response = flask_client.post("/ui/produkte/export-pdf", data={"lager_id": ""})
+        assert response.status_code == 200
+        assert response.mimetype == "application/pdf"
+
+
+class TestProcurementRoutes:
+    """Tests for procurement suggestions and reorder actions."""
+
+    def test_page6_procurement_returns_200(self, flask_client, mock_db):
+        """GET /ui/bestellungen renders the procurement suggestions page."""
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/bestellungen")
+        assert response.status_code == 200
+        body = response.data.decode("utf-8")
+        assert "Bestellvorschläge" in body
+
+    def test_page6_execute_reorder_redirects(self, flask_client, mock_db):
+        """POST /ui/bestellungen/<produkt_id>/ausfuehren redirects after action."""
+        mock_db.find_by_id.return_value = {"_id": FAKE_ID}
+        mock_db.find_inventory_entry.return_value = None
+        response = flask_client.post(
+            f"/ui/bestellungen/{FAKE_ID}/ausfuehren",
+            data={"lager_id": FAKE_ID, "menge": "8"},
+        )
+        assert response.status_code == 302
+        assert "/ui/bestellungen" in response.headers["Location"]
+
+    def test_create_supplier_redirects(self, flask_client, mock_db):
+        """POST /ui/lieferanten/neu creates a supplier and redirects."""
+        response = flask_client.post(
+            "/ui/lieferanten/neu",
+            data={
+                "name": "OfficeSupply GmbH",
+                "email": "kontakt@example.org",
+                "bewertung": "4.6",
+                "mindestbestellwert": "50",
+                "sla_tage": "3",
+            },
+        )
+        assert response.status_code == 302
+        assert "/ui/bestellungen" in response.headers["Location"]
+        inserted_supplier = mock_db.insert.call_args[0][1]
+        assert inserted_supplier["bewertung"] == 4.6
+        assert inserted_supplier["mindestbestellwert"] == 50.0
+        assert inserted_supplier["sla_tage"] == 3
+
+    def test_create_department_redirects(self, flask_client, mock_db):
+        """POST /ui/abteilungen/neu creates a department and redirects."""
+        response = flask_client.post(
+            "/ui/abteilungen/neu",
+            data={"name": "IT", "kostenstelle": "KST-100", "budget_limit": "10000"},
+        )
+        assert response.status_code == 302
+        assert "/ui/bestellungen" in response.headers["Location"]
+
+    def test_create_order_redirects(self, flask_client, mock_db):
+        """POST /ui/bestellungen/neu creates an order and redirects."""
+        mock_db.find_by_id.side_effect = [
+            {"_id": "s1", "mindestbestellwert": 0},
+            {"_id": "dep1", "budget_limit": 10000, "budget_used": 0},
+        ]
+        response = flask_client.post(
+            "/ui/bestellungen/neu",
+            data={
+                "produkt_id": "p1",
+                "lieferant_id": "s1",
+                "lager_id": "l1",
+                "abteilung_id": "dep1",
+                "bestellmenge": "5",
+                "einzelpreis": "10.5",
+            },
+        )
+        assert response.status_code == 302
+        assert "/ui/bestellungen" in response.headers["Location"]
+
+    def test_create_order_rejects_below_supplier_minimum(self, flask_client, mock_db):
+        """POST /ui/bestellungen/neu rejects orders below supplier minimum order value."""
+        mock_db.find_by_id.side_effect = [
+            {"_id": "s1", "mindestbestellwert": 100.0},
+            {"_id": "dep1", "budget_limit": 10000, "budget_used": 0},
+        ]
+        response = flask_client.post(
+            "/ui/bestellungen/neu",
+            data={
+                "produkt_id": "p1",
+                "lieferant_id": "s1",
+                "lager_id": "l1",
+                "abteilung_id": "dep1",
+                "bestellmenge": "2",
+                "einzelpreis": "10",
+            },
+        )
+        assert response.status_code == 302
+        assert "/ui/bestellungen" in response.headers["Location"]
+        mock_db.insert.assert_not_called()
+
+    def test_approve_order_redirects(self, flask_client, mock_db):
+        """POST /ui/bestellungen/<id>/freigeben approves waiting orders and updates budget."""
+        mock_db.find_by_id.side_effect = [
+            {
+                "_id": "o1",
+                "status": "warte_freigabe",
+                "abteilung_id": "dep1",
+                "bestellmenge": 10,
+                "einzelpreis": 5,
+            },
+            {"_id": "dep1", "budget_limit": 10000, "budget_used": 100},
+        ]
+        response = flask_client.post("/ui/bestellungen/o1/freigeben")
+        assert response.status_code == 302
+        assert "/ui/bestellungen" in response.headers["Location"]
+        assert mock_db.update.call_count >= 2
+
+    def test_goods_receipt_redirects(self, flask_client, mock_db):
+        """POST /ui/bestellungen/<id>/wareneingang books partial receipt and redirects."""
+        mock_db.find_by_id.side_effect = [
+            {
+                "_id": "o1",
+                "status": "bestellt",
+                "bestellmenge": 10,
+                "geliefert": 4,
+                "lager_id": "l1",
+                "produkt_id": "p1",
+            },
+            {"_id": "l1"},
+            {"_id": "p1"},
+        ]
+        mock_db.find_inventory_entry.return_value = None
+        response = flask_client.post("/ui/bestellungen/o1/wareneingang", data={"menge": "3"})
+        assert response.status_code == 302
+        assert "/ui/bestellungen" in response.headers["Location"]
+
+
+class TestPickingRoutes:
+    """Tests for picking list workflow endpoints."""
+
+    def test_page7_picking_returns_200(self, flask_client, mock_db):
+        """GET /ui/kommissionierung renders picking page."""
+        mock_db.find_all.return_value = []
+        response = flask_client.get("/ui/kommissionierung")
+        assert response.status_code == 200
+        assert "Kommissionierung" in response.data.decode("utf-8")
+
+    def test_create_picklist_redirects(self, flask_client, mock_db):
+        """POST /ui/kommissionierung/neu creates pick list and redirects."""
+        mock_db.find_all.return_value = [{"_id": "p1", "name": "Marker", "lagerzone": "B"}]
+        response = flask_client.post(
+            "/ui/kommissionierung/neu",
+            data={
+                "lager_id": "l1",
+                "abteilung_id": "d1",
+                "bereich": "A",
+                "produkt_id[]": ["p1"],
+                "menge[]": ["2"],
+            },
+        )
+        assert response.status_code == 302
+        assert "/ui/kommissionierung" in response.headers["Location"]
+        inserted_picklist = mock_db.insert.call_args[0][1]
+        assert "weglaenge_m" in inserted_picklist
+        assert inserted_picklist["weglaenge_m"] > 0
+
+    def test_print_picklist_returns_200(self, flask_client, mock_db):
+        """GET /ui/kommissionierung/<id>/druck renders print template."""
+        mock_db.find_by_id.return_value = {
+            "_id": "pk1",
+            "lager_id": "l1",
+            "abteilung_id": "d1",
+            "bereich": "A",
+            "pick_route": "Ablage -> Marker",
+            "items": [{"produkt_id": "p1", "menge": 1, "lagerbereich": "A"}],
+        }
+        mock_db.find_all.side_effect = [
+            [{"_id": "p1", "name": "Marker", "sku": "M-1"}],
+            [{"_id": "l1", "lagername": "Halle 1"}],
+            [{"_id": "d1", "name": "IT", "kostenstelle": "KST-1"}],
+        ]
+        response = flask_client.get("/ui/kommissionierung/pk1/druck")
+        assert response.status_code == 200
+        assert "Kommissionierliste" in response.data.decode("utf-8")

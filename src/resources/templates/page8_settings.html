@@ -1,0 +1,685 @@
+{% extends "base.html" %}
+{% block title %}Einstellungen - B.I.E.R{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-title {
+    color: var(--text) !important;
+  }
+
+  .page-subtitle {
+    color: var(--text-muted) !important;
+  }
+
+  .settings-layout {
+    display: grid;
+    grid-template-columns: 1.2fr .9fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 1180px) {
+    .settings-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .settings-section {
+    margin-bottom: 16px;
+  }
+
+  .settings-section h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (max-width: 900px) {
+    .settings-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  @media (max-width: 900px) {
+    .theme-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .theme-card {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+
+  .theme-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    transform: translateY(-1px);
+  }
+
+  .theme-card.active {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+
+  .theme-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .theme-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .theme-badge {
+    font-size: 10px;
+    border-radius: 999px;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  .theme-palette {
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+  }
+
+  .theme-palette span {
+    display: block;
+    height: 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,.18);
+  }
+
+  .opt-card {
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    padding: 10px;
+  }
+
+  .opt-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .opt-help {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .preview-wrap {
+    position: sticky;
+    top: calc(var(--nav-h) + 14px);
+  }
+
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .sample-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .sample-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .sample-table th,
+  .sample-table td {
+    border-bottom: 1px solid var(--border);
+    padding: 7px;
+    font-size: 12px;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .role-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  @media (max-width: 900px) {
+    .role-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .io-panel {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .manager-only {
+    border-left: 3px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  }
+
+  .lock-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .lock-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="section-header" style="margin-bottom:20px;">
+    <div>
+      <h1 class="page-title">Einstellungen</h1>
+      <p class="page-subtitle">Workspace personalisieren: Themes, Dichte, Verhalten und sinnvolle Standardwerte</p>
+    </div>
+    <span class="badge badge-accent" id="roleBadge"><i class="bi bi-sliders"></i> Persönliche Einstellungen</span>
+  </div>
+
+  <div class="settings-layout">
+    <section>
+      <div class="card settings-section">
+        <h3><i class="bi bi-person-gear"></i> Profil & Rollen</h3>
+        <div class="role-row">
+          <div class="opt-card">
+            <label class="opt-label" for="profileRole">Profilziel</label>
+            <span class="opt-help">Manager können zusätzlich das Clerk-Profil pflegen.</span>
+            <select id="profileRole" class="form-select"></select>
+          </div>
+
+          <div class="opt-card">
+            <label class="opt-label">Export / Import</label>
+            <span class="opt-help">Theme + Settings als JSON sichern oder einspielen.</span>
+            <div class="io-panel">
+              <button id="exportProfileBtn" class="btn btn-secondary btn-sm" type="button">
+                <i class="bi bi-download"></i>
+                Profil exportieren
+              </button>
+              <button id="importProfileBtn" class="btn btn-secondary btn-sm" type="button">
+                <i class="bi bi-upload"></i>
+                Profil importieren
+              </button>
+              <input id="importProfileFile" type="file" accept="application/json,.json" style="display:none;" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card settings-section">
+        <h3><i class="bi bi-palette2"></i> Theme Selector (VS-Code Style)</h3>
+        <div id="themeGrid" class="theme-grid"></div>
+      </div>
+
+      <div class="card settings-section manager-only" id="managerPolicyCard" style="display:none;">
+        <h3><i class="bi bi-shield-check"></i> Manager Governance für Clerk</h3>
+        <div class="settings-grid">
+          <div class="opt-card">
+            <label class="opt-label" for="clerkDefaultTheme">Clerk-Default-Theme</label>
+            <span class="opt-help">Standardtheme für neue/zuückgesetzte Clerk-Profile.</span>
+            <select id="clerkDefaultTheme" class="form-select"></select>
+          </div>
+
+          <div class="opt-card">
+            <label class="opt-label">Clerk-Locks</label>
+            <span class="opt-help">Gesperrte Felder können von Clerks nicht überschrieben werden.</span>
+            <div class="lock-grid">
+              <label><input type="checkbox" id="lock_themeId" /> Theme</label>
+              <label><input type="checkbox" id="lock_density" /> Dichte</label>
+              <label><input type="checkbox" id="lock_fontScale" /> Schriftgröße</label>
+              <label><input type="checkbox" id="lock_motion" /> Animationen</label>
+              <label><input type="checkbox" id="lock_startPage" /> Startseite</label>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" id="applyCurrentAsClerkDefaultBtn" type="button">
+            <i class="bi bi-person-check"></i>
+            Aktuelles Profil als Clerk-Default
+          </button>
+          <button class="btn btn-primary btn-sm" id="saveManagerPolicyBtn" type="button">
+            <i class="bi bi-save"></i>
+            Governance speichern
+          </button>
+        </div>
+      </div>
+
+      <div class="card settings-section">
+        <h3><i class="bi bi-window-stack"></i> Oberfläche</h3>
+        <div class="settings-grid">
+          <div class="opt-card">
+            <label class="opt-label" for="density">Dichte</label>
+            <span class="opt-help">Mehr Inhalt auf einen Blick oder mehr Luft zwischen Elementen.</span>
+            <select id="density" class="form-select">
+              <option value="comfortable">Komfort</option>
+              <option value="compact">Kompakt</option>
+            </select>
+          </div>
+
+          <div class="opt-card">
+            <label class="opt-label" for="fontScale">Schriftgröße</label>
+            <span class="opt-help">Globales Schriftmaß für bessere Lesbarkeit.</span>
+            <select id="fontScale" class="form-select">
+              <option value="small">Klein</option>
+              <option value="normal">Normal</option>
+              <option value="large">Groß</option>
+            </select>
+          </div>
+
+          <div class="opt-card">
+            <label class="opt-label" for="motion">Animationen</label>
+            <span class="opt-help">Sanfte Übergänge oder reduzierte Bewegung.</span>
+            <select id="motion" class="form-select">
+              <option value="full">Standard</option>
+              <option value="reduced">Reduziert</option>
+            </select>
+          </div>
+
+          <div class="opt-card">
+            <label class="opt-label" for="flashDurationMs">Hinweisdauer</label>
+            <span class="opt-help">Wie lange Flash-Nachrichten sichtbar bleiben.</span>
+            <select id="flashDurationMs" class="form-select">
+              <option value="2500">2.5 Sekunden</option>
+              <option value="4000">4 Sekunden</option>
+              <option value="7000">7 Sekunden</option>
+            </select>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="settings-grid">
+          <label class="opt-card" style="cursor:pointer;">
+            <span class="opt-label" style="display:flex;justify-content:space-between;align-items:center;">
+              Zeilenstreifen in Tabellen
+              <input id="tableStripes" type="checkbox" />
+            </span>
+            <span class="opt-help">Erhöht die Lesbarkeit langer Listen.</span>
+          </label>
+
+          <label class="opt-card" style="cursor:pointer;">
+            <span class="opt-label" style="display:flex;justify-content:space-between;align-items:center;">
+              Glass-Look für Karten
+              <input id="glassCards" type="checkbox" />
+            </span>
+            <span class="opt-help">Transparenter Kartenstil mit Blur-Effekt.</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card settings-section">
+        <h3><i class="bi bi-compass"></i> Workflow Defaults</h3>
+        <div class="settings-grid">
+          <div class="opt-card">
+            <label class="opt-label" for="startPage">Standard-Startseite</label>
+            <span class="opt-help">Wird beim Aufruf von / automatisch geöffnet.</span>
+            <select id="startPage" class="form-select">
+              <option value="/ui/produkte">Produkte</option>
+              <option value="/ui/lager">Lager</option>
+              <option value="/ui/bestellungen">Bestellungen</option>
+              <option value="/ui/kommissionierung">Kommissionierung</option>
+              <option value="/ui/statistik">Statistik</option>
+              <option value="/ui/historie">Historie</option>
+              <option value="/ui/einstellungen">Einstellungen</option>
+            </select>
+          </div>
+
+          <div class="opt-card">
+            <label class="opt-label">Empfohlene Nutzung</label>
+            <span class="opt-help">Kompakt + Tabellenstreifen für operative Teams, große Schrift für Wareneingang.</span>
+            <span class="badge badge-muted">Tip: Ctrl+K öffnet Schnellaktionen</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <button id="saveSettingsBtn" class="btn btn-primary" type="button">
+            <i class="bi bi-check2-circle"></i>
+            Einstellungen speichern
+          </button>
+          <button id="resetSettingsBtn" class="btn btn-secondary" type="button">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Auf Standard zurücksetzen
+          </button>
+          <span id="saveStatus" class="badge badge-accent" style="display:none;">Gespeichert</span>
+        </div>
+      </div>
+    </section>
+
+    <aside class="preview-wrap">
+      <div class="card">
+        <div class="preview-header">
+          <h3 style="margin:0;"><i class="bi bi-eye"></i> Live-Vorschau</h3>
+          <span class="badge badge-muted" id="previewThemeLabel">Theme</span>
+        </div>
+
+        <div class="sample-card">
+          <div style="font-weight:700; margin-bottom:4px;">KPI-Karte</div>
+          <div style="font-size:22px; font-weight:800; line-height:1;">1.284</div>
+          <div style="font-size:12px; color:var(--text-muted);">Positionen im Zugriff</div>
+        </div>
+
+        <div class="sample-card">
+          <table class="sample-table">
+            <thead>
+              <tr>
+                <th>Artikel</th>
+                <th>Status</th>
+                <th>Menge</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Ordner A4</td>
+                <td><span class="badge badge-accent">OK</span></td>
+                <td>92</td>
+              </tr>
+              <tr>
+                <td>Marker Set</td>
+                <td><span class="badge badge-danger">Niedrig</span></td>
+                <td>6</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="sample-card">
+          <div style="font-size:13px; color:var(--text-muted); margin-bottom:7px;">Aktive Features</div>
+          <div id="activeFeatureList" style="font-size:13px;"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function () {
+    const ui = window.BIER_UI;
+    if (!ui) return;
+
+    const currentRole = ui.getCurrentRole();
+    const editableRoles = ui.getEditableRoles();
+
+    const themeGrid = document.getElementById('themeGrid');
+    const previewThemeLabel = document.getElementById('previewThemeLabel');
+    const saveStatus = document.getElementById('saveStatus');
+    const activeFeatureList = document.getElementById('activeFeatureList');
+    const roleBadge = document.getElementById('roleBadge');
+
+    const profileRoleSelect = document.getElementById('profileRole');
+    const exportProfileBtn = document.getElementById('exportProfileBtn');
+    const importProfileBtn = document.getElementById('importProfileBtn');
+    const importProfileFile = document.getElementById('importProfileFile');
+
+    const managerPolicyCard = document.getElementById('managerPolicyCard');
+    const clerkDefaultTheme = document.getElementById('clerkDefaultTheme');
+    const saveManagerPolicyBtn = document.getElementById('saveManagerPolicyBtn');
+    const applyCurrentAsClerkDefaultBtn = document.getElementById('applyCurrentAsClerkDefaultBtn');
+
+    const fieldIds = [
+      'density',
+      'fontScale',
+      'motion',
+      'flashDurationMs',
+      'tableStripes',
+      'glassCards',
+      'startPage'
+    ];
+
+    function getFieldValues() {
+      return {
+        density: document.getElementById('density').value,
+        fontScale: document.getElementById('fontScale').value,
+        motion: document.getElementById('motion').value,
+        flashDurationMs: Number(document.getElementById('flashDurationMs').value || 4000),
+        tableStripes: document.getElementById('tableStripes').checked,
+        glassCards: document.getElementById('glassCards').checked,
+        startPage: document.getElementById('startPage').value,
+        themeId: document.querySelector('.theme-card.active')?.dataset.themeId || ui.getSettings().themeId
+      };
+    }
+
+    function getSelectedRole() {
+      return profileRoleSelect.value || ui.getActiveProfileRole();
+    }
+
+    function setFieldValues(settings) {
+      document.getElementById('density').value = settings.density;
+      document.getElementById('fontScale').value = settings.fontScale;
+      document.getElementById('motion').value = settings.motion;
+      document.getElementById('flashDurationMs').value = String(settings.flashDurationMs);
+      document.getElementById('tableStripes').checked = !!settings.tableStripes;
+      document.getElementById('glassCards').checked = !!settings.glassCards;
+      document.getElementById('startPage').value = settings.startPage;
+
+      [...document.querySelectorAll('.theme-card')].forEach(card => {
+        card.classList.toggle('active', card.dataset.themeId === settings.themeId);
+      });
+
+      const currentTheme = ui.getThemeList().find(t => t.id === settings.themeId);
+      previewThemeLabel.textContent = currentTheme ? currentTheme.name : settings.themeId;
+      roleBadge.innerHTML = `<i class="bi bi-person-badge"></i> Profil: ${getSelectedRole()} | Nutzerrolle: ${currentRole}`;
+
+      const labels = [
+        settings.density === 'compact' ? 'Kompakte Dichte' : 'Komfort-Dichte',
+        settings.motion === 'reduced' ? 'Reduzierte Animationen' : 'Standard-Animationen',
+        settings.tableStripes ? 'Tabellenstreifen aktiv' : 'Tabellenstreifen aus',
+        settings.glassCards ? 'Glass Cards aktiv' : 'Glass Cards aus',
+        settings.fontScale === 'large' ? 'Große Schrift' : settings.fontScale === 'small' ? 'Kleine Schrift' : 'Normale Schrift'
+      ];
+      activeFeatureList.innerHTML = labels.map(item => `<div><i class="bi bi-check2"></i> ${item}</div>`).join('');
+    }
+
+    function buildThemeGrid() {
+      const themes = ui.getThemeList();
+
+      if (clerkDefaultTheme) {
+        clerkDefaultTheme.innerHTML = themes.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+      }
+
+      themeGrid.innerHTML = themes.map(t => {
+        return `
+          <button type="button" class="theme-card" data-theme-id="${t.id}">
+            <div class="theme-head">
+              <span class="theme-name">${t.name}</span>
+              <span class="theme-badge">${t.mode}</span>
+            </div>
+            <div class="theme-palette">
+              <span style="background:${t.accent};"></span>
+              <span style="background:var(--surface);"></span>
+              <span style="background:var(--surface-2);"></span>
+              <span style="background:var(--border);"></span>
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      [...document.querySelectorAll('.theme-card')].forEach(card => {
+        card.addEventListener('click', () => {
+          const themeId = card.dataset.themeId;
+          ui.applyTheme(themeId);
+          [...document.querySelectorAll('.theme-card')].forEach(c => c.classList.remove('active'));
+          card.classList.add('active');
+          const current = getFieldValues();
+          setFieldValues({ ...ui.getSettings(), ...current, themeId });
+        });
+      });
+    }
+
+    function buildRoleSelector() {
+      profileRoleSelect.innerHTML = editableRoles
+        .map(role => `<option value="${role}">${role === 'manager' ? 'Manager Profil' : 'Clerk Profil'}</option>`)
+        .join('');
+      profileRoleSelect.value = ui.getActiveProfileRole();
+    }
+
+    function getPolicyPayloadFromUI() {
+      return {
+        clerkLockedKeys: [
+          'themeId',
+          'density',
+          'fontScale',
+          'motion',
+          'startPage'
+        ].filter(key => document.getElementById(`lock_${key}`).checked)
+      };
+    }
+
+    function loadManagerPolicyUI() {
+      if (currentRole !== 'manager') return;
+
+      managerPolicyCard.style.display = '';
+
+      const roleDefaults = ui.getRoleDefaults();
+      const roleLocks = ui.getRoleLocks();
+
+      clerkDefaultTheme.value = roleDefaults.clerk.themeId || 'bier-dark';
+
+      ['themeId', 'density', 'fontScale', 'motion', 'startPage'].forEach(key => {
+        document.getElementById(`lock_${key}`).checked = roleLocks.clerkLockedKeys.includes(key);
+      });
+    }
+
+    function transientSaved() {
+      saveStatus.style.display = 'inline-flex';
+      setTimeout(() => {
+        saveStatus.style.display = 'none';
+      }, 1400);
+    }
+
+    buildThemeGrid();
+    buildRoleSelector();
+    setFieldValues(ui.getSettings(getSelectedRole()));
+    loadManagerPolicyUI();
+
+    profileRoleSelect.addEventListener('change', () => {
+      const targetRole = getSelectedRole();
+      ui.setActiveProfileRole(targetRole);
+      setFieldValues(ui.getSettings(targetRole));
+    });
+
+    fieldIds.forEach(id => {
+      const el = document.getElementById(id);
+      el?.addEventListener('change', () => {
+        const next = getFieldValues();
+        ui.saveSettings(next, { role: getSelectedRole() });
+        setFieldValues(ui.getSettings(getSelectedRole()));
+      });
+    });
+
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+      ui.saveSettings(getFieldValues(), { role: getSelectedRole() });
+      setFieldValues(ui.getSettings(getSelectedRole()));
+      transientSaved();
+    });
+
+    document.getElementById('resetSettingsBtn').addEventListener('click', () => {
+      ui.resetSettings({ role: getSelectedRole() });
+      setFieldValues(ui.getSettings(getSelectedRole()));
+      transientSaved();
+    });
+
+    exportProfileBtn.addEventListener('click', () => {
+      const profile = ui.exportProfile({ role: getSelectedRole() });
+      const blob = new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `bier-ui-profile-${profile.profileRole}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      transientSaved();
+    });
+
+    importProfileBtn.addEventListener('click', () => {
+      importProfileFile.click();
+    });
+
+    importProfileFile.addEventListener('change', async () => {
+      const file = importProfileFile.files && importProfileFile.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        ui.importProfile(parsed, { role: getSelectedRole() });
+        setFieldValues(ui.getSettings(getSelectedRole()));
+        transientSaved();
+      } catch (err) {
+        alert('Import fehlgeschlagen: ' + (err && err.message ? err.message : 'Ungültige JSON-Datei'));
+      } finally {
+        importProfileFile.value = '';
+      }
+    });
+
+    if (currentRole === 'manager') {
+      saveManagerPolicyBtn.addEventListener('click', () => {
+        ui.saveRoleDefaults({ clerk: { themeId: clerkDefaultTheme.value } });
+        ui.saveRoleLocks(getPolicyPayloadFromUI());
+        transientSaved();
+      });
+
+      applyCurrentAsClerkDefaultBtn.addEventListener('click', () => {
+        ui.saveRoleDefaults({ clerk: getFieldValues() });
+        transientSaved();
+      });
+    }
+
+    window.addEventListener('bier-settings-updated', () => {
+      setFieldValues(ui.getSettings(getSelectedRole()));
+    });
+
+    window.addEventListener('bier-profile-role-changed', () => {
+      setFieldValues(ui.getSettings(getSelectedRole()));
+    });
+  })();
+</script>
+{% endblock %}

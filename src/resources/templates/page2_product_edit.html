@@ -222,6 +222,38 @@
         <span></span>
       </div>
 
+      <div class="attr-row default-attr" id="row-sku">
+        <div class="attr-key"><i class="bi bi-upc-scan"></i> SKU <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="text" name="sku" id="field-sku" class="attr-val-input"
+               value="{{ produkt.sku if produkt and produkt.sku is defined else '' }}"
+               placeholder="z.B. OFFICE-PAPER-A4" />
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-kategorie">
+        <div class="attr-key"><i class="bi bi-tags"></i> Kategorie <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="text" name="kategorie" id="field-kategorie" class="attr-val-input"
+               value="{{ produkt.kategorie if produkt and produkt.kategorie is defined else '' }}"
+               placeholder="z.B. Papier, Schreibwaren, Technik" />
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-mindestbestand">
+        <div class="attr-key"><i class="bi bi-exclamation-circle"></i> Mindestbestand <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="number" name="mindestbestand" id="field-mindestbestand" class="attr-val-input" min="0" step="1"
+               value="{{ produkt.mindestbestand if produkt and produkt.mindestbestand is defined else '0' }}"
+               placeholder="0" />
+        <span></span>
+      </div>
+
+      <div class="attr-row default-attr" id="row-bestellmenge">
+        <div class="attr-key"><i class="bi bi-bag-plus"></i> Empf. Bestellmenge <i class="bi bi-lock-fill attr-lock"></i></div>
+        <input type="number" name="bestellmenge" id="field-bestellmenge" class="attr-val-input" min="0" step="1"
+               value="{{ produkt.bestellmenge if produkt and produkt.bestellmenge is defined else '0' }}"
+               placeholder="0" />
+        <span></span>
+      </div>
+
       <div class="attr-row default-attr" id="row-beschreibung">
          <div class="attr-key"><i class="bi bi-card-text"></i> Beschreibung <i class="bi bi-lock-fill attr-lock"></i></div>
          <input type="text" name="beschreibung" id="field-beschreibung" class="attr-val-input"
@@ -275,7 +307,7 @@
     <button class="btn btn-danger" id="deleteAttrBtn" onclick="deleteSelectedAttribute()" disabled>
       <i class="bi bi-trash"></i> Attribut löschen
     </button>
-    {% if produkt %}
+    {% if produkt and is_manager %}
     <button class="btn btn-danger" onclick="confirmDeleteProduct()" style="margin-left:16px;">
       <i class="bi bi-x-octagon"></i> Produkt löschen
     </button>
@@ -293,6 +325,10 @@
   <input type="hidden" name="preis"       id="hf-preis" />
   <input type="hidden" name="waehrung"    id="hf-waehrung" />
   <input type="hidden" name="lieferant"   id="hf-lieferant" />
+  <input type="hidden" name="sku"         id="hf-sku" />
+  <input type="hidden" name="kategorie"   id="hf-kategorie" />
+  <input type="hidden" name="mindestbestand" id="hf-mindestbestand" />
+  <input type="hidden" name="bestellmenge" id="hf-bestellmenge" />
   <input type="hidden" name="beschreibung" id="hf-beschreibung" />
   <input type="hidden" name="gewicht"     id="hf-gewicht" />
   <div id="hf-extra"></div>
@@ -310,7 +346,7 @@
     </div>
   </div>
 </div>
-{% if produkt %}
+{% if produkt and is_manager %}
 <!-- ─── Delete Product Confirmation Modal ─────────── -->
 <div class="modal-overlay" id="deleteProductModal">
   <div class="modal-box">
@@ -369,6 +405,10 @@
     document.getElementById('hf-preis').value       = preisEl ? preisEl.value : '';
     document.getElementById('hf-waehrung').value    = document.getElementById('field-waehrung').value;
     document.getElementById('hf-lieferant').value   = document.getElementById('field-lieferant').value;
+    document.getElementById('hf-sku').value         = document.getElementById('field-sku').value;
+    document.getElementById('hf-kategorie').value   = document.getElementById('field-kategorie').value;
+    document.getElementById('hf-mindestbestand').value = document.getElementById('field-mindestbestand').value;
+    document.getElementById('hf-bestellmenge').value = document.getElementById('field-bestellmenge').value;
     document.getElementById('hf-beschreibung').value= document.getElementById('field-beschreibung').value;
     document.getElementById('hf-gewicht').value     = document.getElementById('field-gewicht').value;
 

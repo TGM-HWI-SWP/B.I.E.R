@@ -1,162 +1,233 @@
-<p align="center">
-  <img src="src/resources/pictures/BIER_LOGO_SCHWARZ_COMPRESSED.png" alt="B.I.E.R Logo" width="300"/>
-</p>
+# B.I.E.R
 
-# B.I.E.R - Büro-Inventar- und Einkaufs-Register
+B.I.E.R steht fuer Buero-Inventar- und Einkaufs-Register.
 
-> **Important Note – AI-generated test branch**
->
-> This is **not** the main / production branch of B.I.E.R. The code and documentation here were created **almost entirely with AI support** as an experiment and **must be treated as a test version only**. For authoritative source code, architecture and grading-relevant artifacts, always refer to the official main branch provided.
+Eine moderne Warehouse- und Procurement-Webanwendung mit Flask, MongoDB und Docker.
 
-A warehouse management web application built with Python, Flask, MongoDB, and Docker.
+## Hinweis Zum Branch
 
----
+Dieser Branch ist eine KI-unterstuetzte Test-/Experimentier-Version und nicht die offizielle Bewertungs-/Produktionsquelle.
 
-## About
+## Inhaltsverzeichnis
 
-This project was developed as part of the Software Development and Project Management (SWP) course at TGM - Die Schule der Technik, Vienna, Austria (2026).
+- [Warum B.I.E.R](#warum-bier)
+- [Funktionsumfang](#funktionsumfang)
+- [Architektur Kurzfassung](#architektur-kurzfassung)
+- [Tech Stack](#tech-stack)
+- [Projektstruktur](#projektstruktur)
+- [Schnellstart Mit Docker](#schnellstart-mit-docker)
+- [Lokale Entwicklung Ohne Docker](#lokale-entwicklung-ohne-docker)
+- [Login Rollen Und Sicherheit](#login-rollen-und-sicherheit)
+- [UI Settings Persistenz](#ui-settings-persistenz)
+- [Reports Und Exporte](#reports-und-exporte)
+- [Tests](#tests)
+- [Dokumentation](#dokumentation)
+- [Roadmap](#roadmap)
+- [Lizenz](#lizenz)
 
-**Project Team:**
+## Warum B.I.E.R
 
-- Paul Hinterbauer
-- Mateja Gvozdenac
-- Dragoljub Mitrovic
-- Emir Keser
+B.I.E.R kombiniert Lagerverwaltung, Beschaffung und Nachvollziehbarkeit in einer Anwendung:
 
----
+- zentrale Verwaltung von Produkten, Lagern und Bestaenden
+- Beschaffungs- und Freigabeprozesse fuer Bestellungen
+- Kommissionierung inkl. Druckansicht
+- rollenbasierte Bedienung fuer Manager und Clerk
+- nachvollziehbare Aenderungshistorie inkl. User-Admin-Audit-Events
 
-## Features
+## Funktionsumfang
 
-- **Inventory Management** – Track and manage warehouse stock across multiple locations
-- **Modern Flask Web UI** – 5 Seiten (Produkte, Produkt bearbeiten, Lager, Statistik, Historie) mit Dark-Theme
-- **Multi-Lager-Unterstützung** – Pro Produkt unterschiedliche Bestände in mehreren Lagern pflegen
-- **Event-Historie** – Alle Änderungen an Produkten, Lagern und Beständen werden in einer eigenen Historie erfasst
-- **Reporting** – Zwei Reports (Bestandsreport und Statistikreport) erzeugen aus den gespeicherten Daten auswertbare Textdateien
-- **MongoDB Backend** – Persistente Datenspeicherung inkl. Event-Historie
-- **Port-Adapter Architecture** – Clean, testable, and maintainable codebase (Hexagonale Architektur)
-- **Docker Support** – One-command deployment with Docker Compose
+### Lager Und Inventar
 
----
+- Produkte erstellen, bearbeiten, verschieben und loeschen
+- Multi-Lager-Bestaende pro Produkt
+- Lagerverwaltung mit Kapazitaets-/Auslastungsanzeige
+- Statistik-Dashboard mit Kennzahlen und Charts
+- Historie aller relevanten Events
 
-## Prerequisites
+### Beschaffung Und Kommissionierung
 
-- **Python 3.10+**
-- **Docker Desktop** - Required for containerized deployment
+- Lieferanten- und Abteilungsdaten
+- Bestellvorschlaege und Bestell-Workflow
+- Freigaben fuer manager-relevante Schritte
+- Picklisten und Druckansicht fuer operative Prozesse
 
----
+### Authentifizierung Und Userverwaltung
 
-## Installation
+- Login/Logout mit Session-basiertem Auth-Flow
+- Rollen: `manager`, `clerk`
+- Manager-UI fuer Benutzerverwaltung:
+  - Benutzer anlegen
+  - Rolle aendern
+  - aktiv/deaktiviert setzen
+  - Passwort zuruecksetzen
+- Sicherheitsregeln:
+  - kein Self-Demotion auf `clerk`
+  - keine Self-Deaktivierung
+  - mindestens ein aktiver Manager bleibt erhalten
 
-### 1. Clone the Repository
+### Auditbarkeit
 
-```bash
-git clone <repository-url>
-cd B.I.E.R
+User-Admin-Aenderungen werden als Audit-Events gespeichert:
+
+- `entity_type = user_admin`
+- `action = create | update_role | update_status | reset_password`
+- inkl. `performed_by`, Zeitstempel, Ziel-User und Aenderungsdetails
+
+## Architektur Kurzfassung
+
+Das Projekt folgt einer Ports-and-Adapters-Struktur (hexagonaler Ansatz):
+
+1. Frontend (Flask + Jinja Templates)
+2. Service-Layer (Businesslogik)
+3. Contracts (abstrakte Ports)
+4. DB-Adapter (MongoDB)
+
+Mehr Details: [docs/architecture.md](docs/architecture.md)
+
+## Tech Stack
+
+- Python 3.10+
+- Flask
+- MongoDB
+- Docker / Docker Compose
+- pytest
+- Bootstrap + Jinja Templates
+
+## Projektstruktur
+
+```text
+src/
+  bierapp/
+    backend/        # Services und Domain-Logik
+    contracts/      # Port-Interfaces
+    db/             # MongoDB Adapter + Init/Seed
+    frontend/flask/ # Flask-Routen + UI-Glue
+    reports/        # CLI Reports
+  resources/
+    templates/      # Jinja-Templates (Page 1-9)
+    pictures/
+tests/
+  unit/
+  integration/
 ```
 
-### 2. Run with Docker
+## Schnellstart Mit Docker
 
-Start all services (Flask app, MongoDB, Mongo Express) with a single command:
+### Voraussetzungen
+
+- Docker Desktop
+
+### Start
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-### 3. Run Locally (without Docker)
+### Erreichbare Services
+
+- App: http://localhost:5000
+- Mongo Express: http://localhost:8081
+
+## Lokale Entwicklung Ohne Docker
+
+### Voraussetzungen
+
+- Python 3.10+
+
+### Setup
 
 ```bash
-# Create and activate a virtual environment
 python -m venv .venv
-.venv\Scripts\activate      # Windows
-source .venv/bin/activate   # Linux/Mac
-
-# Install dependencies (inkl. Dev-Tools)
+.venv\Scripts\activate
 pip install -e .[dev]
-
-# Run tests
-pytest
 ```
 
----
-
-## Usage
-
-Once running, the following services are available:
-
-| Service       | URL                                         | Description         |
-| ------------- | ------------------------------------------- | ------------------- |
-| Flask App     | [http://localhost:5000](http://localhost:5000) | Main web interface  |
-| Mongo Express | [http://localhost:8081](http://localhost:8081) | Database management |
-
----
-
-## Reports & Exports
-
-### Inventory & Statistics Reports (CLI)
-
-Die beiden Reports sind als eigenständige Komponenten implementiert und können direkt über Python ausgeführt werden (innerhalb des aktivierten virtuellen Environments):
+### Starten
 
 ```bash
-cd B.I.E.R
-.venv\Scripts\activate  # oder entsprechendes Activate-Skript
+python -m bierapp.frontend.flask.gui
+```
 
-# Statistikreport (globale KPIs)
+## Login Rollen Und Sicherheit
+
+Wenn `AUTH_REQUIRED=1` aktiv ist:
+
+- Manager Default: `admin` / `admin`
+- Clerk Default: `lager` / `lager`
+
+Die Default-User werden bei Bedarf in MongoDB angelegt und koennen anschliessend in der User-Admin gepflegt werden.
+
+Wichtige Umgebungsvariablen:
+
+- `AUTH_REQUIRED` (Standard: `1`)
+- `FLASK_SECRET`
+- `MONGO_HOST`
+- `MONGO_PORT`
+- `MONGO_DB`
+- `MONGO_USER`
+- `MONGO_PASS`
+
+## UI Settings Persistenz
+
+Personalisierung ist DB-basiert:
+
+- benutzerspezifische Profile in `user_settings`
+- globale Rollenpolicy (Clerk Defaults/Locks) in `app_settings`
+- Theme/Settings Import/Export als JSON
+- Bootstrap-API fuer initiales Laden der Profile
+
+## Reports Und Exporte
+
+### CLI Reports
+
+```bash
 python -m bierapp.reports.statistics_report
-
-# Bestandsreport über alle Lager
 python -m bierapp.reports.inventory_report
-
-# Optional: nur ein bestimmtes Lager
 python -m bierapp.reports.inventory_report <lager_id>
 ```
 
-Die Report-Dateien werden im Ordner [src/bierapp/reports/output](src/bierapp/reports/output) abgelegt:
+Ausgabeordner:
 
-- Statistik: [src/bierapp/reports/output/statistics.txt](src/bierapp/reports/output/statistics.txt)
-- Globaler Bestandsreport: [src/bierapp/reports/output/inventory_all.txt](src/bierapp/reports/output/inventory_all.txt)
-- Lager-spezifische Reports: [src/bierapp/reports/output](src/bierapp/reports/output) (Dateiname `inventory_<lager_id>.txt`)
+- [src/bierapp/reports/output](src/bierapp/reports/output)
 
-### Historie als TXT aus der UI exportieren
+### UI Exporte
 
-Auf **Page 5 – Historie** (`/ui/historie`) gibt es einen Button *„Historie als TXT exportieren“*.
+- Historie als TXT
+- PDF Exporte fuer Inventar/Statistik/Historie
 
-- Ein Klick erzeugt on-the-fly eine Textdatei mit allen Historien-Einträgen.
-- Der Browser bietet diese Datei direkt als Download (`history.txt`) an – es wird kein zusätzlicher Ordner im Projekt angelegt.
+## Tests
 
----
-
-## Architecture
-
-```
-Frontend (Flask)
-      |
-  Backend (Logic)
-      |
-   DB (MongoDB)
-```
-
-- **Frontend** - Flask routes and Jinja2 templates (`src/bierapp/frontend/`)
-- **Backend** - Business logic, one file per service (`src/bierapp/backend/`)
-- **DB** - MongoDB adapter (`src/bierapp/db/`)
-- **Contracts** - Shared interfaces as a package (`src/bierapp/contracts/`)
-
----
-
-## Testing
+Alle Tests:
 
 ```bash
-# Unit tests
-pytest tests/unit/ -v
-
-# Integration tests
-pytest tests/integration/ -v
-
-# With coverage
-pytest --cov=src tests/
+.venv\Scripts\python -m pytest -q .
 ```
 
----
+Stand: 104/104 Tests erfolgreich.
 
-## License
+Gezielt ausfuehren:
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+```bash
+pytest tests/unit/ -v
+pytest tests/integration/ -v
+```
+
+Mehr Details: [docs/tests.md](docs/tests.md)
+
+## Dokumentation
+
+- [docs/architecture.md](docs/architecture.md)
+- [docs/contracts.md](docs/contracts.md)
+- [docs/style_guide.md](docs/style_guide.md)
+- [docs/tests.md](docs/tests.md)
+
+## Roadmap
+
+- Audit-Log Filter (User, Aktion, Zeitraum)
+- Optionale serverseitige Team-Profile fuer UI-Einstellungen
+- Weitere Härtung von Security Policies und Monitoring
+
+## Lizenz
+
+MIT. Siehe [LICENSE](LICENSE).

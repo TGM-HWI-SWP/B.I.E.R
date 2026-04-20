@@ -7,7 +7,14 @@ class ProductServicePort(ABC):
     """Abstract interface for product-related business logic."""
 
     @abstractmethod
-    def create_product(self, name: str, description: str, weight: float, price: float = 0.0) -> Dict:
+    def create_product(
+        self,
+        name: str,
+        description: str,
+        weight: float,
+        price: float = 0.0,
+        performed_by: str = "system",
+    ) -> Dict:
         """Create a new product and persist it.
 
         Args:
@@ -15,6 +22,7 @@ class ProductServicePort(ABC):
             description: Short description of the product.
             weight: Weight of the product in kilograms. Must be >= 0.
             price: Unit price of the product. Must be >= 0.
+            performed_by: Name or identifier of the user performing the action.
 
         Returns:
             A dictionary representing the newly created product.
@@ -46,12 +54,13 @@ class ProductServicePort(ABC):
         ...
 
     @abstractmethod
-    def update_product(self, product_id: str, data: Dict) -> Dict:
+    def update_product(self, product_id: str, data: Dict, performed_by: str = "system") -> Dict:
         """Update fields of an existing product.
 
         Args:
             product_id: Unique product identifier.
             data: Dictionary of fields to update.
+            performed_by: Name or identifier of the user performing the action.
 
         Returns:
             The updated product representation.
@@ -63,11 +72,12 @@ class ProductServicePort(ABC):
         ...
 
     @abstractmethod
-    def delete_product(self, product_id: str) -> None:
+    def delete_product(self, product_id: str, performed_by: str = "system") -> None:
         """Permanently delete a product.
 
         Args:
             product_id: Unique product identifier.
+            performed_by: Name or identifier of the user performing the action.
 
         Raises:
             KeyError: If no product with the given ID exists.

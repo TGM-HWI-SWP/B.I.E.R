@@ -28,6 +28,7 @@ class WarehouseService(WarehouseServicePort):
         warehouse_name: str,
         address: str,
         max_slots: int,
+        performed_by: str = "system",
     ) -> Dict:
         """Validate inputs and persist a new warehouse document.
 
@@ -35,6 +36,7 @@ class WarehouseService(WarehouseServicePort):
             warehouse_name: Human-readable warehouse name. Must not be empty.
             address: Physical address of the warehouse.
             max_slots: Maximum number of storage slots. Must be a positive integer.
+            performed_by: Name or identifier of the user performing the action.
 
         Returns:
             The newly created warehouse document including its generated _id.
@@ -54,6 +56,7 @@ class WarehouseService(WarehouseServicePort):
             action="create",
             entity_id=warehouse_id,
             summary=f"Lager '{warehouse.name}' angelegt.",
+            performed_by=performed_by,
         )
         self._db.insert(COLLECTION_EVENTS, event.to_doc())
 
@@ -78,7 +81,7 @@ class WarehouseService(WarehouseServicePort):
         """
         return self._db.find_all(COLLECTION_LAGER)
 
-    def update_warehouse(self, warehouse_id: str, data: Dict) -> Dict:
+    def update_warehouse(self, warehouse_id: str, data: Dict, performed_by: str = "system") -> Dict:
         """Apply a partial update to an existing warehouse.
 
         Accepted keys are lagername, adresse and max_plaetze. Attempting to
@@ -88,6 +91,7 @@ class WarehouseService(WarehouseServicePort):
         Args:
             warehouse_id: Unique warehouse identifier.
             data: Fields to update.
+            performed_by: Name or identifier of the user performing the action.
 
         Returns:
             The updated warehouse document.
@@ -142,16 +146,18 @@ class WarehouseService(WarehouseServicePort):
             action="update",
             entity_id=warehouse_id,
             summary=f"Lager '{updated_warehouse.get('lagername', warehouse_id)}' aktualisiert.",
+            performed_by=performed_by,
         )
         self._db.insert(COLLECTION_EVENTS, event.to_doc())
 
         return updated_warehouse
 
-    def delete_warehouse(self, warehouse_id: str) -> None:
+    def delete_warehouse(self, warehouse_id: str, performed_by: str = "system") -> None:
         """Permanently delete a warehouse from the database.
 
         Args:
             warehouse_id: Unique warehouse identifier.
+            performed_by: Name or identifier of the user performing the action.
 
         Raises:
             KeyError: If no warehouse with warehouse_id exists.
@@ -168,5 +174,6 @@ class WarehouseService(WarehouseServicePort):
             action="delete",
             entity_id=warehouse_id,
             summary=f"Lager '{existing.get('lagername', warehouse_id)}' gelöscht.",
+            performed_by=performed_by,
         )
         self._db.insert(COLLECTION_EVENTS, event.to_doc())

@@ -78,3 +78,41 @@ Write them after skipping a line under all the core libraries, also using `from`
 Docstrings are the **primary way** of communicating a function's purpose and details.
 
 Comments should only be used to specify certain in-line details — for example, mathematical formulas in the middle of a code chunk.
+
+---
+
+## Security & Auth Conventions
+
+- Never store plain text passwords in MongoDB; only `generate_password_hash(...)` output is persisted.
+- Any manager-only route must be guarded via `_require_manager()`.
+- User mutations must preserve a safe baseline:
+	- no self-deactivation,
+	- no demotion of own manager role to clerk,
+	- at least one active manager remains.
+
+---
+
+## Audit Logging Conventions
+
+- User administration changes must create an event in `events` with `entity_type = user_admin`.
+- Required event fields for user-admin actions:
+	- `timestamp`, `action`, `performed_by`, `summary`, `entity_id`, `details.target_username`, `details.changes`.
+- Audit logging should not block the main mutation path; failures in logging should degrade gracefully.
+
+---
+
+## Documentation Maintenance Rule
+
+When adding routes, pages, collections, or persistence behavior, update all markdown docs in the same change set:
+
+- `README.md`
+- `docs/architecture.md`
+- `docs/contracts.md`
+- `docs/tests.md`
+- `docs/style_guide.md`
+
+This keeps code and docs synchronized.
+
+---
+
+**Letzte Aktualisierung:** 2026-04-20

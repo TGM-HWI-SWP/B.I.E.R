@@ -58,9 +58,11 @@
       <h1 class="page-title">Lagerliste</h1>
       <p class="page-subtitle">{{ lager | length }} Lager registriert</p>
     </div>
+    {% if is_manager %}
     <button class="btn btn-primary btn-lg" onclick="openCreateModal()">
       <i class="bi bi-plus-lg"></i> Neues Lager
     </button>
+    {% endif %}
   </div>
 
   <!-- ─── Warehouse Table ───────────────────────────────── -->
@@ -136,6 +138,7 @@
                    href="{{ url_for('page1_products') }}?lager_id={{ l._id }}">
                   <i class="bi bi-box-seam"></i>
                 </a>
+                {% if is_manager %}
                 <button class="btn btn-ghost btn-icon btn-sm" title="Bearbeiten"
                         onclick="startEdit('{{ l._id }}')">
                   <i class="bi bi-pencil"></i>
@@ -144,6 +147,7 @@
                         onclick="confirmDelete('{{ l._id }}', '{{ l.lagername | e }}')">
                   <i class="bi bi-trash"></i>
                 </button>
+                {% endif %}
               </div>
             </td>
           </tr>
@@ -154,9 +158,11 @@
       <div class="empty-state">
         <i class="bi bi-building"></i>
         <p>Noch keine Lager vorhanden.</p>
+        {% if is_manager %}
         <button class="btn btn-primary" onclick="openCreateModal()">
           <i class="bi bi-plus-lg"></i> Erstes Lager anlegen
         </button>
+        {% endif %}
       </div>
       {% endif %}
     </div>
@@ -165,6 +171,7 @@
 </div>
 
 <!-- ─── Create Warehouse Modal ───────────────────── -->
+{% if is_manager %}
 <div class="modal-overlay" id="createModal">
   <div class="modal-box" style="text-align:left;max-width:480px;">
     <h3 style="margin-bottom:20px;display:flex;align-items:center;gap:10px;">
@@ -205,10 +212,12 @@
     </div>
   </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+  {% if is_manager %}
   // ── Create modal ───────────────────────────────────────
   function openCreateModal()  { document.getElementById('createModal').classList.add('open'); }
   function closeCreateModal() { document.getElementById('createModal').classList.remove('open'); }
@@ -246,5 +255,6 @@
       }
     });
   });
+  {% endif %}
 </script>
 {% endblock %}

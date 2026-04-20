@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Login - B.I.E.R{% endblock %}
+
+{% block extra_head %}
+<style>
+  .login-wrap {
+    min-height: calc(100vh - var(--nav-h));
+    display: grid;
+    place-items: center;
+    padding: 30px 16px;
+  }
+
+  .login-card {
+    width: min(460px, 100%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 30px;
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.25);
+  }
+
+  .login-title {
+    margin: 0 0 6px;
+    font-size: 28px;
+    letter-spacing: -0.04em;
+  }
+
+  .login-subtitle {
+    margin: 0 0 20px;
+    color: var(--text-muted);
+  }
+
+  .hint-box {
+    margin-top: 16px;
+    padding: 12px;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <h1 class="login-title">Willkommen bei B.I.E.R</h1>
+    <p class="login-subtitle">Bitte anmelden, um die Lagerverwaltung zu nutzen.</p>
+
+    <form method="post" action="{{ url_for('login_submit') }}">
+      <input type="hidden" name="next" value="{{ next_path }}" />
+
+      <label class="form-label" for="username">Benutzername</label>
+      <input id="username" name="username" class="form-control" autocomplete="username" required />
+
+      <label class="form-label" for="password" style="margin-top:12px;">Passwort</label>
+      <input id="password" name="password" type="password" class="form-control" autocomplete="current-password" required />
+
+      <button type="submit" class="btn btn-primary" style="margin-top:18px;width:100%;justify-content:center;">
+        <i class="bi bi-box-arrow-in-right"></i>
+        Anmelden
+      </button>
+    </form>
+
+    <div class="hint-box">
+      Standardzugang lokal: admin / admin
+    </div>
+  </div>
+</div>
+{% endblock %}

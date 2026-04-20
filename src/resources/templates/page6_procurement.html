@@ -1,0 +1,466 @@
+{% extends "base.html" %}
+{% block title %}Einkauf und Bestellungen - B.I.E.R{% endblock %}
+
+{% block extra_head %}
+<style>
+  .proc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .proc-kpi {
+    background: linear-gradient(145deg, var(--surface), var(--surface-2));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .proc-kpi .label {
+    color: var(--text-muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    display: block;
+  }
+
+  .proc-kpi .value {
+    font-size: 28px;
+    line-height: 1.1;
+    font-weight: 700;
+  }
+
+  .section-card {
+    margin-bottom: 16px;
+    padding: 18px;
+  }
+
+  .section-card h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .danger-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--danger);
+    display: inline-block;
+    margin-right: 6px;
+    box-shadow: 0 0 0 4px var(--danger-soft);
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 1024px) {
+    .two-col {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .budget-bar {
+    width: 150px;
+    height: 8px;
+    border-radius: 99px;
+    background: var(--surface-3);
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  .budget-bar > span {
+    display: block;
+    height: 100%;
+    background: var(--success);
+  }
+
+  .budget-bar > span.warn {
+    background: #f59e0b;
+  }
+
+  .budget-bar > span.danger {
+    background: var(--danger);
+  }
+
+  .kpi-warning {
+    color: var(--danger);
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .pill.warn {
+    color: #b45309;
+    border-color: #fcd34d;
+    background: #fffbeb;
+  }
+
+  .pill.ok {
+    color: #166534;
+    border-color: #86efac;
+    background: #f0fdf4;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="section-header" style="margin-bottom:24px;">
+    <div>
+      <h1 class="page-title">Einkauf und Bestellungen</h1>
+      <p class="page-subtitle">Lieferantenbewertung, SLA, Freigabeworkflow und Budgetsteuerung</p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <form method="post" action="{{ url_for('export_procurement_pdf') }}">
+        <input type="hidden" name="lager_id" value="{{ active_lager_filter._id if active_lager_filter else '' }}" />
+        <button type="submit" class="btn btn-secondary">
+          <i class="bi bi-file-earmark-pdf"></i>
+          Vorschläge als PDF
+        </button>
+      </form>
+      <a class="btn btn-primary" href="{{ url_for('page7_picking') }}">
+        <i class="bi bi-signpost-split"></i>
+        Zur Kommissionierung
+      </a>
+    </div>
+  </div>
+
+  <div class="proc-grid">
+    <div class="proc-kpi">
+      <span class="label">Offene Vorschläge</span>
+      <span class="value">{{ suggestions | length }}</span>
+    </div>
+    <div class="proc-kpi">
+      <span class="label">Fehlmenge Gesamt</span>
+      <span class="value">{{ total_deficit }}</span>
+    </div>
+    <div class="proc-kpi">
+      <span class="label">Empf. Bestellmenge</span>
+      <span class="value">{{ total_suggested }}</span>
+    </div>
+    <div class="proc-kpi">
+      <span class="label">Offener Rückstand</span>
+      <span class="value">{{ total_open_backorder }}</span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card section-card">
+      <h3><i class="bi bi-truck"></i> Lieferant anlegen</h3>
+      <form method="post" action="{{ url_for('page6_create_supplier') }}">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+          <input class="form-control" name="name" placeholder="Lieferantenname *" required />
+          <input class="form-control" name="ansprechpartner" placeholder="Ansprechpartner" />
+          <input class="form-control" name="email" placeholder="E-Mail" />
+          <input class="form-control" name="telefon" placeholder="Telefon" />
+          <input class="form-control" type="number" min="0" max="5" step="0.1" name="bewertung" placeholder="Bewertung 0-5" />
+          <input class="form-control" type="number" min="0" step="0.01" name="mindestbestellwert" placeholder="Mindestbestellwert (EUR)" />
+          <input class="form-control" type="number" min="0" step="1" name="sla_tage" placeholder="Lieferzeit-SLA (Tage)" />
+          <input class="form-control" name="zahlungsziel" placeholder="Zahlungsziel" style="grid-column: 1 / span 2;" />
+        </div>
+        <button class="btn btn-primary" type="submit" style="margin-top:10px;">
+          <i class="bi bi-plus-circle"></i>
+          Lieferant speichern
+        </button>
+      </form>
+
+      <hr class="divider" />
+      <div style="max-height:190px; overflow:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Kontakt</th>
+              <th>Bewertung</th>
+              <th>MBW / SLA</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in suppliers %}
+            <tr>
+              <td>{{ s.name }}</td>
+              <td style="font-size:12px;color:var(--text-muted);">{{ s.email or s.telefon or '—' }}</td>
+              <td>{{ '%.1f'|format(s.bewertung or 0) }} / 5</td>
+              <td style="font-size:12px;color:var(--text-muted);">
+                MBW: {{ '%.2f'|format(s.mindestbestellwert or 0) }} EUR<br />
+                SLA: {{ s.sla_tage or 0 }} Tage
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">Noch keine Lieferanten.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card section-card">
+      <h3><i class="bi bi-bank"></i> Abteilung / Budget</h3>
+      <form method="post" action="{{ url_for('page6_create_department') }}">
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+          <input class="form-control" name="name" placeholder="Abteilungsname *" required />
+          <input class="form-control" name="kostenstelle" placeholder="Kostenstelle" />
+          <input class="form-control" type="number" min="0" step="0.01" name="budget_limit" placeholder="Budgetlimit" />
+        </div>
+        <button class="btn btn-primary" type="submit" style="margin-top:10px;">
+          <i class="bi bi-plus-circle"></i>
+          Abteilung speichern
+        </button>
+      </form>
+
+      <hr class="divider" />
+      <div style="max-height:190px; overflow:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Abteilung</th>
+              <th>Budgetstatus</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in departments %}
+            <tr>
+              <td>
+                <strong>{{ d.name }}</strong>
+                <div style="font-size:12px;color:var(--text-muted);">Kostenstelle: {{ d.kostenstelle or '—' }}</div>
+              </td>
+              <td>
+                <div class="budget-bar">
+                  <span class="{% if d.budget_pct >= 100 %}danger{% elif d.budget_pct >= 80 %}warn{% endif %}"
+                        style="width: {{ [d.budget_pct, 100] | min }}%;"></span>
+                </div>
+                <div style="font-size:12px;color:var(--text-muted); margin-top:4px;">
+                  {{ '%.2f'|format(d.budget_used) }} / {{ '%.2f'|format(d.budget_limit) }}
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="2">Noch keine Abteilungen.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card section-card">
+    <h3><i class="bi bi-receipt"></i> Bestellung anlegen</h3>
+    <form method="post" action="{{ url_for('page6_create_order') }}">
+      <div style="display:grid; grid-template-columns: 2fr 1.5fr 1.2fr 1.2fr 1fr 1fr; gap:10px; align-items:end;">
+        <div>
+          <label class="form-label">Produkt</label>
+          <select class="form-select" name="produkt_id" required>
+            <option value="">Produkt wählen…</option>
+            {% for p in products_for_orders %}
+              <option value="{{ p._id }}">{{ p.name }} ({{ p.lieferant }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Lieferant</label>
+          <select class="form-select" name="lieferant_id" required>
+            <option value="">Lieferant wählen…</option>
+            {% for s in suppliers %}
+              <option value="{{ s._id }}">{{ s.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Lager</label>
+          <select class="form-select" name="lager_id" required>
+            <option value="">Lager wählen…</option>
+            {% for w in lager %}
+              <option value="{{ w._id }}">{{ w.lagername }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Abteilung</label>
+          <select class="form-select" name="abteilung_id" required>
+            <option value="">Abteilung wählen…</option>
+            {% for d in departments %}
+              <option value="{{ d._id }}">{{ d.name }} ({{ d.kostenstelle or '—' }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Menge</label>
+          <input class="form-control" type="number" name="bestellmenge" min="1" value="1" required />
+        </div>
+        <div>
+          <label class="form-label">Einzelpreis</label>
+          <input class="form-control" type="number" name="einzelpreis" min="0" step="0.01" value="0.00" required />
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit" style="margin-top:10px;">
+        <i class="bi bi-bag-plus"></i>
+        Bestellung auslösen
+      </button>
+    </form>
+  </div>
+
+  <div class="card section-card" style="padding:0; overflow:hidden;">
+    <div style="padding:18px 18px 0;">
+      <h3><i class="bi bi-box-seam"></i> Offene Bestellungen und Wareneingang</h3>
+    </div>
+    <div style="overflow:auto; max-height:420px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Bestellung</th>
+            <th>Status</th>
+            <th>SLA</th>
+            <th>Budget/Kostenstelle</th>
+            <th>Wareneingang</th>
+            <th style="text-align:right;">Aktionen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+          <tr>
+            <td>
+              <div style="font-weight:700;">{{ o.produkt_name }} - {{ o.lieferant_name }}</div>
+              <div style="font-size:12px;color:var(--text-muted);">
+                Lager: {{ o.lager_name }} | Menge: {{ o.bestellmenge }} | Geliefert: {{ o.geliefert }} | Rückstand: {{ o.rueckstand }}
+              </div>
+              <div style="font-size:12px;color:var(--text-muted);">
+                Einzelpreis: {{ '%.2f'|format(o.einzelpreis) }} EUR | Gesamt: {{ '%.2f'|format(o.gesamtpreis) }} EUR
+              </div>
+            </td>
+            <td>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                <span class="badge {% if o.status == 'warte_freigabe' %}badge-accent{% elif o.status == 'abgelehnt' %}badge-danger{% else %}badge-muted{% endif %}">
+                  {{ o.status }}
+                </span>
+                {% if is_manager %}
+                <form method="post" action="{{ url_for('page6_update_order_status', bestellung_id=o._id) }}" style="display:flex; gap:8px;">
+                  <select class="form-select" name="status" style="min-width:150px;">
+                    {% for s in ['entwurf','bestellt','teilgeliefert','abgeschlossen','storniert'] %}
+                      <option value="{{ s }}" {% if o.status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                  </select>
+                  <button class="btn btn-secondary btn-sm" type="submit">Setzen</button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+            <td>
+              <div>
+                {% if o.sla_breach %}
+                  <span class="pill warn">SLA verletzt</span>
+                {% else %}
+                  <span class="pill ok">SLA OK</span>
+                {% endif %}
+              </div>
+              <div style="font-size:12px;color:var(--text-muted); margin-top:4px;">
+                Erwartet: {{ o.expected_delivery }}<br />
+                SLA: {{ o.sla_tage }} Tage | Rating: {{ '%.1f'|format(o.lieferant_bewertung or 0) }}/5
+              </div>
+            </td>
+            <td>
+              <div>{{ o.abteilung_name }}</div>
+              <div style="font-size:12px;color:var(--text-muted);">{{ o.kostenstelle }}</div>
+            </td>
+            <td>
+              {% if o.status in ['bestellt', 'teilgeliefert'] %}
+              <form method="post" action="{{ url_for('page6_goods_receipt', bestellung_id=o._id) }}" style="display:flex; gap:8px; align-items:center;">
+                <input class="form-control" type="number" min="1" name="menge" value="{{ [o.rueckstand, 1] | max }}" style="width:90px;" />
+                <button class="btn btn-success btn-sm" type="submit">Buchen</button>
+              </form>
+              {% else %}
+              <span style="font-size:12px;color:var(--text-muted);">Nicht buchbar</span>
+              {% endif %}
+            </td>
+            <td style="text-align:right;">
+              {% if o.status == 'warte_freigabe' and is_manager %}
+                <div style="display:flex; gap:6px; justify-content:flex-end; margin-bottom:6px;">
+                  <form method="post" action="{{ url_for('page6_approve_order', bestellung_id=o._id) }}">
+                    <button class="btn btn-success btn-sm" type="submit">Freigeben</button>
+                  </form>
+                  <form method="post" action="{{ url_for('page6_reject_order', bestellung_id=o._id) }}">
+                    <button class="btn btn-secondary btn-sm" type="submit">Ablehnen</button>
+                  </form>
+                </div>
+              {% endif %}
+
+              {% if o.rueckstand > 0 and o.status in ['bestellt', 'teilgeliefert'] %}
+                <span class="danger-dot"></span><span class="kpi-warning">{{ o.rueckstand }}</span>
+              {% else %}
+                <span class="badge badge-accent">0</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6">Noch keine Bestellungen vorhanden.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card section-card" style="padding:0; overflow:hidden;">
+    <div style="padding:18px 18px 0;">
+      <h3><i class="bi bi-clipboard2-check"></i> Bestellvorschläge (Mindestbestand)</h3>
+    </div>
+    <div style="overflow:auto; max-height:380px;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Produkt</th>
+            <th>Lager</th>
+            <th>Bestand</th>
+            <th>Mindestbestand</th>
+            <th>Defizit</th>
+            <th>Vorschlag</th>
+            <th style="text-align:right;">Aktion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in suggestions %}
+          <tr>
+            <td>
+              <div style="font-weight:600;">{{ s.produkt_name }}</div>
+              <div style="font-size:12px;color:var(--text-muted);">
+                {{ s.sku or 'ohne SKU' }}{% if s.kategorie %} | {{ s.kategorie }}{% endif %}
+              </div>
+            </td>
+            <td>{{ s.lagername }}</td>
+            <td><span class="badge badge-muted">{{ s.bestand }}</span></td>
+            <td><span class="badge badge-accent">{{ s.mindestbestand }}</span></td>
+            <td><span class="danger-dot"></span><strong>{{ s.defizit }}</strong></td>
+            <td><strong>{{ s.vorschlag }}</strong></td>
+            <td style="text-align:right;">
+              <form method="post" action="{{ url_for('page6_execute_reorder', produkt_id=s.produkt_id) }}" style="display:inline-flex; gap:8px; align-items:center;">
+                <input type="hidden" name="lager_id" value="{{ s.lager_id }}" />
+                <input type="number" name="menge" class="form-control" min="1" value="{{ s.vorschlag }}" style="width:90px;" />
+                <button class="btn btn-success btn-sm" type="submit">
+                  <i class="bi bi-check2-circle"></i>
+                  Nachbestellen
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7">Keine offenen Bestellvorschläge.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+{% block title %}Kommissionierung - B.I.E.R{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pick-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 1100px) {
+    .pick-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .pick-route {
+    font-size: 13px;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    margin-top: 6px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="section-header" style="margin-bottom:20px;">
+    <div>
+      <h1 class="page-title">Kommissionierung</h1>
+      <p class="page-subtitle">Druckbare Pick-Listen und Pick-Routen je Lagerbereich</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <form method="get" action="{{ url_for('page7_picking') }}" style="display:flex; gap:10px; align-items:end; flex-wrap:wrap;">
+      <div>
+        <label class="form-label">Lager</label>
+        <select name="lager_id" class="form-select" style="min-width:240px;">
+          <option value="">Lager wählen…</option>
+          {% for w in lager %}
+            <option value="{{ w._id }}" {% if active_lager_filter and active_lager_filter._id == w._id %}selected{% endif %}>{{ w.lagername }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Lagerbereich</label>
+        <select name="bereich" class="form-select" style="min-width:180px;">
+          <option value="">Alle Bereiche</option>
+          {% for area in area_values %}
+            <option value="{{ area }}" {% if active_area_filter == area %}selected{% endif %}>{{ area }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit"><i class="bi bi-funnel"></i> Filtern</button>
+      <a class="btn btn-ghost" href="{{ url_for('page7_picking') }}">Reset</a>
+    </form>
+  </div>
+
+  <div class="pick-grid">
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 16px 0;">
+        <h3 style="font-size:16px; font-weight:700; margin:0;">Neue Kommissionierliste</h3>
+      </div>
+      <div style="padding:16px;">
+        <form method="post" action="{{ url_for('page7_create_picklist') }}">
+          <input type="hidden" name="lager_id" value="{{ active_lager_filter._id if active_lager_filter else '' }}" />
+          <input type="hidden" name="bereich" value="{{ active_area_filter or 'A' }}" />
+
+          <div style="margin-bottom:10px;">
+            <label class="form-label">Abteilung</label>
+            <select class="form-select" name="abteilung_id" required>
+              <option value="">Abteilung wählen…</option>
+              {% for d in departments %}
+                <option value="{{ d._id }}">{{ d.name }} ({{ d.kostenstelle or '—' }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {% if active_lager_filter %}
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Produkt</th>
+                <th>Bereich</th>
+                <th>Zone</th>
+                <th>Bestand</th>
+                <th>Pick-Menge</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in candidates %}
+              <tr>
+                <td>
+                  <input type="hidden" name="produkt_id[]" value="{{ c.produkt_id }}" />
+                  {{ c.produkt_name }}
+                </td>
+                <td>{{ c.lagerbereich }}</td>
+                <td>{{ c.lagerzone }}</td>
+                <td>{{ c.bestand }}</td>
+                <td>
+                  <input type="number" class="form-control" name="menge[]" min="0" max="{{ c.bestand }}" value="0" style="width:100px;" />
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="5">Keine verfügbaren Produkte im Filter.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <button class="btn btn-primary" type="submit" style="margin-top:12px;">
+            <i class="bi bi-plus-circle"></i>
+            Pick-Liste erstellen
+          </button>
+          {% else %}
+          <div class="empty-state" style="padding:32px 8px;">
+            <i class="bi bi-filter"></i>
+            <p>Bitte zuerst ein Lager auswählen.</p>
+          </div>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <div style="padding:16px 16px 0;">
+        <h3 style="font-size:16px; font-weight:700; margin:0;">Bestehende Pick-Listen</h3>
+      </div>
+      <div style="max-height:650px; overflow:auto; padding:16px;">
+        {% for p in picklists %}
+          <div class="card" style="padding:12px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;">
+              <div>
+                <strong>{{ p.lager_name }}</strong> - Bereich {{ p.bereich }}
+                <div style="font-size:12px;color:var(--text-muted);">{{ p.abteilung_name }} | Status: {{ p.status }}</div>
+                <div style="font-size:12px;color:var(--text-muted);">Optimierte Weglänge: {{ p.weglaenge_m or 0 }} m</div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <a class="btn btn-secondary btn-sm" href="{{ url_for('page7_print_picklist', picklist_id=p._id) }}" target="_blank">
+                  <i class="bi bi-printer"></i>
+                  Drucken
+                </a>
+                {% if p.status != 'abgeschlossen' %}
+                <form method="post" action="{{ url_for('page7_complete_picklist', picklist_id=p._id) }}">
+                  <button class="btn btn-success btn-sm" type="submit">
+                    <i class="bi bi-check2"></i>
+                    Abschließen
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+            <div class="pick-route">Route: {{ p.pick_route or '—' }}</div>
+          </div>
+        {% else %}
+          <div class="empty-state" style="padding:32px 8px;">
+            <i class="bi bi-journal-plus"></i>
+            <p>Noch keine Pick-Listen vorhanden.</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

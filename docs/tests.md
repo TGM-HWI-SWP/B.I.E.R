@@ -5,7 +5,7 @@
 Dieses Dokument beschreibt die Test-Strategie und Test-Struktur des B.I.E.R-Projekts.
 
 **Test-Framework:** pytest 9+  
-**Test-Ergebnis (Stand 2026-03-02):** 80 passed, 2 skipped (ca. 1.4 s)
+**Test-Ergebnis (Stand 2026-04-20):** 104 passed (Warnings nur deprecation-bezogen)
 
 ---
 
@@ -124,7 +124,7 @@ Der `flask_client`-Fixture monkeypatcht `bierapp.frontend.flask.gui._db` auf das
 - `test_inventar_update_quantity_redirects` – Menge ändern → 302, `update` aufgerufen
 - `test_inventar_remove_redirects` – Ausbuchen → 302, `delete` aufgerufen
 
-### TestNewUIRoutes (5-Seiten UI)
+### TestNewUIRoutes (9-Seiten UI)
 
 | Test | Prüft |
 |---|---|
@@ -139,6 +139,24 @@ Der `flask_client`-Fixture monkeypatcht `bierapp.frontend.flask.gui._db` auf das
 | `test_page4_statistics_returns_200` | GET `/ui/statistik` rendert Statistik-Dashboard |
 | `test_page4_statistics_contains_charts` | Response enthält alle Chart-Canvas-Elemente (Chart.js) |
 | `test_page5_history_returns_200` | GET `/ui/historie` rendert die Historienseite |
+| `test_page8_settings_returns_200` | GET `/ui/einstellungen` rendert die Settings-Seite |
+| `test_page9_user_admin_returns_200_for_manager` | GET `/ui/admin/benutzer` erlaubt Manager-Zugriff |
+| `test_page9_user_admin_redirects_for_clerk` | GET `/ui/admin/benutzer` blockt Clerk-Zugriff |
+| `test_page9_user_create_redirects` | POST `/ui/admin/benutzer/neu` erstellt User und schreibt Audit-Event |
+
+### TestAuthAndPdfExport
+
+- Login-Redirects bei aktivierter Auth (`AUTH_REQUIRED=True`)
+- Login-Seite Rendering
+- PDF-Exports für Historie, Statistik und Inventar
+
+### Abgedeckte aktuelle Themen
+
+- Rollenbasiertes Login und Session-Kontext
+- DB-persistente Benutzerverwaltung (`users`)
+- DB-persistente UI-Settings/Profile (`user_settings`, `app_settings`)
+- Manager-Policy für Clerk-Defaults/Locks
+- User-Admin-Audit-Events in `events` (`entity_type=user_admin`)
 
 ---
 
@@ -188,14 +206,16 @@ Beispiele:
 
 ---
 
-**Getestete Funktionalität (Stand v1.2):**
+**Getestete Funktionalität (Stand v1.4):**
 - Produkt erstellen, bearbeiten, löschen
 - Lager erstellen, bearbeiten, löschen
 - Inventar-Verwaltung: einbuchen, ausbuchen, Menge ändern, Bestand entfernen
 - Service-Interaktion: `remove_stock`, `move_product`, Lifecycle-Tests
 - Statistik-Berechnung (Basis-Szenario, Chart-Rendering)
-- Grundlegendes Rendering aller 5 UI-Seiten
+- Grundlegendes Rendering der erweiterten UI-Seiten inkl. Settings und User-Admin
+- Auth-Flow und Zugriffsgrenzen für Manager/Clerk
+- User-Admin-Mutationen inkl. Audit-Event-Erzeugung
 
 ---
 
-**Letzte Aktualisierung:** 2026-03-02
+**Letzte Aktualisierung:** 2026-04-20

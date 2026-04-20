@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}User-Admin - B.I.E.R{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-title {
+    color: var(--text) !important;
+  }
+
+  .page-subtitle {
+    color: var(--text-muted) !important;
+  }
+
+  h3 {
+    color: var(--text);
+  }
+
+  .admin-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .user-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .user-table th,
+  .user-table td {
+    border-bottom: 1px solid var(--border);
+    padding: 10px 8px;
+    vertical-align: top;
+    font-size: 13px;
+  }
+
+  .user-table th {
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    font-size: 11px;
+  }
+
+  .inline-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .compact-input {
+    min-width: 120px;
+    max-width: 220px;
+  }
+
+  .muted {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 700;
+  }
+
+  .status-active {
+    background: color-mix(in srgb, var(--success) 18%, transparent);
+    border-color: color-mix(in srgb, var(--success) 50%, var(--border));
+    color: color-mix(in srgb, var(--success) 70%, var(--text));
+  }
+
+  .status-inactive {
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+    border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+    color: color-mix(in srgb, var(--danger) 70%, var(--text));
+  }
+
+  .audit-list {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .audit-list th,
+  .audit-list td {
+    border-bottom: 1px solid var(--border);
+    padding: 8px;
+    font-size: 12px;
+    vertical-align: top;
+  }
+
+  .audit-list th {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-size: 10px;
+  }
+
+  @media (max-width: 1200px) {
+    .user-table,
+    .user-table thead,
+    .user-table tbody,
+    .user-table tr,
+    .user-table th,
+    .user-table td {
+      display: block;
+      width: 100%;
+    }
+
+    .user-table thead {
+      display: none;
+    }
+
+    .user-table tr {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      margin-bottom: 10px;
+      background: var(--surface-2);
+    }
+
+    .user-table td {
+      border: none;
+      padding: 6px 0;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-content">
+  <div class="section-header" style="margin-bottom:20px;">
+    <div>
+      <h1 class="page-title">User-Administration</h1>
+      <p class="page-subtitle">Manager-Ansicht zur Verwaltung von Login, Rolle und Zugriffsstatus</p>
+    </div>
+    <span class="badge badge-accent"><i class="bi bi-shield-lock"></i> Nur Manager</span>
+  </div>
+
+  <div class="admin-grid">
+    <section class="card">
+      <h3 style="margin:0 0 12px;"><i class="bi bi-person-plus"></i> Neuen Benutzer anlegen</h3>
+      <form method="post" action="{{ url_for('page9_user_create') }}" class="inline-form">
+        <input class="form-control compact-input" type="text" name="username" placeholder="username" required />
+        <input class="form-control compact-input" type="text" name="display_name" placeholder="Anzeigename" />
+        <select class="form-select compact-input" name="role">
+          <option value="clerk">clerk</option>
+          <option value="manager">manager</option>
+        </select>
+        <input class="form-control compact-input" type="password" name="password" placeholder="Initialpasswort" minlength="4" required />
+        <select class="form-select compact-input" name="active">
+          <option value="1">aktiv</option>
+          <option value="0">deaktiviert</option>
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-plus-circle"></i>
+          Anlegen
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
+        <h3 style="margin:0;"><i class="bi bi-people"></i> Bestehende Benutzer</h3>
+        <span class="muted">Aktive Manager: {{ manager_count }}</span>
+      </div>
+
+      <table class="user-table">
+        <thead>
+          <tr>
+            <th>Benutzer</th>
+            <th>Rolle</th>
+            <th>Status</th>
+            <th>Passwort</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr>
+            <td>
+              <strong>{{ user.display_name }}</strong><br />
+              <span class="muted">@{{ user.username }}</span>
+            </td>
+            <td>
+              <form method="post" action="{{ url_for('page9_user_update_role', user_id=user._id) }}" class="inline-form">
+                <select class="form-select compact-input" name="role">
+                  <option value="clerk" {% if user.role == 'clerk' %}selected{% endif %}>clerk</option>
+                  <option value="manager" {% if user.role == 'manager' %}selected{% endif %}>manager</option>
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm">Speichern</button>
+              </form>
+            </td>
+            <td>
+              <div class="inline-form" style="margin-bottom:8px;">
+                <span class="status-badge {% if user.active %}status-active{% else %}status-inactive{% endif %}">
+                  <i class="bi {% if user.active %}bi-check-circle{% else %}bi-x-circle{% endif %}"></i>
+                  {{ 'aktiv' if user.active else 'deaktiviert' }}
+                </span>
+              </div>
+              <form method="post" action="{{ url_for('page9_user_update_status', user_id=user._id) }}" class="inline-form">
+                <select class="form-select compact-input" name="active">
+                  <option value="1" {% if user.active %}selected{% endif %}>aktiv</option>
+                  <option value="0" {% if not user.active %}selected{% endif %}>deaktiviert</option>
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm">Speichern</button>
+              </form>
+            </td>
+            <td>
+              <form method="post" action="{{ url_for('page9_user_reset_password', user_id=user._id) }}" class="inline-form">
+                <input class="form-control compact-input" type="password" name="password" minlength="4" placeholder="Neues Passwort" required />
+                <button type="submit" class="btn btn-secondary btn-sm">Setzen</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px;">
+        <h3 style="margin:0;"><i class="bi bi-clock-history"></i> Audit-Log (User-Änderungen)</h3>
+        <span class="muted">Wer hat wann Rolle, Status oder Passwort geändert</span>
+      </div>
+
+      <table class="audit-list">
+        <thead>
+          <tr>
+            <th>Zeit</th>
+            <th>Aktion</th>
+            <th>Zieluser</th>
+            <th>Von</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for event in audit_events %}
+          <tr>
+            <td>{{ event.display_time or event.timestamp }}</td>
+            <td>{{ event.action }}</td>
+            <td>{{ event.target_username or '-' }}</td>
+            <td>{{ event.performed_by }}</td>
+            <td>{{ event.summary }}</td>
+          </tr>
+          {% endfor %}
+          {% if not audit_events %}
+          <tr>
+            <td colspan="5" class="muted">Noch keine User-Änderungen protokolliert.</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>
+{% endblock %}

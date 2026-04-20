@@ -260,6 +260,7 @@ class InventoryService(InventoryServicePort):
         target_warehouse_id: str,
         product_id: str,
         quantity: int,
+        performed_by: str = "system",
     ) -> None:
         """Move a quantity of a product from one warehouse to another.
 
@@ -268,6 +269,7 @@ class InventoryService(InventoryServicePort):
             target_warehouse_id: ID of the destination warehouse.
             product_id: Product identifier.
             quantity: Quantity to move. Must be > 0.
+            performed_by: Name or identifier of the user performing the action.
 
         Raises:
             ValueError: If quantity <= 0 or greater than available stock.
@@ -342,6 +344,7 @@ class InventoryService(InventoryServicePort):
                 f"{quantity}x '{product_name}' von Lager '{source_name}' "
                 f"nach '{target_name}' verschoben."
             ),
+            performed_by=performed_by,
         )
         self._db.insert(COLLECTION_EVENTS, event.to_doc())
 

@@ -94,5 +94,6 @@ def flask_client(mock_db, monkeypatch):
 
     flask_app.config["TESTING"] = True
     flask_app.config["SECRET_KEY"] = "test-secret"
+    flask_app.config["AUTH_REQUIRED"] = False
     with flask_app.test_client() as client:
         yield client

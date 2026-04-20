@@ -11,7 +11,7 @@ B.I.E.R folgt der **Hexagonalen Architektur** (Ports & Adapters). Jede Schicht k
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                  Frontend (Flask / Jinja2)                   │
-│   gui.py  ·  base.html  ·  page1-4 templates               │
+│   gui.py  ·  base.html  ·  page1-9 templates               │
 └─────────────────────────┬────────────────────────────────────┘
                           │  ruft auf
 ┌─────────────────────────▼────────────────────────────────────┐
@@ -76,7 +76,12 @@ src/resources/
     ├── page2_product_edit.html  # Produkt bearbeiten/erstellen (Multi-Lager)
     ├── page3_warehouse_list.html # Lagerliste
     ├── page4_statistics.html # Statistik-Dashboard
-    └── page5_history.html    # Änderungen-/Historienseite
+    ├── page5_history.html    # Änderungen-/Historienseite
+    ├── page6_procurement.html # Beschaffung / Bestellvorschläge
+    ├── page7_picking.html    # Kommissionierung
+    ├── page7_pick_print.html # Druckansicht Kommissionierliste
+    ├── page8_settings.html   # UI-Settings / Theme Profiles
+    └── page9_user_admin.html # User-Administration mit Audit-Log
 
 tests/
 ├── conftest.py               # Shared Fixtures (mock_db, Services, Flask-Client)
@@ -111,7 +116,7 @@ Alle anderen Schichten importieren nur diese Interfaces — nie konkrete Klassen
 
 **`MongoDBAdapter`** implementiert `DatabasePort`:
 - Verbindungsaufbau über Umgebungsvariablen (`MONGO_HOST`, `MONGO_PORT`, `MONGO_USER`, `MONGO_PASS`, `MONGO_DB`)
-- Collections: `produkte`, `lager`, `inventar`, `events`
+- Collections: `produkte`, `lager`, `inventar`, `events`, `lieferanten`, `bestellungen`, `abteilungen`, `picklisten`, `users`, `user_settings`, `app_settings`
 - Spezialabfragen: `find_inventar_by_lager()`, `find_inventar_entry()`
 - Kontext-Manager-Support (`__enter__` / `__exit__`)
 - `_serialize()` konvertiert BSON `ObjectId` → `str`
@@ -196,7 +201,7 @@ def get_inventory_service() -> InventoryServicePort:
 | POST | `/inventar/<lager_id>/<produkt_id>/aktualisieren` | Menge ändern |
 | POST | `/inventar/<lager_id>/<produkt_id>/entfernen` | Produkt ausbuchen |
 
-**UI-Routen (5 Seiten):**
+**UI-Routen (9 Seiten):**
 
 | Methode | Route | Beschreibung |
 |---|---|---|
@@ -213,7 +218,23 @@ def get_inventory_service() -> InventoryServicePort:
 | POST | `/ui/lager/<id>/loeschen` | Lager löschen (inkl. Inventarbereinigung) |
 | GET | `/ui/statistik` | **Page 4** – Statistik-Dashboard |
 | GET | `/ui/historie` | **Page 5** – Historie aller Änderungen (Events) |
+| GET | `/ui/bestellungen` | **Page 6** – Beschaffung / Bestellvorschläge |
+| GET | `/ui/kommissionierung` | **Page 7** – Kommissionierung |
+| GET | `/ui/einstellungen` | **Page 8** – Personalisierung / Themes / Profile |
+| GET | `/ui/admin/benutzer` | **Page 9** – Manager-only User-Administration |
 | POST | `/ui/historie/export` | Historie als TXT-Datei herunterladen |
+
+**Auth- und Settings-APIs:**
+
+| Methode | Route | Beschreibung |
+|---|---|---|
+| GET | `/login` | Login-Seite |
+| POST | `/login` | Session-Login |
+| POST | `/logout` | Session-Logout |
+| GET | `/api/ui-settings/bootstrap` | Lädt DB-persistente UI-Profile + Rollenpolicy |
+| PUT | `/api/ui-settings/profile/<role>` | Speichert UI-Profile pro Benutzer/Rolle |
+| DELETE | `/api/ui-settings/profile/<role>` | Setzt UI-Profil auf Default zurück |
+| GET/PUT | `/api/ui-settings/role-policy` | Lesen/Schreiben der Clerk-Defaults/Locks |
 
 ### 5. Templates (`src/resources/templates/`)
 
@@ -234,7 +255,12 @@ Alle Templates erben von `base.html` und verwenden Bootstrap 5.3, Bootstrap Icon
 | `page2_product_edit.html` | 2 | Produkt bearbeiten/erstellen: Pflichtfelder (Name, Preis, Gewicht), Bestände pro Lager (Multi-Lager), Default-Attribute + benutzerdefinierte Attribute, Sticky Action Bar, Delete-Modal |
 | `page3_warehouse_list.html` | 3 | Lagerliste: Tabelle mit Inline-Bearbeitung, Kapazitätsbalken, Create/Delete Modals |
 | `page4_statistics.html` | 4 | Statistik: KPI-Karten, Donut-Charts, Bar-Charts, Top-Produkte Liste |
-| `page5_history.html` | 5 | Historie: Tabelle aller Events (Produkte, Lager, Inventar) |
+| `page5_history.html` | 5 | Historie: Tabelle aller Events (inkl. User-Admin-Audits) |
+| `page6_procurement.html` | 6 | Beschaffung: Lieferanten, Bestellvorschläge, Freigabe-Workflow |
+| `page7_picking.html` | 7 | Kommissionierung: Picklisten und Abschluss-Workflow |
+| `page7_pick_print.html` | 7 | Druckansicht für Picklisten |
+| `page8_settings.html` | 8 | Benutzer-Settings: Theme, Dichte, Motion, Profile Import/Export |
+| `page9_user_admin.html` | 9 | Manager-Userverwaltung + Audit-Log |
 
 **Page 1 – Produktverwaltung:**
 - Großer "+" Button zum Erstellen neuer Produkte
@@ -329,5 +355,11 @@ Umgebungsvariablen (konfigurierbar über `.env` oder Docker Compose):
 
 ---
 
-**Letzte Aktualisierung:** 2026-03-02
-**Version:** 1.3
+## Aktueller Delta-Stand (2026-04-20)
+
+- Auth und benutzerspezifische Einstellungen liegen vollständig in MongoDB.
+- User-Admin-Mutationen erzeugen Audit-Events in `events` mit `entity_type = user_admin`.
+- Settings sind rollenabhängig (`manager`/`clerk`) und über Manager-Policy steuerbar (Defaults + Locks für Clerks).
+
+**Letzte Aktualisierung:** 2026-04-20
+**Version:** 1.4

@@ -406,7 +406,67 @@ Erstellt eine Fehler-HTTP-JSON-Antwort.
 
 ---
 
+## 7. Operative Datenverträge (Mongo-Dokumente)
+
+Diese Dokumente sind keine Python-ABCs, aber stabile Verträge zwischen UI, Flask-Routen und MongoDB.
+
+### `users` Collection
+
+Verwendung: Login und User-Administration.
+
+Pflichtfelder:
+- `username: str` (eindeutig)
+- `password_hash: str`
+- `role: "manager" | "clerk"`
+- `display_name: str`
+- `active: bool`
+
+Typische Metadaten:
+- `created_at: str` (ISO UTC)
+- `updated_at: str` (ISO UTC)
+
+### `user_settings` Collection
+
+Verwendung: Benutzerspezifische UI-Profile pro Rolle.
+
+Pflichtfelder:
+- `owner_username: str`
+- `profile_role: "manager" | "clerk"`
+- `settings: Dict`
+
+Metadaten:
+- `updated_at: str` (ISO UTC)
+
+### `app_settings` Collection
+
+Verwendung: Globale Rollen-Policies für UI-Settings.
+
+Aktueller Key:
+- `key: "role_policy"`
+- `value.clerk_defaults: Dict`
+- `value.clerk_locked_keys: List[str]`
+- `updated_at: str` (ISO UTC)
+
+### `events` Collection – User-Admin Audit Events
+
+Zusätzlich zu Produkt/Lager/Inventar-Events existieren strukturierte Audit-Events:
+
+- `entity_type: "user_admin"`
+- `action: "create" | "update_role" | "update_status" | "reset_password"`
+- `performed_by: str`
+- `timestamp: str` (ISO UTC)
+- `entity_id: str` (betroffener User)
+- `summary: str`
+- `details.target_username: str`
+- `details.changes: Dict`
+
+---
+
 ## Versionshistorie der Contracts
+
+### v0.3.0 (2026-04-20)
+- Operative Datenverträge ergänzt: `users`, `user_settings`, `app_settings`
+- Audit-Event-Vertrag für `events` mit `entity_type = user_admin` dokumentiert
 
 ### v0.2.0 (2026-03-02)
 - Contracts in eigenes Package `contracts/` aufgeteilt (eine Datei pro Port)
@@ -421,3 +481,7 @@ Erstellt eine Fehler-HTTP-JSON-Antwort.
 - `InventoryServicePort`: Bestandsverwaltung (add, update_quantity, remove, list)
 - `ReportPort`: Report-Generierung (inventory_report, statistics_report)
 - `HttpResponsePort`: Flask HTTP-Adapter (success, error)
+
+---
+
+**Letzte Aktualisierung:** 2026-04-20

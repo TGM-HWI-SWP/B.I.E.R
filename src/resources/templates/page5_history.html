@@ -30,12 +30,20 @@
       <h1 class="page-title">Historie</h1>
       <p class="page-subtitle">Alle Änderungen an Produkten, Lagern und Beständen</p>
     </div>
-    <form method="post" action="{{ url_for('export_history') }}">
-      <button type="submit" class="btn btn-outline-secondary">
-        <i class="bi bi-download"></i>
-        Historie als TXT exportieren
-      </button>
-    </form>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <form method="post" action="{{ url_for('export_history') }}">
+        <button type="submit" class="btn btn-secondary">
+          <i class="bi bi-download"></i>
+          Historie als TXT exportieren
+        </button>
+      </form>
+      <form method="post" action="{{ url_for('export_history_pdf') }}">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-file-earmark-pdf"></i>
+          Historie als PDF exportieren
+        </button>
+      </form>
+    </div>
   </div>
 
   <div class="history-filters">
@@ -68,6 +76,7 @@
             <th style="width:200px;">Zeitstempel</th>
             <th style="width:120px;">Typ</th>
             <th style="width:140px;">Aktion</th>
+            <th style="width:140px;">Akteur</th>
             <th>Beschreibung</th>
           </tr>
         </thead>
@@ -95,6 +104,7 @@
               {% elif e.action == 'stock_move' %}Bestand verschoben
               {% else %}{{ e.action }}{% endif %}
             </td>
+            <td>{{ e.performed_by or 'system' }}</td>
             <td>{{ e.summary or '' }}</td>
           </tr>
           {% endfor %}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pick-Liste {{ picklist._id }}</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      color: #111;
+    }
+
+    h1 {
+      margin-bottom: 4px;
+      font-size: 22px;
+    }
+
+    .meta {
+      margin-bottom: 16px;
+      color: #444;
+      font-size: 13px;
+    }
+
+    .route {
+      border: 1px dashed #666;
+      padding: 8px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      background: #f7f7f7;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid #c8c8c8;
+      padding: 8px;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      background: #efefef;
+    }
+
+    @media print {
+      .no-print {
+        display: none;
+      }
+      body {
+        margin: 8mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print" style="margin-bottom:12px;">
+    <button onclick="window.print()">Jetzt drucken</button>
+  </div>
+
+  <h1>Kommissionierliste</h1>
+  <div class="meta">
+    Liste: {{ picklist._id }}<br />
+    Lager: {{ warehouse.lagername if warehouse else '-' }}<br />
+    Bereich: {{ picklist.bereich }}<br />
+    Abteilung: {{ department.name if department else '-' }}{% if department and department.kostenstelle %} ({{ department.kostenstelle }}){% endif %}<br />
+    Erstellt am: {{ picklist.erstellt_am }}
+  </div>
+
+  <div class="route">
+    Pick-Route: {{ picklist.pick_route or '—' }}<br />
+    Geschätzte Weglänge: {{ picklist.weglaenge_m or 0 }} m
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Produkt</th>
+        <th>SKU</th>
+        <th>Bereich</th>
+        <th>Zone</th>
+        <th>Menge</th>
+        <th>Erledigt</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>{{ item.produkt_name }}</td>
+        <td>{{ item.sku or '-' }}</td>
+        <td>{{ item.lagerbereich }}</td>
+        <td>{{ item.lagerzone }}</td>
+        <td>{{ item.menge }}</td>
+        <td></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

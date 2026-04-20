@@ -18,6 +18,13 @@ COLLECTION_PRODUKTE = "produkte"
 COLLECTION_LAGER = "lager"
 COLLECTION_INVENTAR = "inventar"
 COLLECTION_EVENTS = "events"
+COLLECTION_LIEFERANTEN = "lieferanten"
+COLLECTION_BESTELLUNGEN = "bestellungen"
+COLLECTION_ABTEILUNGEN = "abteilungen"
+COLLECTION_PICKLISTEN = "picklisten"
+COLLECTION_USERS = "users"
+COLLECTION_USER_SETTINGS = "user_settings"
+COLLECTION_APP_SETTINGS = "app_settings"
 
 class MongoDBAdapter(DatabasePort):
     """Concrete MongoDB adapter that implements DatabasePort.

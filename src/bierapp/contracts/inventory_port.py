@@ -124,6 +124,7 @@ class InventoryServicePort(ABC):
         target_warehouse_id: str,
         product_id: str,
         quantity: int,
+        performed_by: str = "system",
     ) -> None:
         """Move a quantity of a product from one warehouse to another.
 
@@ -132,6 +133,7 @@ class InventoryServicePort(ABC):
             target_warehouse_id: ID of the destination warehouse.
             product_id: Unique product identifier.
             quantity: Quantity to move. Must be > 0.
+            performed_by: Name or identifier of the user performing the action.
 
         Raises:
             ValueError: If quantity <= 0 or greater than available stock.
