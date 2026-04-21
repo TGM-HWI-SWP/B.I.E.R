@@ -24,7 +24,7 @@
 
             <form class="theme-switcher" method="get" action="{{ request.path }}" aria-label="Stylesheet auswählen">
                 <details class="settings-menu">
-                    <summary class="settings-trigger" aria-label="Einstellungen öffnen" title="Einstellungen">⚙</summary>
+                    <summary class="settings-trigger" aria-label="Einstellungen öffnen" title="Einstellungen">⋮</summary>
                     <div class="settings-panel">
                         <label class="theme-label" for="themeSelect">Style</label>
                         <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
@@ -43,7 +43,7 @@
         <section class="product-shell" aria-label="Produkt bearbeiten">
             <div class="product-top">
                 <a class="back" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Zurück" title="Zurück">
-                    <span aria-hidden="true">←</span>
+                    <span aria-hidden="true">‹</span>
                 </a>
 
                 <div class="product-heading">
@@ -69,7 +69,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">🗂️</span>
                                 <span>Produkt</span>
                             </span>
                         </div>
@@ -83,7 +82,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">🏷️</span>
                                 <span>Name</span>
                             </span>
                         </div>
@@ -95,7 +93,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">💶</span>
                                 <span>Preis</span>
                             </span>
                         </div>
@@ -107,7 +104,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">💱</span>
                                 <span>Währung</span>
                             </span>
                         </div>
@@ -123,7 +119,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">⚖️</span>
                                 <span>Gewicht</span>
                             </span>
                         </div>
@@ -135,7 +130,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">📏</span>
                                 <span>Einheit</span>
                             </span>
                         </div>
@@ -154,7 +148,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">📦</span>
                                 <span>Bestand in Lagern</span>
                             </span>
                         </div>
@@ -167,7 +160,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">🚚</span>
                                 <span>Lieferant</span>
                             </span>
                         </div>
@@ -179,7 +171,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">📝</span>
                                 <span>Beschreibung</span>
                             </span>
                         </div>
