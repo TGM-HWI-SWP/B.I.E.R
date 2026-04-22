@@ -13,7 +13,7 @@ from reports.report_format import create_cover_page, create_bar_chart, create_su
 from reports.report_a import ReportA
 
 
-DEFAULT_OUTPUT_FILE = pathlib.Path("report_b_neu.pdf")
+DEFAULT_OUTPUT_FILE = pathlib.Path("report_b.pdf")
 
 
 def _find_int_after_key(details: str, key: str, allow_negative: bool = False) -> Optional[int]:
