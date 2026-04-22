@@ -125,11 +125,10 @@ function initProductPage() {
 
     const saveBtn = document.getElementById("saveProductBtn");
     const discardBtn = document.getElementById("discardProductBtn");
-    const resetBtn = document.getElementById("resetProductBtn");
     const deleteBtn = document.getElementById("deleteAttributeBtn");
     const addAttrBtn = document.getElementById("addAttributeBtn");
 
-    if (!productSelect || !warehouseStocks || !nameInput || !priceInput || !currencyInput || !supplierInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !resetBtn || !deleteBtn || !addAttrBtn) return;
+    if (!productSelect || !warehouseStocks || !nameInput || !priceInput || !currencyInput || !supplierInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !deleteBtn || !addAttrBtn) return;
 
     const title = document.querySelector(".product-title");
     const subtitle = document.querySelector(".product-subtitle");
@@ -443,7 +442,6 @@ function initProductPage() {
 
     bind(saveBtn, saveAll);
     bind(discardBtn, discardChanges);
-    bind(resetBtn, discardChanges);
     bind(deleteBtn, deleteProduct);
     addAttrBtn.addEventListener("click", () => {
         status.textContent = "Attribut-Management ist noch nicht implementiert.";
