@@ -1177,7 +1177,59 @@ function initHistoryPage() {
         if (action === "delete") return "Gelöscht";
         if (action === "assign") return "Gebucht";
         if (action === "add") return "Hinzugefügt";
+        if (action === "set") return "Menge gesetzt";
+        if (action === "move") return "Verschoben";
+        if (action === "remove") return "Entfernt";
         return action || "–";
+    }
+
+    function prettifyLegacyDetails(entry) {
+        const details = String(entry?.details ?? "").trim();
+        if (!details) return "–";
+
+        let match = details.match(/^Bestand:\s*produkt_id=(\d+)\s+lager_id=(\d+)\s+menge=(-?\d+)$/i);
+        if (match) return `Produkt ${match[1]} in Lager ${match[2]}: +${match[3]}`;
+
+        match = details.match(/^Buchung:\s*produkt_id=(\d+)\s+lager_id=(\d+)\s+menge=(-?\d+)$/i);
+        if (match) return `Produkt ${match[1]} in Lager ${match[2]}: +${match[3]}`;
+
+        match = details.match(/^Bestand gesetzt:\s*produkt_id=(\d+)\s+lager_id=(\d+)\s+menge=(-?\d+)$/i);
+        if (match) return `Produkt ${match[1]} in Lager ${match[2]}: Menge auf ${match[3]} gesetzt`;
+
+        match = details.match(/^Bestand entfernt:\s*produkt_id=(\d+)\s+lager_id=(\d+)$/i);
+        if (match) return `Produkt ${match[1]} aus Lager ${match[2]} entfernt`;
+
+        match = details.match(/^Bestand verschoben:\s*produkt_id=(\d+)\s+von\s+lager_id=(\d+)\s+nach\s+lager_id=(\d+)\s+menge=(-?\d+)$/i);
+        if (match) return `Produkt ${match[1]}: ${match[4]} von Lager ${match[2]} nach Lager ${match[3]} verschoben`;
+
+        match = details.match(/^(Produkt|Lager)\s+(\d+):\s*(\{.*\})$/);
+        if (match) {
+            try {
+                const parsed = JSON.parse(match[3]);
+                const labels = {
+                    name: "Name",
+                    beschreibung: "Beschreibung",
+                    gewicht: "Gewicht",
+                    preis: "Preis",
+                    waehrung: "Währung",
+                    lieferant: "Lieferant",
+                    einheit: "Einheit",
+                    lagername: "Lagername",
+                    adresse: "Adresse",
+                    max_plaetze: "Max. Plätze",
+                    firma_id: "Firma-ID",
+                };
+                const parts = Object.entries(parsed).map(([key, value]) => {
+                    const label = labels[key] || key;
+                    return `${label}: ${value}`;
+                });
+                if (parts.length > 0) return `${match[1]} ${match[2]}: ${parts.join(", ")}`;
+            } catch {
+                // Leave original details if parsing fails.
+            }
+        }
+
+        return details;
     }
 
     function parseDate(value) {
@@ -1257,7 +1309,7 @@ function initHistoryPage() {
             tdAction.textContent = actionLabel(e.action);
 
             const tdDetails = document.createElement("td");
-            tdDetails.textContent = String(e.details ?? "");
+            tdDetails.textContent = prettifyLegacyDetails(e);
 
             row.appendChild(tdTime);
             row.appendChild(tdType);
@@ -1293,7 +1345,7 @@ function initHistoryPage() {
             const ts = formatDate(e.created_at);
             const type = typeLabel(e.entry_type);
             const action = actionLabel(e.action);
-            const details = String(e.details ?? "").replace(/\s+/g, " ").trim();
+            const details = prettifyLegacyDetails(e).replace(/\s+/g, " ").trim();
             return `${ts}\t${type}\t${action}\t${details}`;
         });
         const header = "Zeitpunkt\tTyp\tAktion\tDetails";

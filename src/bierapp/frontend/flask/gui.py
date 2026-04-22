@@ -1,7 +1,6 @@
 """B.I.E.R Flask GUI - Route handlers for the inventory management system."""
 
 import os
-import json
 import io
 import tempfile
 import pathlib
@@ -64,6 +63,22 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             "action": row.get("action"),
             "details": row.get("details"),
         }
+
+    def _format_value(value) -> str:
+        if value is None:
+            return "-"
+        if isinstance(value, float):
+            return f"{value:.2f}"
+        return str(value)
+
+    def _format_changes(data: dict, labels: dict[str, str]) -> str:
+        if not isinstance(data, dict) or not data:
+            return "Keine Detailangaben"
+        parts = []
+        for key, value in data.items():
+            label = labels.get(key, key.replace("_", " ").capitalize())
+            parts.append(f"{label}: {_format_value(value)}")
+        return ", ".join(parts)
 
     def _generate_report_pdf(report_key: str) -> tuple[io.BytesIO, str]:
         report_id = str(report_key or "").lower()
@@ -432,7 +447,19 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data:
                 return jsonify({"error": "Request body must be JSON"}), 400
             updated_product = product_service.update_product(str(produkt_id), data)
-            _log_history("product", "update", f"Produkt {produkt_id}: {json.dumps(data, ensure_ascii=False)}")
+            changes = _format_changes(
+                data,
+                {
+                    "name": "Name",
+                    "beschreibung": "Beschreibung",
+                    "gewicht": "Gewicht",
+                    "preis": "Preis",
+                    "waehrung": "Währung",
+                    "lieferant": "Lieferant",
+                    "einheit": "Einheit",
+                },
+            )
+            _log_history("product", "update", f"Produkt {produkt_id}: {changes}")
             return jsonify(updated_product), 200
         except KeyError:
             return jsonify({"error": "Product not found"}), 404
@@ -566,7 +593,16 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
                 return jsonify({"error": "No updatable fields provided"}), 400
 
             updated = warehouse_service.update_warehouse(str(lager_id), payload)
-            _log_history("warehouse", "update", f"Lager {lager_id}: {json.dumps(payload, ensure_ascii=False)}")
+            changes = _format_changes(
+                payload,
+                {
+                    "lagername": "Lagername",
+                    "adresse": "Adresse",
+                    "max_plaetze": "Max. Plätze",
+                    "firma_id": "Firma-ID",
+                },
+            )
+            _log_history("warehouse", "update", f"Lager {lager_id}: {changes}")
             return jsonify(updated), 200
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
@@ -591,7 +627,11 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data or not all(k in data for k in ["lager_id", "produkt_id", "menge"]):
                 return jsonify({"error": "Missing required fields: lager_id, produkt_id, menge"}), 400
             inventory_service.add_product(lager_id=int(data["lager_id"]), produkt_id=int(data["produkt_id"]), menge=int(data["menge"]))
-            _log_history("inventory", "add", f"Bestand: produkt_id={data.get('produkt_id')} lager_id={data.get('lager_id')} menge={data.get('menge')}")
+            _log_history(
+                "inventory",
+                "add",
+                f"Produkt {data.get('produkt_id')} in Lager {data.get('lager_id')}: +{data.get('menge')}",
+            )
             return jsonify({"status": "ok", "message": "Product added to inventory"}), 201
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
@@ -615,7 +655,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             produkt_id = int(data["produkt_id"])
             menge = int(data["menge"])
             inventory_service.set_quantity(lager_id=lager_id, produkt_id=produkt_id, menge=menge)
-            _log_history("inventory", "set", f"Bestand gesetzt: produkt_id={produkt_id} lager_id={lager_id} menge={menge}")
+            _log_history("inventory", "set", f"Produkt {produkt_id} in Lager {lager_id}: Menge auf {menge} gesetzt")
             return jsonify({"status": "ok"}), 200
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
@@ -663,7 +703,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             _log_history(
                 "inventory",
                 "move",
-                f"Bestand verschoben: produkt_id={produkt_id} von lager_id={source_lager_id} nach lager_id={target_lager_id} menge={menge}",
+                f"Produkt {produkt_id}: {menge} von Lager {source_lager_id} nach Lager {target_lager_id} verschoben",
             )
             return jsonify({"status": "ok", "source_qty": source_qty - menge, "target_qty": target_qty + menge}), 200
         except ValueError as exc:
@@ -677,7 +717,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
 
         try:
             inventory_service.remove_product(lager_id=int(lager_id), produkt_id=int(produkt_id))
-            _log_history("inventory", "remove", f"Bestand entfernt: produkt_id={produkt_id} lager_id={lager_id}")
+            _log_history("inventory", "remove", f"Produkt {produkt_id} aus Lager {lager_id} entfernt")
             return "", 204
         except KeyError:
             return jsonify({"error": "Inventory entry not found"}), 404
@@ -732,7 +772,11 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data or not all(k in data for k in ["lager_id", "produkt_id", "menge"]):
                 return jsonify({"error": "Missing required fields: lager_id, produkt_id, menge"}), 400
             warehouse_service.add_product_to_warehouse(lager_id=int(data["lager_id"]), produkt_id=int(data["produkt_id"]), menge=int(data["menge"]))
-            _log_history("inventory", "assign", f"Buchung: produkt_id={data.get('produkt_id')} lager_id={data.get('lager_id')} menge={data.get('menge')}")
+            _log_history(
+                "inventory",
+                "assign",
+                f"Produkt {data.get('produkt_id')} in Lager {data.get('lager_id')}: +{data.get('menge')}",
+            )
             return jsonify({"status": "ok", "message": "Product assigned to warehouse"}), 201
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
