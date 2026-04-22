@@ -51,15 +51,15 @@ body.ui-text-large {
   max-width: 1120px;
   margin: 0 auto;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
-  padding: 8px 12px;
+  padding: 10px 14px;
 }
 
 .brand-logo {
-  width: 44px;
-  height: 34px;
-  border-radius: 8px;
+  width: 56px;
+  height: 42px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -94,10 +94,10 @@ body.ui-text-large {
 
 .settings-trigger {
   list-style: none;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--fg);
   display: inline-flex;
@@ -105,7 +105,8 @@ body.ui-text-large {
   justify-content: center;
   cursor: pointer;
   user-select: none;
-  font-size: 16px;
+  font-size: 22px;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -171,7 +172,7 @@ body.ui-text-large {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   overflow: hidden;
 }
@@ -180,14 +181,14 @@ body.ui-text-large {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
-  padding: 0 12px;
+  height: 40px;
+  padding: 0 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--fg);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   white-space: nowrap;
   max-width: 220px;
@@ -367,9 +368,9 @@ body.page-index .search-row {
 
 body.page-index .add-button {
   display: inline-block;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   border: 2px solid var(--border);
   background: var(--surface);
   position: relative;
@@ -388,8 +389,8 @@ body.page-index .add-button::after {
   border-radius: 999px;
 }
 
-body.page-index .add-button::before { width: 26px; height: 4px; }
-body.page-index .add-button::after { width: 4px; height: 26px; }
+body.page-index .add-button::before { width: 22px; height: 2.5px; }
+body.page-index .add-button::after { width: 2.5px; height: 22px; }
 
 body.page-index .add-button:focus-visible {
   outline: 3px solid color-mix(in oklab, var(--focus) 25%, transparent);
@@ -714,9 +715,9 @@ body.page-product .product-header {
 }
 
 body.page-product .back {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   border: 2px solid var(--border);
   background: var(--surface);
   display: inline-flex;
@@ -724,6 +725,13 @@ body.page-product .back {
   justify-content: center;
   text-decoration: none;
   color: var(--fg);
+}
+
+body.page-product .back span {
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 400;
+  transform: translateY(-1px);
 }
 
 body.page-product .back:focus-visible {
