@@ -39,14 +39,15 @@ function initIndexPage() {
         const filtered = products.filter((product) => {
             const name = String(product.name || "").toLowerCase();
             const description = String(product.beschreibung || "").toLowerCase();
+            const supplier = String(product.lieferant || "").toLowerCase();
             const id = String(product.id || "").toLowerCase();
-            return name.includes(query) || description.includes(query) || id.includes(query);
+            return name.includes(query) || description.includes(query) || supplier.includes(query) || id.includes(query);
         });
 
         body.innerHTML = "";
         if (filtered.length === 0) {
             const row = document.createElement("tr");
-            row.innerHTML = '<td colspan="7">Keine Produkte gefunden.</td>';
+            row.innerHTML = '<td colspan="8">Keine Produkte gefunden.</td>';
             body.appendChild(row);
             return;
         }
@@ -63,6 +64,7 @@ function initIndexPage() {
                 <td>${product.id ?? ""}</td>
                 <td>${product.name ?? ""}</td>
                 <td>${product.beschreibung ?? ""}</td>
+                <td>${product.lieferant || "Unbekannt"}</td>
                 <td>${formattedPrice}</td>
                 <td>${product.gewicht ?? ""}</td>
                 <td>${product.einheit || "Stk"}</td>

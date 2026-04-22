@@ -495,16 +495,17 @@ body.page-index tbody tr:hover td:last-child {
 
 body.page-index .col-id { width: 76px; }
 body.page-index .col-name { width: 190px; }
+body.page-index .col-supplier { width: 170px; }
 body.page-index .col-price { width: 140px; }
 body.page-index .col-weight { width: 110px; }
 body.page-index .col-unit { width: 90px; }
 body.page-index .col-action { width: 140px; }
 
 body.page-index tbody td:nth-child(1),
-body.page-index tbody td:nth-child(4),
 body.page-index tbody td:nth-child(5),
 body.page-index tbody td:nth-child(6),
-body.page-index tbody td:nth-child(7) {
+body.page-index tbody td:nth-child(7),
+body.page-index tbody td:nth-child(8) {
   white-space: nowrap;
 }
 
