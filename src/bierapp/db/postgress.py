@@ -2,7 +2,7 @@
 
 import os
 import psycopg2
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, Json
 
 
 class PostgresRepository:
@@ -69,6 +69,12 @@ class PostgresRepository:
                 )
                 cur.execute(
                     """
+                    ALTER TABLE products
+                    ADD COLUMN IF NOT EXISTS attributes JSONB NOT NULL DEFAULT '[]'::jsonb
+                    """
+                )
+                cur.execute(
+                    """
                     CREATE TABLE IF NOT EXISTS warehouses (
                         id SERIAL PRIMARY KEY,
                         lagername TEXT NOT NULL,
@@ -119,7 +125,7 @@ class PostgresRepository:
         try:
             with self.conn.cursor() as cur:
                 columns = data.keys()
-                values = list(data.values())
+                values = [Json(value) if isinstance(value, (dict, list)) else value for value in data.values()]
                 query = f"INSERT INTO {table} ({','.join(columns)}) VALUES ({','.join(['%s'] * len(values))}) RETURNING id"
                 cur.execute(query, values)
                 inserted_id = cur.fetchone()[0]
@@ -182,7 +188,7 @@ class PostgresRepository:
         try:
             with self.conn.cursor() as cur:
                 set_clause = ", ".join([f"{k}=%s" for k in data.keys()])
-                values = list(data.values())
+                values = [Json(value) if isinstance(value, (dict, list)) else value for value in data.values()]
                 query = f"UPDATE {table} SET {set_clause} WHERE id = %s"
                 cur.execute(query, values + [document_id])
                 updated = cur.rowcount > 0

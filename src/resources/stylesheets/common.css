@@ -8,6 +8,7 @@
   --surface-2: #eef2ff;
   --border: #cbd5e1;
   --focus: #2563eb;
+  --danger: #dc2626;
   --shadow: 0 8px 24px color-mix(in oklab, var(--fg) 10%, transparent);
   --radius: 12px;
 
@@ -28,6 +29,15 @@ body {
   color: var(--fg);
 }
 
+body.ui-density-compact {
+  --card-padding: 8px;
+  --results-min-height: 140px;
+}
+
+body.ui-text-large {
+  font-size: 17px;
+}
+
 .topbar {
   border-bottom: 1px solid var(--border);
   background: color-mix(in oklab, var(--surface) 90%, white 10%);
@@ -41,15 +51,15 @@ body {
   max-width: 1120px;
   margin: 0 auto;
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
-  padding: 8px 12px;
+  padding: 10px 14px;
 }
 
 .brand-logo {
-  width: 44px;
-  height: 34px;
-  border-radius: 8px;
+  width: 56px;
+  height: 42px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -84,10 +94,10 @@ body {
 
 .settings-trigger {
   list-style: none;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--fg);
   display: inline-flex;
@@ -95,7 +105,8 @@ body {
   justify-content: center;
   cursor: pointer;
   user-select: none;
-  font-size: 16px;
+  font-size: 22px;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -112,7 +123,7 @@ body {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 220px;
+  width: 280px;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -121,6 +132,11 @@ body {
   display: grid;
   gap: 8px;
   z-index: 30;
+}
+
+.settings-field {
+  display: grid;
+  gap: 4px;
 }
 
 .settings-menu:not([open]) .settings-panel {
@@ -156,7 +172,7 @@ body {
   flex: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
   overflow: hidden;
 }
@@ -165,14 +181,14 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
-  padding: 0 12px;
+  height: 40px;
+  padding: 0 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--surface);
   color: var(--fg);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   white-space: nowrap;
   max-width: 220px;
@@ -221,6 +237,10 @@ body {
 
 .btn {
   height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
   border-radius: 12px;
   border: 2px solid var(--border);
   background: var(--surface);
@@ -228,6 +248,7 @@ body {
   font-size: 14px;
   font-weight: 650;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .btn-primary {
@@ -253,6 +274,11 @@ body {
   font-size: 13px;
   padding: 0 10px;
   align-self: center;
+}
+
+.btn,
+.btn-small {
+  line-height: 1;
 }
 
 .btn:focus-visible {
@@ -342,9 +368,9 @@ body.page-index .search-row {
 
 body.page-index .add-button {
   display: inline-block;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   border: 2px solid var(--border);
   background: var(--surface);
   position: relative;
@@ -363,8 +389,8 @@ body.page-index .add-button::after {
   border-radius: 999px;
 }
 
-body.page-index .add-button::before { width: 26px; height: 4px; }
-body.page-index .add-button::after { width: 4px; height: 26px; }
+body.page-index .add-button::before { width: 22px; height: 2.5px; }
+body.page-index .add-button::after { width: 2.5px; height: 22px; }
 
 body.page-index .add-button:focus-visible {
   outline: 3px solid color-mix(in oklab, var(--focus) 25%, transparent);
@@ -454,6 +480,12 @@ body.page-index thead th {
   z-index: 1;
 }
 
+body.page-index thead th:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+}
+
 body.page-index tbody td {
   padding: 12px;
   border-bottom: 1px solid var(--border);
@@ -461,22 +493,34 @@ body.page-index tbody td {
   vertical-align: top;
 }
 
+body.page-index tbody td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: var(--surface);
+}
+
 body.page-index tbody tr:hover td {
+  background: var(--surface-2);
+}
+
+body.page-index tbody tr:hover td:last-child {
   background: var(--surface-2);
 }
 
 body.page-index .col-id { width: 76px; }
 body.page-index .col-name { width: 190px; }
+body.page-index .col-supplier { width: 170px; }
 body.page-index .col-price { width: 140px; }
 body.page-index .col-weight { width: 110px; }
 body.page-index .col-unit { width: 90px; }
 body.page-index .col-action { width: 140px; }
 
 body.page-index tbody td:nth-child(1),
-body.page-index tbody td:nth-child(4),
 body.page-index tbody td:nth-child(5),
 body.page-index tbody td:nth-child(6),
-body.page-index tbody td:nth-child(7) {
+body.page-index tbody td:nth-child(7),
+body.page-index tbody td:nth-child(8) {
   white-space: nowrap;
 }
 
@@ -565,6 +609,110 @@ body.page-product .field-row {
   border-top: 1px solid var(--border);
 }
 
+body.page-product .attribute-section {
+  border-top: 1px solid var(--border);
+}
+
+body.page-product .attribute-toolbar {
+  padding: 0 18px 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+body.page-product .attribute-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+body.page-product .attribute-summary {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fg);
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+body.page-product .attribute-rows {
+  padding: 0 18px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+body.page-product .attribute-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 10px 0 2px;
+}
+
+body.page-product .attribute-row {
+  display: grid;
+  grid-template-columns: 28px minmax(160px, 220px) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--surface) 97%, var(--bg));
+}
+
+body.page-product .attribute-row.is-selected {
+  border-color: color-mix(in oklab, var(--focus) 32%, var(--border));
+  background: color-mix(in oklab, var(--focus) 8%, var(--surface));
+}
+
+body.page-product .attribute-select-toggle {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--focus);
+  justify-self: center;
+}
+
+body.page-product .attribute-name,
+body.page-product .attribute-value {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--fg);
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+body.page-product .attribute-value::placeholder {
+  color: color-mix(in oklab, var(--muted) 78%, white);
+}
+
+body.page-product .attribute-remove {
+  height: 38px;
+  min-width: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+}
+
+body.page-product .field-row.is-invalid {
+  background: color-mix(in oklab, var(--danger) 9%, var(--surface));
+}
+
+body.page-product .field-row.is-invalid input,
+body.page-product .field-row.is-invalid select {
+  border-color: color-mix(in oklab, var(--danger) 65%, var(--border));
+  background: color-mix(in oklab, var(--danger) 6%, var(--surface));
+}
+
+body.page-product .field-row.is-invalid .field-label {
+  color: color-mix(in oklab, var(--danger) 55%, var(--muted));
+}
+
+body.page-product .product-status small.status-error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 body.page-product .field-label {
   color: var(--muted);
   font-size: 14px;
@@ -607,6 +755,11 @@ body.page-product .warehouse-hint {
   color: var(--muted);
 }
 
+body.page-product .warehouse-hint.is-error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 body.page-product .product-footer {
   position: sticky;
   bottom: 0;
@@ -647,9 +800,9 @@ body.page-product .product-header {
 }
 
 body.page-product .back {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   border: 2px solid var(--border);
   background: var(--surface);
   display: inline-flex;
@@ -657,6 +810,13 @@ body.page-product .back {
   justify-content: center;
   text-decoration: none;
   color: var(--fg);
+}
+
+body.page-product .back span {
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 400;
+  transform: translateY(-1px);
 }
 
 body.page-product .back:focus-visible {
@@ -800,18 +960,17 @@ body.page-warehouse tbody tr:hover td {
   background: var(--surface-2);
 }
 
-body.page-warehouse .warehouse-row-clickable {
-  cursor: pointer;
-}
-
-body.page-warehouse .warehouse-row-clickable:focus-within td {
-  background: var(--surface-2);
-}
-
 body.page-warehouse .actions {
   display: inline-flex;
   gap: 8px;
   align-items: center;
+}
+
+body.page-index .row-actions .btn-small,
+body.page-warehouse .actions .btn-small,
+body.page-warehouse-detail .detail-inline-actions .btn-small,
+body.page-reports .report-actions .btn-small {
+  min-width: 96px;
 }
 
 body.page-warehouse-detail .warehouse-detail-header {
@@ -820,6 +979,10 @@ body.page-warehouse-detail .warehouse-detail-header {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+body.page-warehouse-detail #backToWarehouseList {
+  min-width: 148px;
 }
 
 body.page-warehouse-detail .warehouse-edit-panel {
@@ -911,13 +1074,34 @@ body.page-reports .report-preview {
   padding: 12px;
 }
 
+body.page-reports .report-preview-pages {
+  display: grid;
+  gap: 16px;
+}
+
+body.page-reports .report-preview-page {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--surface) 98%, var(--bg));
+}
+
+body.page-reports .report-preview-page-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
 body.page-reports .preview-top {
   display: grid;
   gap: 4px;
   margin-bottom: 10px;
 }
 
-body.page-reports #reportPreviewCanvas {
+body.page-reports .report-preview-canvas {
   width: 100%;
   max-width: 900px;
   border: 1px solid var(--border);
@@ -931,8 +1115,36 @@ body.page-stats .grid {
   gap: 12px;
 }
 
+body.page-stats .stats-intro {
+  overflow: hidden;
+}
+
+body.page-stats .stats-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body.page-stats .kpi-highlight {
+  min-height: 120px;
+  display: grid;
+  align-content: start;
+}
+
 body.page-stats .kpis {
   grid-template-columns: repeat(4, 1fr);
+}
+
+body.page-stats .stats-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.page-stats .stats-single {
+  grid-template-columns: 1fr;
+}
+
+body.page-stats .stats-panel .card-body {
+  min-height: 240px;
 }
 
 body.page-stats .kpi {
@@ -967,6 +1179,10 @@ body.page-stats .split-section {
   margin-top: 12px;
 }
 
+body.page-stats .split-section + .split-section {
+  margin-top: 16px;
+}
+
 body.page-stats .card-title {
   margin: 0;
   font-size: 15px;
@@ -983,6 +1199,10 @@ body.page-stats .card-body {
   padding: 12px;
   display: grid;
   gap: 10px;
+}
+
+body.page-stats .card-body:empty {
+  min-height: 120px;
 }
 
 body.page-stats .bar-row {
@@ -1108,8 +1328,16 @@ body.page-stats .dot.free {
 }
 
 @media (max-width: 980px) {
+  body.page-stats .stats-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   body.page-stats .kpis {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  body.page-stats .stats-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1143,6 +1371,19 @@ body.page-stats .dot.free {
     grid-template-columns: 1fr;
     gap: 8px;
     align-items: start;
+  }
+
+  body.page-product .attribute-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  body.page-product .attribute-select-toggle {
+    justify-self: start;
+  }
+
+  body.page-product .attribute-remove {
+    width: 100%;
   }
 
   body.page-product .warehouse-row {
@@ -1192,6 +1433,10 @@ body.page-stats .dot.free {
     grid-template-columns: 1fr;
   }
 
+  body.page-warehouse-detail #backToWarehouseList {
+    width: 100%;
+  }
+
   body.page-warehouse-detail table {
     min-width: 0;
   }
@@ -1222,9 +1467,82 @@ body.page-stats .dot.free {
     --page-title-size: 24px;
   }
 
+  body.page-stats .stats-summary {
+    grid-template-columns: 1fr;
+  }
+
   body.page-index .add-button {
     width: 56px;
     height: 56px;
     border-radius: 16px;
   }
+}
+
+body.ui-density-compact {
+  --card-padding: 8px;
+  --results-min-height: 140px;
+}
+
+body.ui-density-compact .topbar-inner {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+body.ui-density-compact .container {
+  padding-top: 12px;
+  padding-bottom: 22px;
+}
+
+body.ui-density-compact .card,
+body.ui-density-compact .settings-panel,
+body.ui-density-compact .table-wrap,
+body.ui-density-compact .report-item,
+body.ui-density-compact .report-preview-page {
+  padding: 8px;
+}
+
+body.ui-density-compact .grid,
+body.ui-density-compact .stats-summary,
+body.ui-density-compact .reports-grid,
+body.ui-density-compact .product-shell,
+body.ui-density-compact .product-editor,
+body.ui-density-compact .warehouse-shell,
+body.ui-density-compact .warehouse-detail-shell {
+  gap: 8px;
+}
+
+body.ui-density-compact .tab,
+body.ui-density-compact .btn,
+body.ui-density-compact .theme-select,
+body.ui-density-compact .settings-trigger {
+  height: 30px;
+}
+
+body.ui-text-large {
+  --page-title-size: 32px;
+}
+
+body.ui-text-large .tab,
+body.ui-text-large .btn,
+body.ui-text-large .theme-select,
+body.ui-text-large .settings-trigger,
+body.ui-text-large input,
+body.ui-text-large select,
+body.ui-text-large td,
+body.ui-text-large th,
+body.ui-text-large .note,
+body.ui-text-large .card-note,
+body.ui-text-large .theme-label,
+body.ui-text-large .report-item,
+body.ui-text-large .report-preview-page-label {
+  font-size: 1.05em;
+}
+
+body.ui-text-large .page-title {
+  letter-spacing: 0.3px;
+}
+
+body.ui-text-large .card-title,
+body.ui-text-large .kpi-label {
+  font-size: 1.02em;
 }

@@ -1,5 +1,6 @@
 """Product and Inventory Services - Core business logic for product and inventory management."""
 
+import json
 from typing import Dict, List, Optional
 from ...contracts import DatabasePort, ProductServicePort, InventoryServicePort
 
@@ -17,7 +18,53 @@ class ProductService(ProductServicePort):
         """
         self.db = db
 
-    def create_product(self, name: str, beschreibung: str, gewicht: float, preis: float = 0.0, waehrung: str = "EUR", lieferant: str = "", einheit: str = "Stk") -> Dict:
+    def _normalize_attribute(self, attribute) -> Optional[Dict[str, str]]:
+        if isinstance(attribute, str):
+            text = attribute.strip()
+            if not text:
+                return None
+            if "=" in text:
+                name, value = text.split("=", 1)
+                return {"name": name.strip(), "value": value.strip()}
+            return {"name": text, "value": ""}
+
+        if isinstance(attribute, dict):
+            name = str(attribute.get("name") or attribute.get("label") or attribute.get("attribute") or "").strip()
+            value = str(attribute.get("value") or attribute.get("wert") or attribute.get("text") or "").strip()
+            if not name and not value:
+                return None
+            return {"name": name, "value": value}
+
+        return None
+
+    def _normalize_attributes(self, attributes) -> List[Dict[str, str]]:
+        if attributes is None:
+            return []
+        if isinstance(attributes, str):
+            try:
+                attributes = json.loads(attributes)
+            except Exception:
+                return []
+        if isinstance(attributes, dict):
+            attributes = [attributes]
+        if not isinstance(attributes, list):
+            return []
+
+        normalized: List[Dict[str, str]] = []
+        for attribute in attributes:
+            item = self._normalize_attribute(attribute)
+            if item:
+                normalized.append(item)
+        return normalized
+
+    def _normalize_product(self, product: Optional[Dict]) -> Optional[Dict]:
+        if product is None:
+            return None
+        normalized = dict(product)
+        normalized["attributes"] = self._normalize_attributes(normalized.get("attributes"))
+        return normalized
+
+    def create_product(self, name: str, beschreibung: str, gewicht: float, preis: float = 0.0, waehrung: str = "EUR", lieferant: str = "", einheit: str = "Stk", attributes=None) -> Dict:
         """Create a new product and store it in the database.
 
         Args:
@@ -47,6 +94,7 @@ class ProductService(ProductServicePort):
             "waehrung": waehrung or "EUR",
             "lieferant": lieferant or "",
             "einheit": einheit or "Stk",
+            "attributes": self._normalize_attributes(attributes),
         }
         product_id = self.db.insert(self.COLLECTION, data)
         data["id"] = product_id
@@ -61,7 +109,7 @@ class ProductService(ProductServicePort):
         Returns:
             Optional[Dict]: The product if found, otherwise None.
         """
-        return self.db.find_by_id(self.COLLECTION, produkt_id)
+        return self._normalize_product(self.db.find_by_id(self.COLLECTION, produkt_id))
 
     def list_products(self) -> List[Dict]:
         """Retrieve all products.
@@ -69,7 +117,7 @@ class ProductService(ProductServicePort):
         Returns:
             List[Dict]: A list containing all products.
         """
-        return self.db.find_all(self.COLLECTION)
+        return [product for product in (self._normalize_product(product) for product in self.db.find_all(self.COLLECTION)) if product is not None]
 
     def update_product(self, produkt_id: str, data: Dict) -> Dict:
         """Update an existing product.
@@ -84,11 +132,15 @@ class ProductService(ProductServicePort):
         Raises:
             KeyError: If product not found.
         """
-        success = self.db.update(self.COLLECTION, produkt_id, data)
+        payload = dict(data)
+        if "attributes" in payload:
+            payload["attributes"] = self._normalize_attributes(payload.get("attributes"))
+
+        success = self.db.update(self.COLLECTION, produkt_id, payload)
         if not success:
             raise KeyError("Product not found")
         product = self.db.find_by_id(self.COLLECTION, produkt_id)
-        return product
+        return self._normalize_product(product) or {}
 
     def delete_product(self, produkt_id: str) -> None:
         """Delete a product from the database.

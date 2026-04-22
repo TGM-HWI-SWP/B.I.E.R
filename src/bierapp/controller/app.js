@@ -26,6 +26,40 @@ async function api(endpoint, options = {}) {
     return payload;
 }
 
+function initUiPreferences() {
+    const densitySelect = document.getElementById("densitySelect");
+    const textScaleSelect = document.getElementById("textScaleSelect");
+
+    const storage = window.localStorage;
+    let density = storage.getItem("bier-density") || "normal";
+    let textScale = storage.getItem("bier-text-scale") || "normal";
+
+    function applyPreferences() {
+        document.body.classList.toggle("ui-density-compact", density === "compact");
+        document.body.classList.toggle("ui-text-large", textScale === "large");
+    }
+
+    if (densitySelect) {
+        densitySelect.value = density;
+        densitySelect.addEventListener("change", () => {
+            density = densitySelect.value === "compact" ? "compact" : "normal";
+            storage.setItem("bier-density", density);
+            applyPreferences();
+        });
+    }
+
+    if (textScaleSelect) {
+        textScaleSelect.value = textScale;
+        textScaleSelect.addEventListener("change", () => {
+            textScale = textScaleSelect.value === "large" ? "large" : "normal";
+            storage.setItem("bier-text-scale", textScale);
+            applyPreferences();
+        });
+    }
+
+    applyPreferences();
+}
+
 function initIndexPage() {
     const body = document.getElementById("productsTableBody");
     const search = document.getElementById("productSearch");
@@ -39,14 +73,15 @@ function initIndexPage() {
         const filtered = products.filter((product) => {
             const name = String(product.name || "").toLowerCase();
             const description = String(product.beschreibung || "").toLowerCase();
+            const supplier = String(product.lieferant || "").toLowerCase();
             const id = String(product.id || "").toLowerCase();
-            return name.includes(query) || description.includes(query) || id.includes(query);
+            return name.includes(query) || description.includes(query) || supplier.includes(query) || id.includes(query);
         });
 
         body.innerHTML = "";
         if (filtered.length === 0) {
             const row = document.createElement("tr");
-            row.innerHTML = '<td colspan="7">Keine Produkte gefunden.</td>';
+            row.innerHTML = '<td colspan="8">Keine Produkte gefunden.</td>';
             body.appendChild(row);
             return;
         }
@@ -63,6 +98,7 @@ function initIndexPage() {
                 <td>${product.id ?? ""}</td>
                 <td>${product.name ?? ""}</td>
                 <td>${product.beschreibung ?? ""}</td>
+                <td>${product.lieferant || "Unbekannt"}</td>
                 <td>${formattedPrice}</td>
                 <td>${product.gewicht ?? ""}</td>
                 <td>${product.einheit || "Stk"}</td>
@@ -122,14 +158,15 @@ function initProductPage() {
     const weightInput = document.getElementById("productWeight");
     const unitInput = document.getElementById("productUnit");
     const status = document.getElementById("page1Status");
+    const warehouseHint = document.getElementById("warehouseStocksHint");
 
     const saveBtn = document.getElementById("saveProductBtn");
     const discardBtn = document.getElementById("discardProductBtn");
-    const resetBtn = document.getElementById("resetProductBtn");
     const deleteBtn = document.getElementById("deleteAttributeBtn");
     const addAttrBtn = document.getElementById("addAttributeBtn");
+    const deleteProductBtn = document.getElementById("deleteProductBtn");
 
-    if (!productSelect || !warehouseStocks || !nameInput || !priceInput || !currencyInput || !supplierInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !resetBtn || !deleteBtn || !addAttrBtn) return;
+    if (!productSelect || !warehouseStocks || !warehouseHint || !nameInput || !priceInput || !currencyInput || !supplierInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !deleteBtn || !addAttrBtn || !deleteProductBtn) return;
 
     const title = document.querySelector(".product-title");
     const subtitle = document.querySelector(".product-subtitle");
@@ -138,6 +175,81 @@ function initProductPage() {
     let products = [];
     let warehouses = [];
     let loadedInventory = new Map();
+    const attributeRowsHost = document.getElementById("attributeRows");
+    const attributeSummary = document.getElementById("attributeSummary");
+    const ATTRIBUTE_OPTIONS = [
+        "Farbe",
+        "Größe",
+        "Marke",
+        "Material",
+        "Kategorie",
+        "Typ",
+        "Zustand",
+        "Form",
+        "Verpackung",
+        "Herkunft",
+        "Saison",
+        "Besonderheit",
+    ];
+
+    function setStatus(message, kind = "info") {
+        status.textContent = message;
+        status.classList.remove("status-error");
+        if (kind === "error") {
+            status.classList.add("status-error");
+        }
+    }
+
+    function markInvalidField(control, message) {
+        if (!control) return;
+        control.classList.add("is-invalid");
+        control.setAttribute("aria-invalid", "true");
+        if (message) control.title = message;
+        const row = control.closest(".field-row");
+        if (row) row.classList.add("is-invalid");
+    }
+
+    function clearInvalidField(control) {
+        if (!control) return;
+        control.classList.remove("is-invalid");
+        control.removeAttribute("aria-invalid");
+        control.removeAttribute("title");
+        const row = control.closest(".field-row");
+        if (row) row.classList.remove("is-invalid");
+    }
+
+    function clearRequiredHighlights() {
+        clearInvalidField(nameInput);
+        clearInvalidField(priceInput);
+        clearInvalidField(weightInput);
+    }
+
+    function validateRequiredFields(payload) {
+        clearRequiredHighlights();
+        const invalid = [];
+
+        if (!payload.name) {
+            markInvalidField(nameInput, "Bitte einen Produktnamen eingeben.");
+            invalid.push(nameInput);
+        }
+
+        if (Number.isNaN(payload.preis) || payload.preis < 0) {
+            markInvalidField(priceInput, "Bitte einen gültigen Preis (>= 0) eingeben.");
+            invalid.push(priceInput);
+        }
+
+        if (Number.isNaN(payload.gewicht) || payload.gewicht <= 0) {
+            markInvalidField(weightInput, "Bitte eine gültige Menge (> 0) eingeben.");
+            invalid.push(weightInput);
+        }
+
+        if (invalid.length) {
+            invalid[0].focus();
+            return false;
+        }
+
+        return true;
+    }
 
     function setHeader(productId) {
         if (!title || !subtitle) return;
@@ -162,7 +274,141 @@ function initProductPage() {
             input.value = "0";
         }
         loadedInventory = new Map();
+        renderAttributeRows([]);
         setHeader("");
+        clearRequiredHighlights();
+    }
+
+    function ensureCurrencyOption(code) {
+        const normalized = String(code || "").trim().toUpperCase();
+        if (!normalized) return;
+        const hasOption = Array.from(currencyInput.options).some((opt) => String(opt.value).toUpperCase() === normalized);
+        if (hasOption) return;
+
+        const option = document.createElement("option");
+        option.value = normalized;
+        option.textContent = `${normalized} — (unbekannt)`;
+        currencyInput.appendChild(option);
+    }
+
+    function ensureUnitOption(unit) {
+        const normalized = String(unit || "").trim();
+        if (!normalized) return;
+        const hasOption = Array.from(unitInput.options).some((opt) => String(opt.value) === normalized);
+        if (hasOption) return;
+
+        const option = document.createElement("option");
+        option.value = normalized;
+        option.textContent = `${normalized} — (unbekannt)`;
+        unitInput.appendChild(option);
+    }
+
+    function normalizeAttribute(attribute) {
+        if (!attribute) return { name: "", value: "" };
+        const name = String(attribute.name || attribute.label || attribute.attribute || "").trim();
+        const value = String(attribute.value || attribute.wert || attribute.text || "").trim();
+        return { name, value };
+    }
+
+    function syncAttributeSummary() {
+        if (!attributeSummary) return;
+        const count = attributeRowsHost ? attributeRowsHost.querySelectorAll(".attribute-row").length : 0;
+        attributeSummary.textContent = `${count} Attribut${count === 1 ? "" : "e"}`;
+    }
+
+    function createAttributeRow(attribute = {}, selected = false) {
+        const normalized = normalizeAttribute(attribute);
+        const row = document.createElement("div");
+        row.className = "attribute-row";
+
+        const toggle = document.createElement("input");
+        toggle.type = "checkbox";
+        toggle.className = "attribute-select-toggle";
+        toggle.checked = selected;
+
+        const nameSelect = document.createElement("select");
+        nameSelect.className = "attribute-name";
+
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Attribut wählen";
+        nameSelect.appendChild(placeholder);
+
+        ATTRIBUTE_OPTIONS.forEach((label) => {
+            const option = document.createElement("option");
+            option.value = label;
+            option.textContent = label;
+            nameSelect.appendChild(option);
+        });
+
+        if (normalized.name && !ATTRIBUTE_OPTIONS.includes(normalized.name)) {
+            const customOption = document.createElement("option");
+            customOption.value = normalized.name;
+            customOption.textContent = `${normalized.name} — benutzerdefiniert`;
+            nameSelect.appendChild(customOption);
+        }
+
+        nameSelect.value = normalized.name;
+
+        const valueInput = document.createElement("input");
+        valueInput.type = "text";
+        valueInput.className = "attribute-value";
+        valueInput.placeholder = "Wert eingeben...";
+        valueInput.value = normalized.value;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "btn btn-small btn-danger attribute-remove";
+        removeBtn.textContent = "×";
+        removeBtn.title = "Attribut entfernen";
+
+        const setSelectedClass = () => row.classList.toggle("is-selected", toggle.checked);
+        toggle.addEventListener("change", setSelectedClass);
+        setSelectedClass();
+
+        removeBtn.addEventListener("click", () => {
+            row.remove();
+            if (attributeRowsHost && !attributeRowsHost.querySelector(".attribute-row")) {
+                attributeRowsHost.appendChild(createAttributeRow());
+            }
+            syncAttributeSummary();
+        });
+
+        row.appendChild(toggle);
+        row.appendChild(nameSelect);
+        row.appendChild(valueInput);
+        row.appendChild(removeBtn);
+        return row;
+    }
+
+    function renderAttributeRows(attributes = []) {
+        if (!attributeRowsHost) return;
+        attributeRowsHost.innerHTML = "";
+        const rows = Array.isArray(attributes) && attributes.length ? attributes : [{}];
+        rows.forEach((attribute) => {
+            attributeRowsHost.appendChild(createAttributeRow(attribute));
+        });
+        syncAttributeSummary();
+    }
+
+    function collectAttributes() {
+        if (!attributeRowsHost) return [];
+        const attributes = [];
+        for (const row of attributeRowsHost.querySelectorAll(".attribute-row")) {
+            const nameSelect = row.querySelector(".attribute-name");
+            const valueInput = row.querySelector(".attribute-value");
+            if (!(nameSelect instanceof HTMLSelectElement) || !(valueInput instanceof HTMLInputElement)) continue;
+
+            const name = String(nameSelect.value || "").trim();
+            const value = String(valueInput.value || "").trim();
+            if (!name && !value) continue;
+            if (!name && value) {
+                throw new Error("Bitte wähle für jedes Attribut einen Namen aus.");
+            }
+
+            attributes.push({ name, value });
+        }
+        return attributes;
     }
 
     function productPayload() {
@@ -174,6 +420,7 @@ function initProductPage() {
             beschreibung: descriptionInput.value.trim(),
             gewicht: Number(weightInput.value),
             einheit: unitInput.value || "Stk",
+            attributes: collectAttributes(),
         };
     }
 
@@ -185,12 +432,16 @@ function initProductPage() {
         }
         nameInput.value = product.name || "";
         priceInput.value = product.preis ?? "";
+        ensureCurrencyOption(product.waehrung);
         currencyInput.value = product.waehrung || "EUR";
         supplierInput.value = product.lieferant || "";
         descriptionInput.value = product.beschreibung || "";
         weightInput.value = product.gewicht ?? "";
+        ensureUnitOption(product.einheit);
         unitInput.value = product.einheit || "Stk";
+        renderAttributeRows(Array.isArray(product.attributes) ? product.attributes : []);
         setHeader(productId);
+        clearRequiredHighlights();
     }
 
     function renderProductOptions() {
@@ -212,6 +463,15 @@ function initProductPage() {
 
     function renderWarehouseStocks() {
         warehouseStocks.innerHTML = "";
+        if (!warehouses.length) {
+            warehouseStocks.innerHTML = '<div class="warehouse-name">Keine Lager vorhanden.</div>';
+            warehouseHint.textContent = "Kein Lager vorhanden – bitte zuerst ein Lager in 'Lagerliste' anlegen.";
+            warehouseHint.classList.add("is-error");
+            return;
+        }
+
+        warehouseHint.textContent = "Mengen-Eintrag 0 bedeutet: kein Bestand in diesem Lager.";
+        warehouseHint.classList.remove("is-error");
         warehouses.forEach((warehouse) => {
             const row = document.createElement("div");
             row.className = "warehouse-row";
@@ -253,8 +513,8 @@ function initProductPage() {
 
     async function createOrUpdateProduct() {
         const payload = productPayload();
-        if (!payload.name || !payload.gewicht || Number.isNaN(payload.preis) || payload.preis < 0) {
-            throw new Error("Name, Gewicht und ein gültiger Preis sind Pflichtfelder.");
+        if (!validateRequiredFields(payload)) {
+            throw new Error("Name, Menge und ein gültiger Preis sind Pflichtfelder.");
         }
 
         const existingId = productSelect.value;
@@ -266,7 +526,7 @@ function initProductPage() {
             await loadProducts();
             productSelect.value = String(created.id);
             fillProductForm(created.id);
-            status.textContent = `Produkt ${created.id} erstellt.`;
+            setStatus(`Produkt ${created.id} erstellt.`);
             return String(created.id);
         }
 
@@ -277,7 +537,7 @@ function initProductPage() {
         await loadProducts();
         productSelect.value = String(existingId);
         fillProductForm(existingId);
-        status.textContent = `Produkt ${existingId} aktualisiert.`;
+        setStatus(`Produkt ${existingId} aktualisiert.`);
         return String(existingId);
     }
 
@@ -307,7 +567,7 @@ function initProductPage() {
     async function saveAll() {
         const productId = await createOrUpdateProduct();
         await saveInventoryForProduct(productId);
-        status.textContent = `Produkt ${productId} gespeichert.`;
+        setStatus(`Produkt ${productId} gespeichert.`);
     }
 
     async function deleteProduct() {
@@ -318,14 +578,14 @@ function initProductPage() {
         await loadProducts();
         productSelect.value = "";
         clearForm();
-        status.textContent = `Produkt ${productId} gelöscht.`;
+        setStatus(`Produkt ${productId} gelöscht.`);
     }
 
     async function discardChanges() {
         const productId = productSelect.value;
         fillProductForm(productId);
         await loadInventoryForProduct(productId);
-        status.textContent = productId ? "Änderungen verworfen." : "Zurückgesetzt.";
+        setStatus(productId ? "Änderungen verworfen." : "Zurückgesetzt.");
     }
 
     function bind(button, action) {
@@ -333,7 +593,7 @@ function initProductPage() {
             try {
                 await action();
             } catch (error) {
-                status.textContent = `Fehler: ${error.message}`;
+                setStatus(`Fehler: ${error.message}`, "error");
             }
         });
     }
@@ -341,33 +601,50 @@ function initProductPage() {
     productSelect.addEventListener("change", async () => {
         const productId = productSelect.value;
         fillProductForm(productId);
+        clearRequiredHighlights();
         try {
             await loadInventoryForProduct(productId);
         } catch (error) {
-            status.textContent = `Fehler beim Laden des Bestands: ${error.message}`;
+            setStatus(`Fehler beim Laden des Bestands: ${error.message}`, "error");
         }
+    });
+
+    [nameInput, priceInput, weightInput].forEach((control) => {
+        control.addEventListener("input", () => clearInvalidField(control));
+        control.addEventListener("change", () => clearInvalidField(control));
     });
 
     bind(saveBtn, saveAll);
     bind(discardBtn, discardChanges);
-    bind(resetBtn, discardChanges);
-    bind(deleteBtn, deleteProduct);
+    bind(deleteProductBtn, deleteProduct);
     addAttrBtn.addEventListener("click", () => {
-        status.textContent = "Attribut-Management ist noch nicht implementiert.";
+        if (!attributeRowsHost) return;
+        attributeRowsHost.appendChild(createAttributeRow());
+        syncAttributeSummary();
+    });
+    deleteBtn.addEventListener("click", () => {
+        if (!attributeRowsHost) return;
+        const selectedRows = Array.from(attributeRowsHost.querySelectorAll(".attribute-row.is-selected"));
+        const rowsToRemove = selectedRows.length ? selectedRows : Array.from(attributeRowsHost.querySelectorAll(".attribute-row")).slice(-1);
+        rowsToRemove.forEach((row) => row.remove());
+        if (!attributeRowsHost.querySelector(".attribute-row")) {
+            attributeRowsHost.appendChild(createAttributeRow());
+        }
+        syncAttributeSummary();
     });
 
     (async function init() {
         try {
-            status.textContent = "Lade Produkt- und Lagerdaten ...";
+            setStatus("Lade Produkt- und Lagerdaten ...");
             await Promise.all([loadProducts(), loadWarehouses()]);
             if (requestedEditId && products.some((product) => String(product.id) === String(requestedEditId))) {
                 productSelect.value = String(requestedEditId);
             }
             fillProductForm(productSelect.value);
             await loadInventoryForProduct(productSelect.value);
-            status.textContent = "Bereit.";
+            setStatus("Bereit.");
         } catch (error) {
-            status.textContent = `Initialisierung fehlgeschlagen: ${error.message}`;
+            setStatus(`Initialisierung fehlgeschlagen: ${error.message}`, "error");
         }
     })();
 }
@@ -380,9 +657,8 @@ function initWarehousePage() {
     const nameInput = document.getElementById("warehouseName");
     const addressInput = document.getElementById("warehouseAddress");
     const capacityInput = document.getElementById("warehouseCapacity");
-    const companyInput = document.getElementById("warehouseCompany");
 
-    if (!body || !status || !createBtn || !searchInput || !nameInput || !addressInput || !capacityInput || !companyInput) return;
+    if (!body || !status || !createBtn || !searchInput || !nameInput || !addressInput || !capacityInput) return;
 
     let warehouses = [];
 
@@ -408,7 +684,7 @@ function initWarehousePage() {
         body.innerHTML = "";
         if (!visibleWarehouses.length) {
             const row = document.createElement("tr");
-            row.innerHTML = '<td colspan="6">Keine Lager zur Suche gefunden.</td>';
+            row.innerHTML = '<td colspan="7">Keine Lager zur Suche gefunden.</td>';
             body.appendChild(row);
             return;
         }
@@ -419,17 +695,15 @@ function initWarehousePage() {
             const utilization = capacity > 0 ? Math.round((products / capacity) * 100) : 0;
             const row = document.createElement("tr");
             row.dataset.id = String(warehouse.id);
-            row.className = "warehouse-row-clickable";
-            row.tabIndex = 0;
-            row.setAttribute("aria-label", `Lager ${warehouse.lagername ?? warehouse.id} öffnen`);
             row.innerHTML = `
                 <td>${warehouse.lagername ?? ""}</td>
+                <td><span class="pill">${warehouse.id ?? ""}</span></td>
                 <td>${warehouse.adresse ?? ""}</td>
                 <td><span class="pill">${products} Produkte</span></td>
                 <td><span class="pill">${capacity} max.</span></td>
                 <td><span class="pill">${utilization}%</span></td>
                 <td class="actions">
-                    <button class="btn btn-small" type="button" data-open-id="${warehouse.id}">Öffnen</button>
+                    <button class="btn btn-small" type="button" data-open-id="${warehouse.id}">Produkte</button>
                     <button class="btn btn-small" type="button" data-delete-id="${warehouse.id}">Löschen</button>
                 </td>
             `;
@@ -460,9 +734,8 @@ function initWarehousePage() {
             lagername: nameInput.value.trim(),
             adresse: addressInput.value.trim(),
             max_plaetze: Number(capacityInput.value),
-            firma_id: Number(companyInput.value),
         };
-        if (!payload.lagername || !payload.adresse || !payload.max_plaetze || !payload.firma_id) {
+        if (!payload.lagername || !payload.adresse || !payload.max_plaetze) {
             throw new Error("Bitte alle Felder für das Lager ausfüllen.");
         }
 
@@ -518,21 +791,6 @@ function initWarehousePage() {
             }
             return;
         }
-
-        const row = target instanceof Element ? target.closest("tr[data-id]") : null;
-        if (!row) return;
-        const id = row.dataset.id;
-        if (!id) return;
-        openWarehouseDetail(id);
-    });
-
-    body.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter") return;
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-        const row = target.closest("tr[data-id]");
-        if (!row || !row.dataset.id) return;
-        openWarehouseDetail(row.dataset.id);
     });
 
     loadWarehouses().catch((error) => {
@@ -795,8 +1053,9 @@ function initStatsPage() {
     const topHost = document.getElementById("topProducts");
     const unitMixHost = document.getElementById("unitMixList");
     const supplierMixHost = document.getElementById("supplierMixList");
+    const attributeMixHost = document.getElementById("attributeMixList");
 
-    if (!warehousesValue || !productsValue || !capacityValue || !freeCapacityValue || !topProductValue || !topProductSub || !maxUtilValue || !maxUtilSub || !avgUtilValue || !activeWarehousesValue || !inventoryValueKpi || !mainCurrencyKpi || !topSupplierKpi || !topSupplierSub || !chartHost || !utilHost || !distributionHost || !currencyHost || !topHost || !unitMixHost || !supplierMixHost) return;
+    if (!warehousesValue || !productsValue || !capacityValue || !freeCapacityValue || !topProductValue || !topProductSub || !maxUtilValue || !maxUtilSub || !avgUtilValue || !activeWarehousesValue || !inventoryValueKpi || !mainCurrencyKpi || !topSupplierKpi || !topSupplierSub || !chartHost || !utilHost || !distributionHost || !currencyHost || !topHost || !unitMixHost || !supplierMixHost || !attributeMixHost) return;
 
     (async function run() {
         try {
@@ -818,6 +1077,16 @@ function initStatsPage() {
             const currencyTotals = new Map();
             const unitTotals = new Map();
             const supplierTotals = new Map();
+            const attributeTotals = new Map();
+
+            products.forEach((product) => {
+                const attributes = Array.isArray(product.attributes) ? product.attributes : [];
+                attributes.forEach((attribute) => {
+                    const name = String(attribute?.name || attribute?.label || "").trim();
+                    if (!name) return;
+                    attributeTotals.set(name, (attributeTotals.get(name) || 0) + 1);
+                });
+            });
 
             for (const warehouse of warehouses) {
                 const items = await api(`/inventory/${warehouse.id}/products`);
@@ -866,6 +1135,7 @@ function initStatsPage() {
             const mainCurrency = currencyEntries[0]?.[0] || "-";
             const supplierEntries = Array.from(supplierTotals.entries()).sort((a, b) => b[1] - a[1]);
             const topSupplier = supplierEntries[0] || null;
+            const attributeEntries = Array.from(attributeTotals.entries()).sort((a, b) => b[1] - a[1]);
 
             warehousesValue.textContent = String(totalWarehouses);
             productsValue.textContent = String(totalProducts);
@@ -1049,6 +1319,30 @@ function initStatsPage() {
                 li.appendChild(pill);
                 supplierMixHost.appendChild(li);
             });
+
+            attributeMixHost.innerHTML = "";
+            if (!attributeEntries.length) {
+                const li = document.createElement("li");
+                li.className = "list-item";
+                li.textContent = "Noch keine Attribute erfasst.";
+                attributeMixHost.appendChild(li);
+            } else {
+                attributeEntries.slice(0, 10).forEach(([attribute, qty]) => {
+                    const li = document.createElement("li");
+                    li.className = "list-item";
+
+                    const title = document.createElement("strong");
+                    title.textContent = attribute;
+
+                    const pill = document.createElement("span");
+                    pill.className = "pill";
+                    pill.textContent = `${qty} Produkte`;
+
+                    li.appendChild(title);
+                    li.appendChild(pill);
+                    attributeMixHost.appendChild(li);
+                });
+            }
         } catch (error) {
             warehousesValue.textContent = "!";
             productsValue.textContent = "!";
@@ -1093,7 +1387,59 @@ function initHistoryPage() {
         if (action === "delete") return "Gelöscht";
         if (action === "assign") return "Gebucht";
         if (action === "add") return "Hinzugefügt";
+        if (action === "set") return "Menge gesetzt";
+        if (action === "move") return "Verschoben";
+        if (action === "remove") return "Entfernt";
         return action || "–";
+    }
+
+    function prettifyLegacyDetails(entry) {
+        const details = String(entry?.details ?? "").trim();
+        if (!details) return "–";
+
+        let match = details.match(/^Bestand:\s*produkt_id=(\d+)\s+lager_id=(\d+)\s+menge=(-?\d+)$/i);
+        if (match) return `Produkt ${match[1]} in Lager ${match[2]}: +${match[3]}`;
+
+        match = details.match(/^Buchung:\s*produkt_id=(\d+)\s+lager_id=(\d+)\s+menge=(-?\d+)$/i);
+        if (match) return `Produkt ${match[1]} in Lager ${match[2]}: +${match[3]}`;
+
+        match = details.match(/^Bestand gesetzt:\s*produkt_id=(\d+)\s+lager_id=(\d+)\s+menge=(-?\d+)$/i);
+        if (match) return `Produkt ${match[1]} in Lager ${match[2]}: Menge auf ${match[3]} gesetzt`;
+
+        match = details.match(/^Bestand entfernt:\s*produkt_id=(\d+)\s+lager_id=(\d+)$/i);
+        if (match) return `Produkt ${match[1]} aus Lager ${match[2]} entfernt`;
+
+        match = details.match(/^Bestand verschoben:\s*produkt_id=(\d+)\s+von\s+lager_id=(\d+)\s+nach\s+lager_id=(\d+)\s+menge=(-?\d+)$/i);
+        if (match) return `Produkt ${match[1]}: ${match[4]} von Lager ${match[2]} nach Lager ${match[3]} verschoben`;
+
+        match = details.match(/^(Produkt|Lager)\s+(\d+):\s*(\{.*\})$/);
+        if (match) {
+            try {
+                const parsed = JSON.parse(match[3]);
+                const labels = {
+                    name: "Name",
+                    beschreibung: "Beschreibung",
+                    gewicht: "Gewicht",
+                    preis: "Preis",
+                    waehrung: "Währung",
+                    lieferant: "Lieferant",
+                    einheit: "Einheit",
+                    lagername: "Lagername",
+                    adresse: "Adresse",
+                    max_plaetze: "Max. Plätze",
+                    firma_id: "Firma-ID",
+                };
+                const parts = Object.entries(parsed).map(([key, value]) => {
+                    const label = labels[key] || key;
+                    return `${label}: ${value}`;
+                });
+                if (parts.length > 0) return `${match[1]} ${match[2]}: ${parts.join(", ")}`;
+            } catch {
+                // Leave original details if parsing fails.
+            }
+        }
+
+        return details;
     }
 
     function parseDate(value) {
@@ -1173,7 +1519,7 @@ function initHistoryPage() {
             tdAction.textContent = actionLabel(e.action);
 
             const tdDetails = document.createElement("td");
-            tdDetails.textContent = String(e.details ?? "");
+            tdDetails.textContent = prettifyLegacyDetails(e);
 
             row.appendChild(tdTime);
             row.appendChild(tdType);
@@ -1209,7 +1555,7 @@ function initHistoryPage() {
             const ts = formatDate(e.created_at);
             const type = typeLabel(e.entry_type);
             const action = actionLabel(e.action);
-            const details = String(e.details ?? "").replace(/\s+/g, " ").trim();
+            const details = prettifyLegacyDetails(e).replace(/\s+/g, " ").trim();
             return `${ts}\t${type}\t${action}\t${details}`;
         });
         const header = "Zeitpunkt\tTyp\tAktion\tDetails";
@@ -1244,9 +1590,9 @@ function initHistoryPage() {
 function initReportsPage() {
     const previewTitle = document.getElementById("reportsPreviewTitle");
     const previewStatus = document.getElementById("reportsPreviewStatus");
-    const previewCanvas = document.getElementById("reportPreviewCanvas");
+    const previewPages = document.getElementById("reportPreviewPages");
 
-    if (!previewTitle || !previewStatus || !previewCanvas) return;
+    if (!previewTitle || !previewStatus || !previewPages) return;
     if (typeof window.pdfjsLib === "undefined") {
         previewStatus.textContent = "PDF Vorschau-Bibliothek konnte nicht geladen werden.";
         return;
@@ -1258,6 +1604,7 @@ function initReportsPage() {
     async function renderPreview(reportKey) {
         previewTitle.textContent = `Preview: Report ${String(reportKey).toUpperCase()}`;
         previewStatus.textContent = "Lade PDF Vorschau ...";
+        previewPages.innerHTML = "";
 
         try {
             const response = await fetch(`/reports/${reportKey}/preview`);
@@ -1268,19 +1615,40 @@ function initReportsPage() {
             const bytes = await response.arrayBuffer();
             const loadingTask = pdfjsLib.getDocument({ data: bytes });
             const pdf = await loadingTask.promise;
-            const page = await pdf.getPage(1);
 
+            const fragment = document.createDocumentFragment();
             const maxWidth = 900;
-            const initialViewport = page.getViewport({ scale: 1 });
-            const scale = Math.min(1.5, maxWidth / initialViewport.width);
-            const viewport = page.getViewport({ scale });
 
-            const ctx = previewCanvas.getContext("2d");
-            previewCanvas.width = Math.ceil(viewport.width);
-            previewCanvas.height = Math.ceil(viewport.height);
+            for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+                const page = await pdf.getPage(pageNumber);
+                const initialViewport = page.getViewport({ scale: 1 });
+                const scale = Math.min(1.5, maxWidth / initialViewport.width);
+                const viewport = page.getViewport({ scale });
 
-            await page.render({ canvasContext: ctx, viewport }).promise;
-            previewStatus.textContent = `Seite 1 von ${pdf.numPages} gerendert.`;
+                const pageWrap = document.createElement("div");
+                pageWrap.className = "report-preview-page";
+
+                const pageLabel = document.createElement("div");
+                pageLabel.className = "report-preview-page-label";
+                pageLabel.textContent = `Seite ${pageNumber} von ${pdf.numPages}`;
+
+                const canvas = document.createElement("canvas");
+                canvas.setAttribute("aria-label", `PDF Vorschau Seite ${pageNumber}`);
+                canvas.width = Math.ceil(viewport.width);
+                canvas.height = Math.ceil(viewport.height);
+                canvas.className = "report-preview-canvas";
+
+                pageWrap.appendChild(pageLabel);
+                pageWrap.appendChild(canvas);
+                fragment.appendChild(pageWrap);
+
+                const ctx = canvas.getContext("2d");
+                await page.render({ canvasContext: ctx, viewport }).promise;
+                previewStatus.textContent = `Seite ${pageNumber} von ${pdf.numPages} gerendert.`;
+            }
+
+            previewPages.appendChild(fragment);
+            previewStatus.textContent = `${pdf.numPages} Seite(n) gerendert.`;
         } catch (error) {
             previewStatus.textContent = `Vorschau fehlgeschlagen: ${error.message}`;
         }
@@ -1304,6 +1672,7 @@ function initReportsPage() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    initUiPreferences();
     if (document.body.classList.contains("page-index")) initIndexPage();
     if (document.body.classList.contains("page-product")) initProductPage();
     if (document.body.classList.contains("page-warehouse") && !document.body.classList.contains("page-history") && !document.body.classList.contains("page-warehouse-detail")) initWarehousePage();

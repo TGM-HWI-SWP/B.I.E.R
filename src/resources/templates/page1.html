@@ -11,7 +11,7 @@
     <header class="topbar">
         <div class="topbar-inner">
             <a class="brand-logo" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Startseite">
-                <img src="{{ url_for('picture', filename='BIER_LOGO_SCHWARZ_COMPRESSED.png') }}" alt="B.I.E.R Logo" />
+                <img src="{{ url_for('picture', filename='BIER_ICON_COMPRESSED.png') }}" alt="B.I.E.R Logo" />
             </a>
             <nav class="tabs" aria-label="Page Auswahl">
                 <a class="tab" href="{{ url_for('index', theme=selected_theme) }}">Produkte</a>
@@ -26,12 +26,28 @@
                 <details class="settings-menu">
                     <summary class="settings-trigger" aria-label="Einstellungen öffnen" title="Einstellungen">⚙</summary>
                     <div class="settings-panel">
-                        <label class="theme-label" for="themeSelect">Style</label>
-                        <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
-                            {% for theme in theme_options %}
-                            <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="settings-field">
+                            <label class="theme-label" for="themeSelect">Design</label>
+                            <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+                                {% for theme in theme_options %}
+                                <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme_labels.get(theme, theme) }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="settings-field">
+                            <label class="theme-label" for="densitySelect">Dichte</label>
+                            <select id="densitySelect" class="theme-select" name="density" onchange="this.form.submit()">
+                                <option value="normal">Normal</option>
+                                <option value="compact">Kompakt</option>
+                            </select>
+                        </div>
+                        <div class="settings-field">
+                            <label class="theme-label" for="textScaleSelect">Schrift</label>
+                            <select id="textScaleSelect" class="theme-select" name="text_scale" onchange="this.form.submit()">
+                                <option value="normal">Standard</option>
+                                <option value="large">Groß</option>
+                            </select>
+                        </div>
                         <noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
                     </div>
                 </details>
@@ -43,7 +59,7 @@
         <section class="product-shell" aria-label="Produkt bearbeiten">
             <div class="product-top">
                 <a class="back" href="{{ url_for('index', theme=selected_theme) }}" aria-label="Zurück" title="Zurück">
-                    <span aria-hidden="true">←</span>
+                    <span aria-hidden="true">‹</span>
                 </a>
 
                 <div class="product-heading">
@@ -69,7 +85,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">🗂️</span>
                                 <span>Produkt</span>
                             </span>
                         </div>
@@ -83,7 +98,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">🏷️</span>
                                 <span>Name</span>
                             </span>
                         </div>
@@ -95,7 +109,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">💶</span>
                                 <span>Preis</span>
                             </span>
                         </div>
@@ -107,7 +120,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">💱</span>
                                 <span>Währung</span>
                             </span>
                         </div>
@@ -116,6 +128,18 @@
                                 <option value="EUR" selected>EUR — Euro</option>
                                 <option value="USD">USD — US-Dollar</option>
                                 <option value="GBP">GBP — Pfund</option>
+                                <option value="CHF">CHF — Schweizer Franken</option>
+                                <option value="JPY">JPY — Japanischer Yen</option>
+                                <option value="CNY">CNY — Chinesischer Yuan</option>
+                                <option value="SEK">SEK — Schwedische Krone</option>
+                                <option value="NOK">NOK — Norwegische Krone</option>
+                                <option value="DKK">DKK — Dänische Krone</option>
+                                <option value="PLN">PLN — Polnischer Złoty</option>
+                                <option value="CZK">CZK — Tschechische Krone</option>
+                                <option value="HUF">HUF — Ungarischer Forint</option>
+                                <option value="RON">RON — Rumänischer Leu</option>
+                                <option value="BGN">BGN — Bulgarischer Lew</option>
+                                <option value="TRY">TRY — Türkische Lira</option>
                             </select>
                         </div>
                     </div>
@@ -123,30 +147,43 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">⚖️</span>
-                                <span>Gewicht</span>
+                                <span>Menge</span>
                             </span>
                         </div>
                         <div class="field-control">
-                            <input id="productWeight" type="number" min="0.01" step="0.001" placeholder="0.000" required />
+                            <input id="productWeight" type="number" min="0.01" step="0.001" placeholder="Menge z.B. 0.5" aria-label="Menge" required />
                         </div>
                     </div>
 
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">📏</span>
                                 <span>Einheit</span>
                             </span>
                         </div>
                         <div class="field-control">
                             <select id="productUnit" aria-label="Einheit auswählen">
                                 <option value="Stk" selected>Stk</option>
+                                <option value="Paar">Paar</option>
                                 <option value="kg">kg</option>
                                 <option value="g">g</option>
+                                <option value="mg">mg</option>
                                 <option value="l">l</option>
                                 <option value="ml">ml</option>
+                                <option value="m">m</option>
+                                <option value="cm">cm</option>
+                                <option value="mm">mm</option>
+                                <option value="m²">m²</option>
+                                <option value="m³">m³</option>
                                 <option value="Packung">Packung</option>
+                                <option value="Set">Set</option>
+                                <option value="Karton">Karton</option>
+                                <option value="Box">Box</option>
+                                <option value="Beutel">Beutel</option>
+                                <option value="Rolle">Rolle</option>
+                                <option value="Palette">Palette</option>
+                                <option value="Dose">Dose</option>
+                                <option value="Flasche">Flasche</option>
                             </select>
                         </div>
                     </div>
@@ -154,20 +191,18 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">📦</span>
                                 <span>Bestand in Lagern</span>
                             </span>
                         </div>
                         <div class="field-control">
                             <div class="warehouse-stocks" id="warehouseStocks" aria-label="Bestand pro Lager"></div>
-                            <div class="warehouse-hint">Mengen-Eintrag 0 bedeutet: kein Bestand in diesem Lager.</div>
+                            <div class="warehouse-hint" id="warehouseStocksHint">Mengen-Eintrag 0 bedeutet: kein Bestand in diesem Lager.</div>
                         </div>
                     </div>
 
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">🚚</span>
                                 <span>Lieferant</span>
                             </span>
                         </div>
@@ -179,7 +214,6 @@
                     <div class="field-row">
                         <div class="field-label">
                             <span class="field-label-inner">
-                                <span class="field-label-icon" aria-hidden="true">📝</span>
                                 <span>Beschreibung</span>
                             </span>
                         </div>
@@ -187,17 +221,26 @@
                             <input id="productDescription" type="text" placeholder="Kurzbeschreibung..." />
                         </div>
                     </div>
+
+                    <div class="product-section attribute-section">
+                        <div class="section-title">Attribute</div>
+                        <div class="attribute-toolbar">
+                            <div class="attribute-note">Mehrere Attribute können über die Häkchen markiert und mit dem Löschen-Button entfernt werden.</div>
+                            <div class="attribute-summary" id="attributeSummary">0 Attribute</div>
+                        </div>
+                        <div id="attributeRows" class="attribute-rows" aria-label="Attributliste"></div>
+                    </div>
                 </div>
 
                 <div class="product-footer" aria-label="Aktionen">
                     <div class="footer-left">
                         <button class="btn btn-primary" id="saveProductBtn" type="button">Speichern</button>
                         <button class="btn" id="discardProductBtn" type="button">Verwerfen</button>
-                        <button class="btn btn-ghost" id="resetProductBtn" type="button">Zurücksetzen</button>
+                        <button class="btn btn-danger" id="deleteProductBtn" type="button">Produkt löschen</button>
                     </div>
                     <div class="footer-right">
                         <button class="btn" id="addAttributeBtn" type="button">+ Attribut hinzufügen</button>
-                        <button class="btn btn-danger" id="deleteAttributeBtn" type="button">Attribut löschen</button>
+                        <button class="btn btn-danger" id="deleteAttributeBtn" type="button">Markierte Attribute löschen</button>
                     </div>
                 </div>
 
@@ -215,7 +258,6 @@
                     <button class="btn" id="createProductBtn" type="button">Produkt anlegen</button>
                     <button class="btn" id="updateProductBtn" type="button">Produkt speichern</button>
                     <button class="btn" id="assignWarehouseBtn" type="button">In Lager buchen</button>
-                    <button class="btn" id="deleteProductBtn" type="button">Produkt löschen</button>
                 </div>
             </form>
         </section>

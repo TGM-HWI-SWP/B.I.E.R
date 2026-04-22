@@ -1,11 +1,12 @@
 """B.I.E.R Flask GUI - Route handlers for the inventory management system."""
 
 import os
-import json
 import io
 import tempfile
 import pathlib
+
 from flask import Flask, render_template, jsonify, request, send_from_directory, send_file
+
 from bierapp.backend.service.product_service import ProductService, InventoryService
 from bierapp.backend.service.warehouse_service import WarehouseService
 
@@ -18,6 +19,22 @@ def _theme_options() -> list[str]:
     """
     styles_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "resources", "stylesheets"))
     return sorted([name for name in os.listdir(styles_dir) if name.endswith(".css")])
+
+
+def _theme_labels() -> dict[str, str]:
+    """Return readable labels for stylesheet filenames."""
+
+    return {
+        "common.css": "Standard",
+        "dark.css": "Dunkel",
+        "forest.css": "Wald",
+        "high-contrast.css": "Hoher Kontrast",
+        "mono-invert.css": "Monochrom invertiert",
+        "neon.css": "Neon",
+        "ocean.css": "Ozean",
+        "sunset.css": "Sonnenuntergang",
+        "amber-night.css": "Bernstein Nacht",
+    }
 
 
 def _selected_theme() -> str:
@@ -65,6 +82,35 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             "details": row.get("details"),
         }
 
+    def _format_value(value) -> str:
+        if value is None:
+            return "-"
+        if isinstance(value, dict):
+            name = str(value.get("name") or value.get("label") or "").strip()
+            item_value = str(value.get("value") or value.get("wert") or value.get("text") or "").strip()
+            if name and item_value:
+                return f"{name}={item_value}"
+            if name:
+                return name
+            if item_value:
+                return item_value
+            return "-"
+        if isinstance(value, list):
+            items = [str(_format_value(item)) for item in value if _format_value(item) != "-"]
+            return "; ".join(items) if items else "-"
+        if isinstance(value, float):
+            return f"{value:.2f}"
+        return str(value)
+
+    def _format_changes(data: dict, labels: dict[str, str]) -> str:
+        if not isinstance(data, dict) or not data:
+            return "Keine Detailangaben"
+        parts = []
+        for key, value in data.items():
+            label = labels.get(key, key.replace("_", " ").capitalize())
+            parts.append(f"{label}: {_format_value(value)}")
+        return ", ".join(parts)
+
     def _generate_report_pdf(report_key: str) -> tuple[io.BytesIO, str]:
         report_id = str(report_key or "").lower()
         try:
@@ -102,6 +148,125 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
                 output_path.unlink(missing_ok=True)
             except Exception:
                 pass
+
+    def _build_stats() -> dict:
+        warehouses = warehouse_service.list_warehouses()
+        products = product_service.list_products()
+        inventory_rows = inventory_service.db.find_all("inventory")
+
+        product_meta = {
+            str(product.get("id")): {
+                "name": product.get("name") or f"Produkt {product.get('id')}",
+                "preis": float(product.get("preis") or 0),
+                "waehrung": product.get("waehrung") or "EUR",
+                "lieferant": product.get("lieferant") or "Unbekannt",
+                "einheit": product.get("einheit") or "Stk",
+            }
+            for product in products
+        }
+
+        warehouse_rows = []
+        product_totals: dict[str, int] = {}
+        currency_totals: dict[str, float] = {}
+        unit_totals: dict[str, int] = {}
+        supplier_totals: dict[str, int] = {}
+        attribute_totals: dict[str, int] = {}
+
+        for warehouse in warehouses:
+            wid = str(warehouse.get("id"))
+            items = [row for row in inventory_rows if str(row.get("lager_id")) == wid]
+            total_products = sum(int(row.get("menge") or 0) for row in items)
+            capacity = int(warehouse.get("max_plaetze") or 0)
+            util = (total_products / capacity) if capacity > 0 else 0
+
+            warehouse_rows.append(
+                {
+                    "id": warehouse.get("id"),
+                    "name": warehouse.get("lagername") or f"Lager {warehouse.get('id')}",
+                    "products": total_products,
+                    "capacity": capacity,
+                    "util": util,
+                }
+            )
+
+            for row in items:
+                product_id = str(row.get("produkt_id"))
+                qty = int(row.get("menge") or 0)
+                product_totals[product_id] = product_totals.get(product_id, 0) + qty
+
+                meta = product_meta.get(product_id, {
+                    "name": f"Produkt {product_id}",
+                    "preis": 0.0,
+                    "waehrung": "EUR",
+                    "lieferant": "Unbekannt",
+                    "einheit": "Stk",
+                })
+                currency_totals[meta["waehrung"]] = currency_totals.get(meta["waehrung"], 0.0) + meta["preis"] * qty
+                unit_totals[meta["einheit"]] = unit_totals.get(meta["einheit"], 0) + qty
+                supplier_totals[meta["lieferant"]] = supplier_totals.get(meta["lieferant"], 0) + qty
+
+        for product in products:
+            for attribute in product.get("attributes") or []:
+                if not isinstance(attribute, dict):
+                    continue
+                attribute_name = str(attribute.get("name") or attribute.get("label") or "").strip()
+                if not attribute_name:
+                    continue
+                attribute_totals[attribute_name] = attribute_totals.get(attribute_name, 0) + 1
+
+        warehouse_rows.sort(key=lambda item: item["products"], reverse=True)
+        utilization_rows = sorted(warehouse_rows, key=lambda item: item["util"], reverse=True)
+        top_products = sorted(
+            (
+                {
+                    "name": product_meta.get(product_id, {}).get("name", f"Produkt {product_id}"),
+                    "qty": qty,
+                }
+                for product_id, qty in product_totals.items()
+            ),
+            key=lambda item: item["qty"],
+            reverse=True,
+        )
+        currency_rows = sorted(currency_totals.items(), key=lambda item: item[1], reverse=True)
+        unit_rows = sorted(unit_totals.items(), key=lambda item: item[1], reverse=True)
+        supplier_rows = sorted(supplier_totals.items(), key=lambda item: item[1], reverse=True)
+        attribute_rows = sorted(attribute_totals.items(), key=lambda item: item[1], reverse=True)
+
+        total_warehouses = len(warehouses)
+        total_products = sum(item["products"] for item in warehouse_rows)
+        total_capacity = sum(item["capacity"] for item in warehouse_rows)
+        free_capacity = max(0, total_capacity - total_products)
+        avg_util = sum(item["util"] for item in warehouse_rows) / total_warehouses if total_warehouses else 0
+        active_warehouses = sum(1 for item in warehouse_rows if item["products"] > 0)
+        top_product = top_products[0] if top_products else None
+        max_util = utilization_rows[0] if utilization_rows else None
+        total_inventory_value = sum(value for _, value in currency_rows)
+        main_currency = currency_rows[0][0] if currency_rows else "-"
+        top_supplier = supplier_rows[0] if supplier_rows else None
+        total_attributes = sum(attribute_totals.values())
+
+        return {
+            "warehouses": total_warehouses,
+            "products": total_products,
+            "capacity": total_capacity,
+            "free_capacity": free_capacity,
+            "avg_util": avg_util,
+            "active_warehouses": active_warehouses,
+            "total_inventory_value": total_inventory_value,
+            "main_currency": main_currency,
+            "top_product": top_product,
+            "max_util": max_util,
+            "top_supplier": top_supplier,
+            "total_attributes": total_attributes,
+            "warehouse_rows": warehouse_rows,
+            "utilization_rows": utilization_rows,
+            "top_products": top_products,
+            "currency_rows": currency_rows,
+            "unit_rows": unit_rows,
+            "supplier_rows": supplier_rows,
+            "attribute_rows": attribute_rows,
+        }
+
     @app.route("/stylesheets/<path:filename>", endpoint="stylesheet", methods=["GET"])
     def stylesheet(filename: str):
         """Serve a stylesheet file from the resources directory.
@@ -139,7 +304,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for the main dashboard.
         """
         selected_theme = _selected_theme()
-        return render_template("index.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "index.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page1", methods=["GET"])
     def page1():
@@ -149,7 +319,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for product editing.
         """
         selected_theme = _selected_theme()
-        return render_template("page1.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page1.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page2", methods=["GET"])
     def page2():
@@ -159,7 +334,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for warehouse overview.
         """
         selected_theme = _selected_theme()
-        return render_template("page2.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page2.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page3", methods=["GET"])
     def page3():
@@ -169,7 +349,14 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for statistics dashboard.
         """
         selected_theme = _selected_theme()
-        return render_template("page3.html", selected_theme=selected_theme, theme_options=_theme_options())
+        stats = _build_stats()
+        return render_template(
+            "page3.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+            stats=stats,
+        )
 
     @app.route("/page4", methods=["GET"])
     def page4():
@@ -179,7 +366,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for change history.
         """
         selected_theme = _selected_theme()
-        return render_template("page4.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page4.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page5", methods=["GET"])
     def page5():
@@ -189,7 +381,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for managing products within a warehouse.
         """
         selected_theme = _selected_theme()
-        return render_template("page5.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page5.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page6", methods=["GET"])
     def page6():
@@ -199,7 +396,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for report preview and download.
         """
         selected_theme = _selected_theme()
-        return render_template("page6.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page6.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/reports/<report_key>/preview", methods=["GET"])
     def preview_report(report_key: str):
@@ -278,6 +480,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
                 waehrung=data.get("waehrung", "EUR"),
                 lieferant=data.get("lieferant", ""),
                 einheit=data.get("einheit", "Stk"),
+                attributes=data.get("attributes", []),
             )
             _log_history("product", "create", f"Produkt {product.get('id')}: {product.get('name', '')}")
             return jsonify(product), 201
@@ -326,7 +529,20 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data:
                 return jsonify({"error": "Request body must be JSON"}), 400
             updated_product = product_service.update_product(str(produkt_id), data)
-            _log_history("product", "update", f"Produkt {produkt_id}: {json.dumps(data, ensure_ascii=False)}")
+            changes = _format_changes(
+                data,
+                {
+                    "name": "Name",
+                    "beschreibung": "Beschreibung",
+                    "gewicht": "Gewicht",
+                    "preis": "Preis",
+                    "waehrung": "Währung",
+                    "lieferant": "Lieferant",
+                    "einheit": "Einheit",
+                    "attributes": "Attribute",
+                },
+            )
+            _log_history("product", "update", f"Produkt {produkt_id}: {changes}")
             return jsonify(updated_product), 200
         except KeyError:
             return jsonify({"error": "Product not found"}), 404
@@ -394,9 +610,10 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         """
         try:
             data = request.get_json()
-            if not data or not all(k in data for k in ["lagername", "adresse", "max_plaetze", "firma_id"]):
-                return jsonify({"error": "Missing required fields: lagername, adresse, max_plaetze, firma_id"}), 400
-            warehouse = warehouse_service.create_warehouse(lagername=data["lagername"], adresse=data["adresse"], max_plaetze=int(data["max_plaetze"]), firma_id=int(data["firma_id"]))
+            if not data or not all(k in data for k in ["lagername", "adresse", "max_plaetze"]):
+                return jsonify({"error": "Missing required fields: lagername, adresse, max_plaetze"}), 400
+            firma_id = int(data.get("firma_id", 1))
+            warehouse = warehouse_service.create_warehouse(lagername=data["lagername"], adresse=data["adresse"], max_plaetze=int(data["max_plaetze"]), firma_id=firma_id)
             _log_history("warehouse", "create", f"Lager {warehouse.get('id')}: {warehouse.get('lagername', '')} ({warehouse.get('adresse', '')})")
             return jsonify(warehouse), 201
         except ValueError as exc:
@@ -459,7 +676,16 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
                 return jsonify({"error": "No updatable fields provided"}), 400
 
             updated = warehouse_service.update_warehouse(str(lager_id), payload)
-            _log_history("warehouse", "update", f"Lager {lager_id}: {json.dumps(payload, ensure_ascii=False)}")
+            changes = _format_changes(
+                payload,
+                {
+                    "lagername": "Lagername",
+                    "adresse": "Adresse",
+                    "max_plaetze": "Max. Plätze",
+                    "firma_id": "Firma-ID",
+                },
+            )
+            _log_history("warehouse", "update", f"Lager {lager_id}: {changes}")
             return jsonify(updated), 200
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
@@ -484,7 +710,11 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data or not all(k in data for k in ["lager_id", "produkt_id", "menge"]):
                 return jsonify({"error": "Missing required fields: lager_id, produkt_id, menge"}), 400
             inventory_service.add_product(lager_id=int(data["lager_id"]), produkt_id=int(data["produkt_id"]), menge=int(data["menge"]))
-            _log_history("inventory", "add", f"Bestand: produkt_id={data.get('produkt_id')} lager_id={data.get('lager_id')} menge={data.get('menge')}")
+            _log_history(
+                "inventory",
+                "add",
+                f"Produkt {data.get('produkt_id')} in Lager {data.get('lager_id')}: +{data.get('menge')}",
+            )
             return jsonify({"status": "ok", "message": "Product added to inventory"}), 201
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
@@ -508,7 +738,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             produkt_id = int(data["produkt_id"])
             menge = int(data["menge"])
             inventory_service.set_quantity(lager_id=lager_id, produkt_id=produkt_id, menge=menge)
-            _log_history("inventory", "set", f"Bestand gesetzt: produkt_id={produkt_id} lager_id={lager_id} menge={menge}")
+            _log_history("inventory", "set", f"Produkt {produkt_id} in Lager {lager_id}: Menge auf {menge} gesetzt")
             return jsonify({"status": "ok"}), 200
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
@@ -556,7 +786,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             _log_history(
                 "inventory",
                 "move",
-                f"Bestand verschoben: produkt_id={produkt_id} von lager_id={source_lager_id} nach lager_id={target_lager_id} menge={menge}",
+                f"Produkt {produkt_id}: {menge} von Lager {source_lager_id} nach Lager {target_lager_id} verschoben",
             )
             return jsonify({"status": "ok", "source_qty": source_qty - menge, "target_qty": target_qty + menge}), 200
         except ValueError as exc:
@@ -570,7 +800,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
 
         try:
             inventory_service.remove_product(lager_id=int(lager_id), produkt_id=int(produkt_id))
-            _log_history("inventory", "remove", f"Bestand entfernt: produkt_id={produkt_id} lager_id={lager_id}")
+            _log_history("inventory", "remove", f"Produkt {produkt_id} aus Lager {lager_id} entfernt")
             return "", 204
         except KeyError:
             return jsonify({"error": "Inventory entry not found"}), 404
@@ -625,7 +855,11 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             if not data or not all(k in data for k in ["lager_id", "produkt_id", "menge"]):
                 return jsonify({"error": "Missing required fields: lager_id, produkt_id, menge"}), 400
             warehouse_service.add_product_to_warehouse(lager_id=int(data["lager_id"]), produkt_id=int(data["produkt_id"]), menge=int(data["menge"]))
-            _log_history("inventory", "assign", f"Buchung: produkt_id={data.get('produkt_id')} lager_id={data.get('lager_id')} menge={data.get('menge')}")
+            _log_history(
+                "inventory",
+                "assign",
+                f"Produkt {data.get('produkt_id')} in Lager {data.get('lager_id')}: +{data.get('menge')}",
+            )
             return jsonify({"status": "ok", "message": "Product assigned to warehouse"}), 201
         except ValueError as exc:
             return jsonify({"error": "Invalid data type", "details": str(exc)}), 400
