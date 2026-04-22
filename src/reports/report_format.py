@@ -24,23 +24,44 @@ def create_cover_page(pdf: PdfPages, title: str, subtitle: str, meta: Optional[D
 
     title_y = 0.78
     try:
-        logo_path = Path(__file__).resolve().parents[2] / "resources" / "pictures" / "BIER_LOGO_WEISS_COMPRESSED.png"
-        if logo_path.exists():
+        candidates = [
+            Path(__file__).resolve().parents[1] / "resources" / "pictures",
+            Path(__file__).resolve().parents[2] / "src" / "resources" / "pictures",
+            Path(__file__).resolve().parents[2] / "resources" / "pictures",
+        ]
+        logo_candidates = [
+            "BIER_LOGO_WEISS_COMPRESSED.png",
+            "BIER_LOGO_SCHWARZ_COMPRESSED.png",
+            "BIER_ICON_COMPRESSED.png",
+        ]
+        logo_path = None
+        for d in candidates:
+            try:
+                for name in logo_candidates:
+                    p = d / name
+                    if p.exists():
+                        logo_path = p
+                        break
+            except Exception:
+                continue
+            if logo_path:
+                break
+        if logo_path:
             img = Image.open(logo_path)
             img_w, img_h = img.size
             width_frac = 0.32
-            aspect = img_h / img_w
+            aspect = img_h / img_w if img_w else 1.0
             img_width = width_frac
             img_height = img_width * aspect
-            bottom = 0.68
-            if bottom + img_height > 0.94:
-                bottom = 0.94 - img_height
+            bottom = 0.78
+            max_top = 0.96
+            if bottom + img_height > max_top:
+                bottom = max_top - img_height
             left = max(0.02, 0.5 - img_width / 2)
             ax_img = fig.add_axes([left, bottom, img_width, img_height])
             ax_img.imshow(img, aspect='auto', alpha=0.95)
             ax_img.axis('off')
             title_y = bottom - 0.06
-            
     except Exception:
         pass
     plt.axis("off")

@@ -616,7 +616,7 @@ class ReportA(ReportPort):
         try:
             with PdfPages(output_path) as pdf:
                 meta = {"Erstellt": datetime.now().strftime("%Y-%m-%d %H:%M")}
-                create_cover_page(pdf, "Lagerbewegungen", "Nur Erstellungs-/Buchungs-Ereignisse, keine Lager-Erstellungen", meta)
+                create_cover_page(pdf, "Lagerbewegungen", "", meta)
                 create_table_pages(pdf, headers, table_rows, title="Lagerbewegungen", fit_one_page=False)
                 create_summary_page(pdf, {"Gefilterte Einträge": len(table_rows), "Top-Produkte": len(top_sales)})
         except Exception as e:
