@@ -519,9 +519,6 @@ function initWarehousePage() {
             const utilization = capacity > 0 ? Math.round((products / capacity) * 100) : 0;
             const row = document.createElement("tr");
             row.dataset.id = String(warehouse.id);
-            row.className = "warehouse-row-clickable";
-            row.tabIndex = 0;
-            row.setAttribute("aria-label", `Lager ${warehouse.lagername ?? warehouse.id} öffnen`);
             row.innerHTML = `
                 <td>${warehouse.lagername ?? ""}</td>
                 <td><span class="pill">${warehouse.id ?? ""}</span></td>
@@ -530,7 +527,7 @@ function initWarehousePage() {
                 <td><span class="pill">${capacity} max.</span></td>
                 <td><span class="pill">${utilization}%</span></td>
                 <td class="actions">
-                    <button class="btn btn-small" type="button" data-open-id="${warehouse.id}">Öffnen</button>
+                    <button class="btn btn-small" type="button" data-open-id="${warehouse.id}">Produkte</button>
                     <button class="btn btn-small" type="button" data-delete-id="${warehouse.id}">Löschen</button>
                 </td>
             `;
@@ -618,21 +615,6 @@ function initWarehousePage() {
             }
             return;
         }
-
-        const row = target instanceof Element ? target.closest("tr[data-id]") : null;
-        if (!row) return;
-        const id = row.dataset.id;
-        if (!id) return;
-        openWarehouseDetail(id);
-    });
-
-    body.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter") return;
-        const target = event.target;
-        if (!(target instanceof Element)) return;
-        const row = target.closest("tr[data-id]");
-        if (!row || !row.dataset.id) return;
-        openWarehouseDetail(row.dataset.id);
     });
 
     loadWarehouses().catch((error) => {

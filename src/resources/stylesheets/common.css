@@ -261,6 +261,11 @@ body {
   align-self: center;
 }
 
+.btn,
+.btn-small {
+  line-height: 1;
+}
+
 .btn:focus-visible {
   outline: 2px solid color-mix(in oklab, var(--focus) 30%, transparent);
   outline-offset: 2px;
@@ -847,18 +852,17 @@ body.page-warehouse tbody tr:hover td {
   background: var(--surface-2);
 }
 
-body.page-warehouse .warehouse-row-clickable {
-  cursor: pointer;
-}
-
-body.page-warehouse .warehouse-row-clickable:focus-within td {
-  background: var(--surface-2);
-}
-
 body.page-warehouse .actions {
   display: inline-flex;
   gap: 8px;
   align-items: center;
+}
+
+body.page-index .row-actions .btn-small,
+body.page-warehouse .actions .btn-small,
+body.page-warehouse-detail .detail-inline-actions .btn-small,
+body.page-reports .report-actions .btn-small {
+  min-width: 96px;
 }
 
 body.page-warehouse-detail .warehouse-detail-header {
@@ -867,6 +871,10 @@ body.page-warehouse-detail .warehouse-detail-header {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+body.page-warehouse-detail #backToWarehouseList {
+  min-width: 148px;
 }
 
 body.page-warehouse-detail .warehouse-edit-panel {
@@ -1237,6 +1245,10 @@ body.page-stats .dot.free {
   body.page-warehouse-detail .warehouse-edit-row,
   body.page-warehouse-detail .warehouse-add-row {
     grid-template-columns: 1fr;
+  }
+
+  body.page-warehouse-detail #backToWarehouseList {
+    width: 100%;
   }
 
   body.page-warehouse-detail table {
