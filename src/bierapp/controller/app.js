@@ -186,7 +186,7 @@ function initProductPage() {
         }
 
         if (Number.isNaN(payload.gewicht) || payload.gewicht <= 0) {
-            markInvalidField(weightInput, "Bitte ein gültiges Gewicht (> 0) eingeben.");
+            markInvalidField(weightInput, "Bitte eine gültige Menge (> 0) eingeben.");
             invalid.push(weightInput);
         }
 
@@ -328,7 +328,7 @@ function initProductPage() {
     async function createOrUpdateProduct() {
         const payload = productPayload();
         if (!validateRequiredFields(payload)) {
-            throw new Error("Name, Gewicht und ein gültiger Preis sind Pflichtfelder.");
+            throw new Error("Name, Menge und ein gültiger Preis sind Pflichtfelder.");
         }
 
         const existingId = productSelect.value;
