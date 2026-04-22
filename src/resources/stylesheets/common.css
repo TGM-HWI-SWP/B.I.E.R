@@ -967,13 +967,34 @@ body.page-reports .report-preview {
   padding: 12px;
 }
 
+body.page-reports .report-preview-pages {
+  display: grid;
+  gap: 16px;
+}
+
+body.page-reports .report-preview-page {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--surface) 98%, var(--bg));
+}
+
+body.page-reports .report-preview-page-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
+}
+
 body.page-reports .preview-top {
   display: grid;
   gap: 4px;
   margin-bottom: 10px;
 }
 
-body.page-reports #reportPreviewCanvas {
+body.page-reports .report-preview-canvas {
   width: 100%;
   max-width: 900px;
   border: 1px solid var(--border);

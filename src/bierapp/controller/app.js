@@ -1380,9 +1380,9 @@ function initHistoryPage() {
 function initReportsPage() {
     const previewTitle = document.getElementById("reportsPreviewTitle");
     const previewStatus = document.getElementById("reportsPreviewStatus");
-    const previewCanvas = document.getElementById("reportPreviewCanvas");
+    const previewPages = document.getElementById("reportPreviewPages");
 
-    if (!previewTitle || !previewStatus || !previewCanvas) return;
+    if (!previewTitle || !previewStatus || !previewPages) return;
     if (typeof window.pdfjsLib === "undefined") {
         previewStatus.textContent = "PDF Vorschau-Bibliothek konnte nicht geladen werden.";
         return;
@@ -1394,6 +1394,7 @@ function initReportsPage() {
     async function renderPreview(reportKey) {
         previewTitle.textContent = `Preview: Report ${String(reportKey).toUpperCase()}`;
         previewStatus.textContent = "Lade PDF Vorschau ...";
+        previewPages.innerHTML = "";
 
         try {
             const response = await fetch(`/reports/${reportKey}/preview`);
@@ -1404,19 +1405,40 @@ function initReportsPage() {
             const bytes = await response.arrayBuffer();
             const loadingTask = pdfjsLib.getDocument({ data: bytes });
             const pdf = await loadingTask.promise;
-            const page = await pdf.getPage(1);
 
+            const fragment = document.createDocumentFragment();
             const maxWidth = 900;
-            const initialViewport = page.getViewport({ scale: 1 });
-            const scale = Math.min(1.5, maxWidth / initialViewport.width);
-            const viewport = page.getViewport({ scale });
 
-            const ctx = previewCanvas.getContext("2d");
-            previewCanvas.width = Math.ceil(viewport.width);
-            previewCanvas.height = Math.ceil(viewport.height);
+            for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+                const page = await pdf.getPage(pageNumber);
+                const initialViewport = page.getViewport({ scale: 1 });
+                const scale = Math.min(1.5, maxWidth / initialViewport.width);
+                const viewport = page.getViewport({ scale });
 
-            await page.render({ canvasContext: ctx, viewport }).promise;
-            previewStatus.textContent = `Seite 1 von ${pdf.numPages} gerendert.`;
+                const pageWrap = document.createElement("div");
+                pageWrap.className = "report-preview-page";
+
+                const pageLabel = document.createElement("div");
+                pageLabel.className = "report-preview-page-label";
+                pageLabel.textContent = `Seite ${pageNumber} von ${pdf.numPages}`;
+
+                const canvas = document.createElement("canvas");
+                canvas.setAttribute("aria-label", `PDF Vorschau Seite ${pageNumber}`);
+                canvas.width = Math.ceil(viewport.width);
+                canvas.height = Math.ceil(viewport.height);
+                canvas.className = "report-preview-canvas";
+
+                pageWrap.appendChild(pageLabel);
+                pageWrap.appendChild(canvas);
+                fragment.appendChild(pageWrap);
+
+                const ctx = canvas.getContext("2d");
+                await page.render({ canvasContext: ctx, viewport }).promise;
+                previewStatus.textContent = `Seite ${pageNumber} von ${pdf.numPages} gerendert.`;
+            }
+
+            previewPages.appendChild(fragment);
+            previewStatus.textContent = `${pdf.numPages} Seite(n) gerendert.`;
         } catch (error) {
             previewStatus.textContent = `Vorschau fehlgeschlagen: ${error.message}`;
         }
