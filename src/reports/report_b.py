@@ -506,7 +506,7 @@ class ReportBNeu:
 
         with PdfPages(output_path) as pdf:
             meta = {"Erstellt": datetime.now().strftime("%Y-%m-%d %H:%M")}
-            create_cover_page(pdf, "History-Report B (gefiltert)", "Top/Bottom Produkte + Lagerverteilung", meta)
+            create_cover_page(pdf, "Produkt Ranking :)", "Top/Bottom Produkte + Lagerverteilung", meta)
 
             if top_sales:
                 create_bar_chart(pdf, top_names, top_values, "Top 10 Produkte nach Verkaufszahlen")
