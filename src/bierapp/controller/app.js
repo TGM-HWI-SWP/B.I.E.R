@@ -225,6 +225,18 @@ function initProductPage() {
         clearRequiredHighlights();
     }
 
+    function ensureCurrencyOption(code) {
+        const normalized = String(code || "").trim().toUpperCase();
+        if (!normalized) return;
+        const hasOption = Array.from(currencyInput.options).some((opt) => String(opt.value).toUpperCase() === normalized);
+        if (hasOption) return;
+
+        const option = document.createElement("option");
+        option.value = normalized;
+        option.textContent = `${normalized} — (unbekannt)`;
+        currencyInput.appendChild(option);
+    }
+
     function productPayload() {
         return {
             name: nameInput.value.trim(),
@@ -245,6 +257,7 @@ function initProductPage() {
         }
         nameInput.value = product.name || "";
         priceInput.value = product.preis ?? "";
+        ensureCurrencyOption(product.waehrung);
         currencyInput.value = product.waehrung || "EUR";
         supplierInput.value = product.lieferant || "";
         descriptionInput.value = product.beschreibung || "";
