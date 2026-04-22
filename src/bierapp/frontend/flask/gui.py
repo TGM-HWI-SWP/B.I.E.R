@@ -19,6 +19,22 @@ def _theme_options() -> list[str]:
     return sorted([name for name in os.listdir(styles_dir) if name.endswith(".css")])
 
 
+def _theme_labels() -> dict[str, str]:
+    """Return readable labels for stylesheet filenames."""
+
+    return {
+        "common.css": "Standard",
+        "dark.css": "Dunkel",
+        "forest.css": "Wald",
+        "high-contrast.css": "Hoher Kontrast",
+        "mono-invert.css": "Monochrom invertiert",
+        "neon.css": "Neon",
+        "ocean.css": "Ozean",
+        "sunset.css": "Sonnenuntergang",
+        "amber-night.css": "Bernstein Nacht",
+    }
+
+
 def _selected_theme() -> str:
     """Resolve the currently selected theme from the request query.
 
@@ -259,7 +275,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for the main dashboard.
         """
         selected_theme = _selected_theme()
-        return render_template("index.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "index.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page1", methods=["GET"])
     def page1():
@@ -269,7 +290,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for product editing.
         """
         selected_theme = _selected_theme()
-        return render_template("page1.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page1.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page2", methods=["GET"])
     def page2():
@@ -279,7 +305,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for warehouse overview.
         """
         selected_theme = _selected_theme()
-        return render_template("page2.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page2.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page3", methods=["GET"])
     def page3():
@@ -290,7 +321,13 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         """
         selected_theme = _selected_theme()
         stats = _build_stats()
-        return render_template("page3.html", selected_theme=selected_theme, theme_options=_theme_options(), stats=stats)
+        return render_template(
+            "page3.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+            stats=stats,
+        )
 
     @app.route("/page4", methods=["GET"])
     def page4():
@@ -300,7 +337,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for change history.
         """
         selected_theme = _selected_theme()
-        return render_template("page4.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page4.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page5", methods=["GET"])
     def page5():
@@ -310,7 +352,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for managing products within a warehouse.
         """
         selected_theme = _selected_theme()
-        return render_template("page5.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page5.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/page6", methods=["GET"])
     def page6():
@@ -320,7 +367,12 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for report preview and download.
         """
         selected_theme = _selected_theme()
-        return render_template("page6.html", selected_theme=selected_theme, theme_options=_theme_options())
+        return render_template(
+            "page6.html",
+            selected_theme=selected_theme,
+            theme_options=_theme_options(),
+            theme_labels=_theme_labels(),
+        )
 
     @app.route("/reports/<report_key>/preview", methods=["GET"])
     def preview_report(report_key: str):

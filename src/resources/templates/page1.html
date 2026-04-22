@@ -26,12 +26,28 @@
                 <details class="settings-menu">
                     <summary class="settings-trigger" aria-label="Einstellungen öffnen" title="Einstellungen">⋮</summary>
                     <div class="settings-panel">
-                        <label class="theme-label" for="themeSelect">Style</label>
-                        <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
-                            {% for theme in theme_options %}
-                            <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme[:-4] }}</option>
-                            {% endfor %}
-                        </select>
+                        <div class="settings-field">
+                            <label class="theme-label" for="themeSelect">Design</label>
+                            <select id="themeSelect" class="theme-select" name="theme" onchange="this.form.submit()">
+                                {% for theme in theme_options %}
+                                <option value="{{ theme }}" {% if theme == selected_theme %}selected{% endif %}>{{ theme_labels.get(theme, theme) }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="settings-field">
+                            <label class="theme-label" for="densitySelect">Dichte</label>
+                            <select id="densitySelect" class="theme-select" name="density" onchange="this.form.submit()">
+                                <option value="normal">Normal</option>
+                                <option value="compact">Kompakt</option>
+                            </select>
+                        </div>
+                        <div class="settings-field">
+                            <label class="theme-label" for="textScaleSelect">Schrift</label>
+                            <select id="textScaleSelect" class="theme-select" name="text_scale" onchange="this.form.submit()">
+                                <option value="normal">Standard</option>
+                                <option value="large">Groß</option>
+                            </select>
+                        </div>
                         <noscript><button class="btn btn-small" type="submit">Anwenden</button></noscript>
                     </div>
                 </details>

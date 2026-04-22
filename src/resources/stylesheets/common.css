@@ -29,6 +29,15 @@ body {
   color: var(--fg);
 }
 
+body.ui-density-compact {
+  --card-padding: 8px;
+  --results-min-height: 140px;
+}
+
+body.ui-text-large {
+  font-size: 17px;
+}
+
 .topbar {
   border-bottom: 1px solid var(--border);
   background: color-mix(in oklab, var(--surface) 90%, white 10%);
@@ -113,7 +122,7 @@ body {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 220px;
+  width: 280px;
   padding: 10px;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -122,6 +131,11 @@ body {
   display: grid;
   gap: 8px;
   z-index: 30;
+}
+
+.settings-field {
+  display: grid;
+  gap: 4px;
 }
 
 .settings-menu:not([open]) .settings-panel {
@@ -1356,4 +1370,73 @@ body.page-stats .dot.free {
     height: 56px;
     border-radius: 16px;
   }
+}
+
+body.ui-density-compact {
+  --card-padding: 8px;
+  --results-min-height: 140px;
+}
+
+body.ui-density-compact .topbar-inner {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+body.ui-density-compact .container {
+  padding-top: 12px;
+  padding-bottom: 22px;
+}
+
+body.ui-density-compact .card,
+body.ui-density-compact .settings-panel,
+body.ui-density-compact .table-wrap,
+body.ui-density-compact .report-item,
+body.ui-density-compact .report-preview-page {
+  padding: 8px;
+}
+
+body.ui-density-compact .grid,
+body.ui-density-compact .stats-summary,
+body.ui-density-compact .reports-grid,
+body.ui-density-compact .product-shell,
+body.ui-density-compact .product-editor,
+body.ui-density-compact .warehouse-shell,
+body.ui-density-compact .warehouse-detail-shell {
+  gap: 8px;
+}
+
+body.ui-density-compact .tab,
+body.ui-density-compact .btn,
+body.ui-density-compact .theme-select,
+body.ui-density-compact .settings-trigger {
+  height: 30px;
+}
+
+body.ui-text-large {
+  --page-title-size: 32px;
+}
+
+body.ui-text-large .tab,
+body.ui-text-large .btn,
+body.ui-text-large .theme-select,
+body.ui-text-large .settings-trigger,
+body.ui-text-large input,
+body.ui-text-large select,
+body.ui-text-large td,
+body.ui-text-large th,
+body.ui-text-large .note,
+body.ui-text-large .card-note,
+body.ui-text-large .theme-label,
+body.ui-text-large .report-item,
+body.ui-text-large .report-preview-page-label {
+  font-size: 1.05em;
+}
+
+body.ui-text-large .page-title {
+  letter-spacing: 0.3px;
+}
+
+body.ui-text-large .card-title,
+body.ui-text-large .kpi-label {
+  font-size: 1.02em;
 }

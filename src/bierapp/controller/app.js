@@ -26,6 +26,40 @@ async function api(endpoint, options = {}) {
     return payload;
 }
 
+function initUiPreferences() {
+    const densitySelect = document.getElementById("densitySelect");
+    const textScaleSelect = document.getElementById("textScaleSelect");
+
+    const storage = window.localStorage;
+    let density = storage.getItem("bier-density") || "normal";
+    let textScale = storage.getItem("bier-text-scale") || "normal";
+
+    function applyPreferences() {
+        document.body.classList.toggle("ui-density-compact", density === "compact");
+        document.body.classList.toggle("ui-text-large", textScale === "large");
+    }
+
+    if (densitySelect) {
+        densitySelect.value = density;
+        densitySelect.addEventListener("change", () => {
+            density = densitySelect.value === "compact" ? "compact" : "normal";
+            storage.setItem("bier-density", density);
+            applyPreferences();
+        });
+    }
+
+    if (textScaleSelect) {
+        textScaleSelect.value = textScale;
+        textScaleSelect.addEventListener("change", () => {
+            textScale = textScaleSelect.value === "large" ? "large" : "normal";
+            storage.setItem("bier-text-scale", textScale);
+            applyPreferences();
+        });
+    }
+
+    applyPreferences();
+}
+
 function initIndexPage() {
     const body = document.getElementById("productsTableBody");
     const search = document.getElementById("productSearch");
@@ -1462,6 +1496,7 @@ function initReportsPage() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    initUiPreferences();
     if (document.body.classList.contains("page-index")) initIndexPage();
     if (document.body.classList.contains("page-product")) initProductPage();
     if (document.body.classList.contains("page-warehouse") && !document.body.classList.contains("page-history") && !document.body.classList.contains("page-warehouse-detail")) initWarehousePage();
