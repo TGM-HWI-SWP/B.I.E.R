@@ -1,204 +1,355 @@
-from typing import List, Dict, Optional
-from matplotlib.backends.backend_pdf import PdfPages
-import pathlib
-import sys
-import json
-from datetime import datetime, timedelta
+from typing import List, Dict, Optional, Tuple
 from collections import defaultdict
-from bierapp.db.postgress import PostgresRepository
+import pathlib
+import shlex
+from datetime import datetime
 from bierapp.contracts import ReportPort
-from reports.report_format import create_cover_page, create_table_pages, create_bar_chart, create_summary_page
+
+from matplotlib.backends.backend_pdf import PdfPages
+
+from bierapp.db.postgress import PostgresRepository
+from reports.report_format import create_cover_page, create_table_pages, create_summary_page
 
 
 DEFAULT_OUTPUT_FILE = pathlib.Path("report_a.pdf")
-SAMPLE_BASE_DATE = datetime(2026, 1, 1, 8, 0, 0)
-ID_MODULO = 100
-INITIAL_OFFSET = 20
-MAX_DAY_SPAN = 60
-OUT_QUANTITY_MOD = 15
-OUT_DAYS_OFFSET = 10
 
 
-def _products_to_movements(product_list: List[Dict]) -> List[Dict]:
-    """Create deterministic synthetic movements from a product list.
+class ReportAHelpers:
+    """Container for parsing and table-building helpers previously at module level.
 
-    For each product we create one initial inbound movement and optionally one small outbound.
+    All methods are `@staticmethod` so they can be used without instantiating.
     """
-    movements: List[Dict] = []
-    for item in product_list:
-        raw_id = item.get("id") or item.get("product_id") or item.get("produkt_id") or ""
-        product_id = str(raw_id)
-        product_name = item.get("product") or item.get("product_name") or f"Produkt {product_id}"
 
+    @staticmethod
+    def find_int_after_key(details: str, key: str, allow_negative: bool = False) -> Optional[int]:
+        if not details:
+            return None
+        low = details.lower()
+        k = key.lower()
+        pos = low.find(k)
+        if pos == -1:
+            return None
+        start = pos + len(k)
+        s = details[start:]
+        i = 0
+        while i < len(s) and not (s[i].isdigit() or (allow_negative and s[i] == '-')):
+            i += 1
+        if i >= len(s):
+            return None
+        num_chars = []
+        if allow_negative and s[i] == '-':
+            num_chars.append('-')
+            i += 1
+        while i < len(s) and s[i].isdigit():
+            num_chars.append(s[i])
+            i += 1
+        if not num_chars or (num_chars == ['-']):
+            return None
         try:
-            numeric_seed = int(item.get("id"))
+            return int(''.join(num_chars))
         except Exception:
-            numeric_seed = abs(hash(product_id)) % ID_MODULO
+            return None
 
-        initial_quantity = (numeric_seed % ID_MODULO) + INITIAL_OFFSET
+    @staticmethod
+    def find_all_ints_after_key(details: str, key: str) -> List[int]:
+        result: List[int] = []
+        if not details:
+            return result
+        low = details.lower()
+        k = key.lower()
+        start = 0
+        while True:
+            pos = low.find(k, start)
+            if pos == -1:
+                break
+            val = ReportAHelpers.find_int_after_key(details[pos + len(k):], '', allow_negative=False)
+            if val is not None:
+                result.append(val)
+            start = pos + len(k)
+        return result
 
-        def _parse_possible_ts(src: Dict):
-            for k in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
-                if k in src and src.get(k) is not None:
-                    val = src.get(k)
-                    if not isinstance(raw, dict):
-                        raw = {}
+    @staticmethod
+    def first_int_in_slice(s: str) -> Optional[int]:
+        if not s:
+            return None
+        i = 0
+        while i < len(s) and not (s[i].isdigit() or s[i] == '-'):
+            i += 1
+        if i >= len(s):
+            return None
+        num_chars = []
+        if s[i] == '-':
+            num_chars.append('-')
+            i += 1
+        while i < len(s) and s[i].isdigit():
+            num_chars.append(s[i])
+            i += 1
+        try:
+            return int(''.join(num_chars))
+        except Exception:
+            return None
 
-                    keys = {
-                        "from": ("from", "quelle", "von", "source", "origin", "from_location"),
-                        "to": ("to", "ziel", "zu", "target", "destination", "to_location"),
-                        "from_id": ("lager_id", "source_lager", "from_warehouse"),
-                        "to_id": ("ziel_lager", "target_lager", "to_warehouse"),
-                    }
+    @staticmethod
+    def find_von_nach_numbers(details: str) -> Optional[Tuple[Optional[int], Optional[int]]]:
+        if not details:
+            return None
+        low = details.lower()
+        vpos = low.find('von')
+        npos = low.find('nach')
+        if vpos == -1 or npos == -1 or npos <= vpos:
+            return None
+        between = details[vpos + 3:npos]
+        after = details[npos + 4:]
+        a = ReportAHelpers.first_int_in_slice(between)
+        b = ReportAHelpers.first_int_in_slice(after)
+        return (a, b)
 
-                    def resolve(side: str):
-                        for k in keys[side]:
-                            v = raw.get(k)
-                            if v:
-                                return str(v)
-                        return None
+    @staticmethod
+    def find_lager_numbers(details: str) -> List[int]:
+        res: List[int] = []
+        if not details:
+            return res
+        low = details.lower()
+        start = 0
+        while True:
+            pos = low.find('lager', start)
+            if pos == -1:
+                break
+            tail = details[pos + len('lager'):]
+            i = 0
+            while i < len(tail) and tail[i] in ' :#-\t':
+                i += 1
+            num = ReportAHelpers.first_int_in_slice(tail[i:])
+            if num is not None:
+                res.append(num)
+            start = pos + len('lager')
+        return res
 
-                    src = resolve("from") or None
-                    dst = resolve("to") or None
+    @staticmethod
+    def find_text_von_nach(details: str) -> Optional[Tuple[str, str]]:
+        if not details:
+            return None
+        low = details.lower()
+        vpos = low.find('von')
+        npos = low.find('nach')
+        if vpos == -1 or npos == -1 or npos <= vpos:
+            return None
+        left = details[vpos + 3:npos].strip()
+        for sep in (',', ';', '\n'):
+            si = left.find(sep)
+            if si != -1:
+                left = left[:si]
+        right = details[npos + 4:].strip()
+        for sep in (',', ';', '\n'):
+            si = right.find(sep)
+            if si != -1:
+                right = right[:si]
+        if left or right:
+            return (left.strip(), right.strip())
+        return None
 
-                    
-                    def _map_value(v):
-                        if not v:
-                            return None
-                        if str(v).lower() == "neu":
-                            return str(v)
-                        s = str(v)
-                        if isinstance(self.warehouses, dict):
-                            mapped = self.warehouses.get(s)
-                            if mapped:
-                                return mapped
+    @staticmethod
+    def extract_name(details: str) -> Optional[str]:
+        if not details:
+            return None
+        low = details.lower()
+        
+        idx = low.find('produkt')
+        if idx != -1:
+            colon = details.find(':', idx)
+            if colon != -1:
+                tail = details[colon + 1:]
+                for sep in ('\n', ',', ';'):
+                    si = tail.find(sep)
+                    if si != -1:
+                        tail = tail[:si]
+                val = tail.strip()
+                if val:
+                    return val
+        try:
+            for tok in shlex.split(details):
+                if tok.lower().startswith('name='):
+                    return tok.split('=', 1)[1].strip().strip('"\'')
+        except Exception:
+            pass
+        pos = low.find('name=')
+        if pos != -1:
+            tail = details[pos + 5:].lstrip()
+            if tail and tail[0] in ('"', "'"):
+                q = tail[0]
+                end = tail.find(q, 1)
+                if end != -1:
+                    return tail[1:end].strip()
+                for sep in ('\n', ',', ';'):
+                    si = tail.find(sep)
+                    if si != -1:
+                        return tail[1:si].strip()
+                return tail[1:].strip()
+            else:
+                for sep in ('\n', ',', ';'):
+                    si = tail.find(sep)
+                    if si != -1:
+                        return tail[:si].strip()
+                return tail.split()[0].strip() if tail.split() else None
+        k = low.find('produktname')
+        if k != -1:
+            for sep in (':', '='):
+                si = details.find(sep, k)
+                if si != -1:
+                    tail = details[si + 1:]
+                    for s in ('\n', ',', ';'):
+                        j = tail.find(s)
+                        if j != -1:
+                            tail = tail[:j]
+                    val = tail.strip()
+                    if val:
+                        return val
+        return None
+
+    @staticmethod
+    def parse_history_row(row: Dict) -> Dict:
+        details = row.get("details") or ""
+        action = row.get("action")
+        entry_type = row.get("entry_type")
+        created_at = row.get("created_at")
+
+        
+        pid = None
+        lid = None
+        menge = None
+        try:
+            tokens = shlex.split(details)
+            for i, tok in enumerate(tokens):
+                if '=' in tok:
+                    k, v = tok.split('=', 1)
+                    k = k.lower().strip()
+                    v = v.strip().strip('"\'')
+                    if k in ('produkt_id', 'product_id', 'pid') and v.isdigit():
+                        pid = v
+                    if k in ('lager_id', 'lagerid', 'lid') and v.isdigit():
+                        lid = v
+                    if k in ('menge', 'quantity', 'qty'):
+                        try:
+                            menge = int(v)
+                        except Exception:
+                            pass
+                else:
+                    low = tok.lower().strip(',:')
+                    if low in ('menge', 'quantity', 'qty') and i + 1 < len(tokens):
+                        nxt = tokens[i + 1].strip(',:')
+                        if nxt.lstrip('-').isdigit():
                             try:
-                                si = str(int(float(s)))
-                                mapped = self.warehouses.get(si)
-                                if mapped:
-                                    return mapped
+                                menge = int(nxt)
                             except Exception:
                                 pass
-                        return s
+                    if low in ('produkt', 'product') and i + 1 < len(tokens):
+                        nxt = tokens[i + 1].strip(',:')
+                        if nxt.isdigit():
+                            pid = nxt
+        except Exception:
+            pass
 
-                    try:
-                        src = _map_value(src)
-                        dst = _map_value(dst)
-                    except Exception:
-                        pass
-
-                    if not src:
-                        src_id = resolve("from_id")
-                        if src_id:
-                            src = self.warehouses.get(str(src_id)) or str(src_id)
-
-                    if not dst:
-                        dst_id = resolve("to_id")
-                        if dst_id:
-                            dst = self.warehouses.get(str(dst_id)) or str(dst_id)
-
-                    if not src and not dst:
-                        return "Nicht angegeben"
-
-                    src = src or "(nicht angegeben)"
-                    dst = dst or "(nicht angegeben)"
-                    return f"{src} -> {dst}"
-            if k in item and item.get(k) is not None:
-                extras[k] = item.get(k)
-
-        if not any(k in extras for k in (
-            "from",
-            "quelle",
-            "von",
-            "source",
-            "origin",
-            "from_location",
-            "lager_id",
-            "source_lager",
-            "from_warehouse",
-            "to",
-            "ziel",
-            "zu",
-            "target",
-            "destination",
-            "to_location",
-            "ziel_lager",
-            "target_lager",
-            "to_warehouse",
-        )):
-
-            
-            dst_label = f"Filiale {numeric_seed % 3 + 1}"
-            
-            extras["from"] = "Neu"
-            extras["to"] = dst_label
-        movements.append({
-            "id": f"init-{product_id}",
-            "product_id": product_id,
-            "product_name": product_name,
-            "quantity_change": initial_quantity,
-            "timestamp": initial_timestamp,
-            **extras,
-        })
-
-        outbound_quantity = -(numeric_seed % OUT_QUANTITY_MOD)
-        if outbound_quantity != 0:
-            parsed_out = _parse_possible_ts(item)
-            if parsed_out and isinstance(parsed_out, datetime):
-                outbound_timestamp = parsed_out + timedelta(days=OUT_DAYS_OFFSET)
-            else:
-                outbound_timestamp = (SAMPLE_BASE_DATE + timedelta(days=(numeric_seed % MAX_DAY_SPAN) + OUT_DAYS_OFFSET))
-            out_extras = {k: item.get(k) for k in warehouse_keys if k in item and item.get(k) is not None}
-            if not out_extras:
-                out_extras = {}
-                out_extras["from"] = f"Lager {numeric_seed % 5 + 1}"
-                out_extras["to"] = f"Filiale {(numeric_seed + 1) % 3 + 1}"
-            movements.append({
-                "id": f"out-{product_id}",
-                "product_id": product_id,
-                "product_name": product_name,
-                "quantity_change": outbound_quantity,
-                "timestamp": outbound_timestamp,
-                **out_extras,
-            })
-
-    return movements
-
-
-
-class ReportA(ReportPort):
-    """Simplified, well-named implementation that produces a PDF report.
-
-    The class keeps the same external behavior: load movements (from JSON, DB
-    or bundled dummy), process them and create a PDF using the report_format helpers.
-    """
-
-    def __init__(self, db_repo: Optional[object] = None):
-        self.db = db_repo or (PostgresRepository() if PostgresRepository else None)
-        self.warehouses: Dict[str, str] = {}
-        if self.db:
-            try:
-                self.db.connect()
-
-                self._load_warehouses()
-            except Exception:
-                self.db = None
-
-    def _load_warehouses(self) -> None:
-        """Load warehouse id -> display name mapping from DB.
-
-        Keeps implementation tiny and forgiving about field names.
-        """
-        self.warehouses = {}
-        if not self.db:
-            return
+        
         try:
-            rows = self.db.find_all("warehouses") or []
+            if row.get('product_id'):
+                pid = pid or str(row.get('product_id'))
+            if row.get('lager_id'):
+                lid = lid or str(row.get('lager_id'))
+            if row.get('quantity') is not None and menge is None:
+                menge = int(row.get('quantity'))
+        except Exception:
+            pass
+
+        qty = menge if menge is not None else None
+
+        raw = dict(row) if isinstance(row, dict) else {"raw": row}
+        
+        try:
+            lids = ReportAHelpers.find_all_ints_after_key(details, "lager_id=")
+            if len(lids) >= 2:
+                raw.setdefault("source_lager", int(lids[0]))
+                raw.setdefault("target_lager", int(lids[1]))
+                raw.setdefault("from", int(lids[0]))
+                raw.setdefault("to", int(lids[1]))
+            else:
+                s = ReportAHelpers.find_int_after_key(details, "source_lager=")
+                t = ReportAHelpers.find_int_after_key(details, "target_lager=")
+                if s is not None:
+                    raw.setdefault("source_lager", int(s))
+                    raw.setdefault("from", int(s))
+                if t is not None:
+                    raw.setdefault("target_lager", int(t))
+                    raw.setdefault("to", int(t))
+                if not raw.get("from") and not raw.get("to"):
+                    nums = ReportAHelpers.find_von_nach_numbers(details)
+                    if nums:
+                        a, b = nums
+                        if a is not None:
+                            raw.setdefault("from", int(a))
+                            raw.setdefault("source_lager", int(a))
+                        if b is not None:
+                            raw.setdefault("to", int(b))
+                            raw.setdefault("target_lager", int(b))
+                if not raw.get("from") and not raw.get("to"):
+                    lids2 = ReportAHelpers.find_lager_numbers(details)
+                    if len(lids2) >= 2:
+                        raw.setdefault("from", int(lids2[0]))
+                        raw.setdefault("to", int(lids2[1]))
+                        raw.setdefault("source_lager", int(lids2[0]))
+                        raw.setdefault("target_lager", int(lids2[1]))
+                if not raw.get("from") and not raw.get("to"):
+                    names = ReportAHelpers.find_text_von_nach(details)
+                    if names:
+                        left, right = names
+                        if left:
+                            raw.setdefault("from", left)
+                        if right:
+                            raw.setdefault("to", right)
+        except Exception:
+            pass
+
+        return {"timestamp": created_at, "entry_type": entry_type, "action": action, "details": details, "product_id": pid, "lager_id": lid, "quantity": qty, "raw": raw}
+
+    @staticmethod
+    def format_ts(ts) -> str:
+        if ts is None:
+            return ""
+        try:
+            if isinstance(ts, datetime):
+                d = ts.astimezone() if ts.tzinfo else ts
+            else:
+                d = datetime.fromisoformat(str(ts))
+            return f"{d.day}.{d.month}.{d.year}, {d.strftime('%H:%M:%S')}"
+        except Exception:
+            return str(ts)
+
+    @staticmethod
+    def is_relevant(parsed: Dict) -> bool:
+        action = (parsed.get("action") or "").lower()
+        entry_type = (parsed.get("entry_type") or "").lower()
+        details = (parsed.get("details") or "").lower()
+        if any(k in entry_type for k in ("warehouse", "lager", "storage")):
+            return False
+       
+        if action == "create" and ("lager" in details or "warehouse" in details):
+            return False
+        if action in ("create", "assign", "book", "booking", "gebucht"):
+            return True
+        if parsed.get("quantity") is not None:
+            return True
+        return False
+
+    @staticmethod
+    def load_warehouses_from_db(db_repo: Optional[object]) -> Dict[str, str]:
+        res: Dict[str, str] = {}
+        if not db_repo:
+            return res
+        try:
+            rows = db_repo.find_all("warehouses") or []
             for w in rows:
                 wid = w.get("id") or w.get("lager_id") or w.get("warehouse_id")
                 if wid is None:
                     continue
-              
                 name = (
                     w.get("name")
                     or w.get("lagername")
@@ -209,433 +360,396 @@ class ReportA(ReportPort):
                     or w.get("warehouse")
                     or wid
                 )
-                self.warehouses[str(wid)] = str(name)
+                res[str(wid)] = str(name)
         except Exception:
+            return {}
+        return res
 
-            self.warehouses = {}
-
-    def _movement_direction(self, raw: Dict, quantity: float) -> str:
-        """Return a readable "Von -> Zu" label using explicit GUI fields.
-
-        Rules (simple):
-        - Prefer explicit `from`/`to` fields (several common names supported).
-        - If those are missing, try common warehouse id fields and resolve via
-          `self.warehouses` (if loaded).
-        - If either side is missing, show `(nicht angegeben)` for that side.
-        - If neither side is available return `Nicht angegeben`.
-        """
+    @staticmethod
+    def movement_direction(raw: Dict, quantity: float, warehouses: Dict[str, str]) -> str:
         if not isinstance(raw, dict):
             raw = {}
-
         keys = {
             "from": ("from", "quelle", "von", "source", "origin", "from_location"),
             "to": ("to", "ziel", "zu", "target", "destination", "to_location"),
             "from_id": ("lager_id", "source_lager", "from_warehouse"),
             "to_id": ("ziel_lager", "target_lager", "to_warehouse"),
         }
-
         def resolve(side: str):
             for k in keys[side]:
                 v = raw.get(k)
                 if v:
                     return str(v)
             return None
-
         src = resolve("from") or None
         dst = resolve("to") or None
-
         try:
-            if src and isinstance(self.warehouses, dict):
-                mapped = self.warehouses.get(str(src))
+            if src and isinstance(warehouses, dict):
+                mapped = warehouses.get(str(src))
                 if mapped:
                     src = mapped
-            if dst and isinstance(self.warehouses, dict):
-                mapped = self.warehouses.get(str(dst))
+            if dst and isinstance(warehouses, dict):
+                mapped = warehouses.get(str(dst))
                 if mapped:
                     dst = mapped
         except Exception:
             pass
-
         if not src:
             src_id = resolve("from_id")
             if src_id:
-                src = self.warehouses.get(str(src_id)) or str(src_id)
-
+                src = warehouses.get(str(src_id)) or str(src_id)
         if not dst:
             dst_id = resolve("to_id")
             if dst_id:
-                dst = self.warehouses.get(str(dst_id)) or str(dst_id)
-
+                dst = warehouses.get(str(dst_id)) or str(dst_id)
         if not src and not dst:
             return "Nicht angegeben"
-
         src = src or "(nicht angegeben)"
         dst = dst or "(nicht angegeben)"
         return f"{src} -> {dst}"
 
-    def get_data(self, input_path: Optional[pathlib.Path] = None) -> List[Dict]:
-        """Load movements from a file, the DB, or bundled dummy data.
+    @staticmethod
+    def build_table_rows(filtered: List[Dict], warehouses: Dict[str, str], product_names: Dict[str, str]) -> Tuple[List[str], List[List[str]]]:
+        rows: List[List[str]] = []
+        running: Dict[Tuple[str, str], float] = {}
 
-        If the loaded list looks like products (no quantity/timestamp keys)
-        we convert it to synthetic movements.
-        """
-        def looks_like_movements(sample: Dict) -> bool:
-            return "quantity_change" in sample or "timestamp" in sample
+        def _resolve_loc(p: Dict) -> str:
+            raw = p.get('raw') or {}
+            for k in ('from', 'quelle', 'von', 'source', 'origin', 'from_location'):
+                v = p.get(k) or raw.get(k)
+                if v:
+                    return str(v)
+            for k in ('to', 'ziel', 'zu', 'target', 'destination', 'to_location'):
+                v = p.get(k) or raw.get(k)
+                if v:
+                    return str(v)
+            for k in ('lager_id', 'source_lager', 'from_warehouse', 'ziel_lager', 'target_lager', 'to_warehouse'):
+                v = p.get(k) or raw.get(k)
+                if v is not None:
+                    try:
+                        return warehouses.get(str(v)) or str(v)
+                    except Exception:
+                        return str(v)
+            return '(nicht angegeben)'
 
-
-        if self.db:
-            for candidate_table in ("movements", "inventory_movements", "inventory"):
-                try:
-                    rows = self.db.find_all(candidate_table)
-                    if rows:
-                        for r in rows:
-                            found = False
-                            for k in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
-                                if k in r and r.get(k) is not None:
-                                    r["timestamp"] = r.get(k)
-                                    found = True
-                                    break
-                            if not found:
-                               
-                                r["timestamp"] = r.get("created_at") or None
-                        
-                        for r in rows:
-                           
-                            parsed = None
-                            for k in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
-                                if k in r and r.get(k) is not None:
-                                    v = r.get(k)
-                                    if isinstance(v, datetime):
-                                        parsed = v
-                                    else:
-                                        try:
-                                            parsed = datetime.fromisoformat(str(v))
-                                        except Exception:
-                                            try:
-                                                parsed = datetime.fromtimestamp(float(v))
-                                            except Exception:
-                                                parsed = None
-                                    break
-                           
-                            if r.get("timestamp") is None and parsed is not None:
-                                r["timestamp"] = parsed
-
-                        
-                            pid = r.get("product_id") or r.get("produkt_id") or r.get("id")
-                            if pid and getattr(self, "db", None):
-                                try:
-                                    prod = self.db.find_by_id("products", pid)
-                                except Exception:
-                                    prod = None
-                                if not prod:
-                                    try:
-                                        prod = self.db.find_by_id("products", int(pid))
-                                    except Exception:
-                                        prod = None
-                                if prod:
-                                    pname = prod.get("name") or prod.get("product") or prod.get("bezeichnung") or prod.get("label")
-                                    if pname:
-                                        r["product_name"] = str(pname)
-                                    r.setdefault("product", {})
-                                    r["product"]["id"] = prod.get("id")
-                                    r["product"]["name"] = pname or r["product"].get("name")
-
-                           
-                            try:
-                                if getattr(self, "warehouses", None):
-                                  
-                                    for sk in ("lager_id", "from_warehouse", "source_lager"):
-                                        if sk in r and r.get(sk) is not None:
-                                            rid = r.get(sk)
-                                            r["from"] = self.warehouses.get(str(rid)) or r.get("from")
-                                            break
-                                    
-                                    for tk in ("ziel_lager", "to_warehouse", "target_lager"):
-                                        if tk in r and r.get(tk) is not None:
-                                            tid = r.get(tk)
-                                            r["to"] = self.warehouses.get(str(tid)) or r.get("to")
-                                            break
-                            except Exception:
-                                pass
-
-                        return rows
-                except Exception:
-                    continue
-                
-        if input_path:
+        for p in filtered:
+            t = ReportAHelpers.format_ts(p.get('timestamp'))
+            pid = p.get('product_id') or ''
+            pname = (product_names.get(str(pid)) if pid else None) or (p.get('raw') or {}).get('product_name') or (p.get('raw') or {}).get('produkt_name') or ReportAHelpers.extract_name(p.get('details') or '') or (f'Produkt {pid}' if pid else '')
+            qty = float(p.get('quantity') or 0)
+            loc = _resolve_loc(p)
+            key = (str(pid), str(loc))
+            prev = running.get(key, 0.0)
+            curr = prev + qty
+            running[key] = curr
+            prev_disp = max(0.0, float(prev)); curr_disp = max(0.0, float(curr))
             try:
-                path = pathlib.Path(input_path)
-                if path.exists() and path.is_file():
-                    with path.open("r", encoding="utf-8") as reader:
-                        payload = json.load(reader)
-                        if isinstance(payload, list) and payload:
-                            first = payload[0]
-                            if isinstance(first, dict) and not looks_like_movements(first):
-                                return _products_to_movements(payload)
-                        return payload if isinstance(payload, list) else []
+                direction = ReportAHelpers.movement_direction(p.get('raw', {}), qty, warehouses)
+                if isinstance(direction, str):
+                    if '->' in direction:
+                        l, r = [s.strip() for s in direction.split('->', 1)]
+                        if l in ('(nicht angegeben)', 'Nicht angegeben', '') and r:
+                            direction = r
+                        elif r in ('(nicht angegeben)', 'Nicht angegeben', '') and l:
+                            direction = l
+                    elif direction in ('(nicht angegeben)', 'Nicht angegeben', '') and loc and loc not in ('(nicht angegeben)', ''):
+                        direction = loc
+            except Exception:
+                direction = loc
+            rows.append([t, direction, pname, f"{prev_disp:g}", f"{qty:g}", f"{curr_disp:g}"])
+        headers = ['Datum', 'Von->Zu', 'Produkt', 'Vorher', 'Änderung', 'Nachher']
+        return headers, rows
+
+
+def _find_all_ints_after_key(details: str, key: str) -> List[int]:
+    return ReportAHelpers.find_all_ints_after_key(details, key)
+
+
+def _first_int_in_slice(s: str) -> Optional[int]:
+    return ReportAHelpers.first_int_in_slice(s)
+
+
+def _find_von_nach_numbers(details: str) -> Optional[Tuple[Optional[int], Optional[int]]]:
+    return ReportAHelpers.find_von_nach_numbers(details)
+
+
+def _find_lager_numbers(details: str) -> List[int]:
+    return ReportAHelpers.find_lager_numbers(details)
+
+
+def _find_text_von_nach(details: str) -> Optional[Tuple[str, str]]:
+    return ReportAHelpers.find_text_von_nach(details)
+
+
+def _extract_name(details: str) -> Optional[str]:
+    return ReportAHelpers.extract_name(details)
+
+
+def _parse_history_row(row: Dict) -> Dict:
+    return ReportAHelpers.parse_history_row(row)
+
+
+def _format_ts(ts) -> str:
+    return ReportAHelpers.format_ts(ts)
+
+
+def _is_relevant(parsed: Dict) -> bool:
+    return ReportAHelpers.is_relevant(parsed)
+
+
+def _load_warehouses_from_db(db_repo: Optional[object]) -> Dict[str, str]:
+    return ReportAHelpers.load_warehouses_from_db(db_repo)
+
+
+def _movement_direction(raw: Dict, quantity: float, warehouses: Dict[str, str]) -> str:
+    return ReportAHelpers.movement_direction(raw, quantity, warehouses)
+
+
+def build_table_rows(filtered: List[Dict], warehouses: Dict[str, str], product_names: Dict[str, str]) -> Tuple[List[str], List[List[str]]]:
+    return ReportAHelpers.build_table_rows(filtered, warehouses, product_names)
+
+
+class ReportA(ReportPort):
+    """Report A (neu): PDF with cover, table pages and a short summary."""
+
+    def __init__(self, db_repo: Optional[object] = None):
+        self.db = db_repo or (PostgresRepository() if PostgresRepository else None)
+        
+        try:
+            self.warehouses = _load_warehouses_from_db(self.db)
+        except Exception:
+            self.warehouses = {}
+
+    def _movement_direction(self, raw: Dict, quantity: float) -> str:
+        """Instance wrapper so callers can use `report_a._movement_direction(raw, qty)`.
+
+        Delegates to the module helper but provides the instance's warehouses map.
+        """
+        try:
+            return _movement_direction(raw, quantity, getattr(self, "warehouses", {}) or {})
+        except Exception:
+            try:
+                return _movement_direction(raw, quantity, {})
+            except Exception:
+                return "Nicht angegeben"
+
+    def generate_report(self, output_path: pathlib.Path = DEFAULT_OUTPUT_FILE) -> Dict:
+        try:
+            if getattr(self.db, 'connect', None):
+                self.db.connect()
+        except Exception:
+            self.db = None
+
+        try:
+            history_rows = self.db.find_all('history') if getattr(self, 'db', None) else []
+        except Exception:
+            history_rows = []
+
+        parsed = [_parse_history_row(r) for r in history_rows]
+
+        def _to_dt(v):
+            if v is None:
+                return datetime.max
+            if isinstance(v, datetime):
+                return v
+            try:
+                return datetime.fromisoformat(str(v))
+            except Exception:
+                try:
+                    return datetime.fromtimestamp(float(v))
+                except Exception:
+                    return datetime.max
+
+        parsed.sort(key=lambda x: _to_dt(x.get('timestamp')))
+        filtered = [p for p in parsed if _is_relevant(p)]
+
+       
+        product_names: Dict[str, str] = {}
+        pids_to_fetch = set()
+        name_keys = ('product_name', 'produkt_name', 'name', 'title', 'product')
+        for p in filtered:
+            pid = p.get('product_id')
+            raw = p.get('raw') or {}
+            pname = next((str(raw.get(k)) for k in name_keys if raw.get(k)), None) or _extract_name(p.get('details') or '')
+            if not pname and pid:
+                pids_to_fetch.add(str(pid))
+            if pid and pname:
+                product_names[str(pid)] = pname
+
+        if pids_to_fetch and self.db and getattr(self.db, 'find_many_by_ids', None):
+            try:
+                rows = self.db.find_many_by_ids('products', list(pids_to_fetch))
+                for r in rows or []:
+                    pid = r.get('id')
+                    if pid is None:
+                        continue
+                    name = r.get('name')
+                    if name:
+                        product_names[str(pid)] = name
             except Exception:
                 pass
 
+        sales = defaultdict(float)
+        warehouse_net = defaultdict(float)
+        for p in filtered:
+            pid = p.get('product_id') or None
+            lid = p.get('lager_id') or None
+            qty = float(p.get('quantity') or 0)
+            if pid and qty < 0:
+                sales[pid] += abs(qty)
+            if lid:
+                warehouse_net[str(lid)] += qty
 
+        top_sales = sorted(sales.items(), key=lambda x: x[1], reverse=True)[:10]
+        bottom_sales = sorted(sales.items(), key=lambda x: x[1])[:10]
 
+        
         try:
-            dummy_path = pathlib.Path(__file__).parent / "dummy_data.json"
-            if dummy_path.exists():
-                with dummy_path.open("r", encoding="utf-8") as reader:
-                    payload = json.load(reader)
-                    if isinstance(payload, list) and payload:
-                        first = payload[0]
-                        if isinstance(first, dict) and not looks_like_movements(first):
-                            return _products_to_movements(payload)
-                    return payload if isinstance(payload, list) else []
+            self.warehouses = _load_warehouses_from_db(self.db)
+        except Exception:
+            self.warehouses = {}
+        warehouses = self.warehouses
+
+        headers, table_rows = build_table_rows(filtered, warehouses, product_names)
+
+      
+        try:
+            with PdfPages(output_path) as pdf:
+                meta = {"Erstellt": datetime.now().strftime("%Y-%m-%d %H:%M")}
+                create_cover_page(pdf, "Lagerbewegungen", "Nur Erstellungs-/Buchungs-Ereignisse, keine Lager-Erstellungen", meta)
+                create_table_pages(pdf, headers, table_rows, title="Lagerbewegungen", fit_one_page=False)
+                create_summary_page(pdf, {"Gefilterte Einträge": len(table_rows), "Top-Produkte": len(top_sales)})
+        except Exception as e:
+            return {"output": None, "error": str(e), "generated": datetime.now().isoformat()}
+
+        return {"output": str(output_path), "summary": {"total_filtered": len(table_rows), "top_count": len(top_sales), "bottom_count": len(bottom_sales)}, "generated": datetime.now().isoformat()}
+
+    def inventory_report(self, lager_id: str) -> List[Dict]:
+        """Return current inventory for a given warehouse id.
+
+        Builds running totals from history and aggregates by product for the
+        specified `lager_id`.
+        """
+        try:
+            rows = self.db.find_all('history') if getattr(self, 'db', None) else []
+        except Exception:
+            rows = []
+
+        parsed = [_parse_history_row(r) for r in rows]
+
+        def _to_dt(v):
+            if v is None:
+                return datetime.max
+            if isinstance(v, datetime):
+                return v
+            try:
+                return datetime.fromisoformat(str(v))
+            except Exception:
+                try:
+                    return datetime.fromtimestamp(float(v))
+                except Exception:
+                    return datetime.max
+
+        parsed.sort(key=lambda x: _to_dt(x.get('timestamp')))
+        filtered = [p for p in parsed if _is_relevant(p)]
+
+        inv: Dict[str, float] = {}
+        lid_str = str(lager_id)
+        for p in filtered:
+            pid = p.get('product_id')
+            if not pid:
+                continue
+            qty = float(p.get('quantity') or 0)
+            raw = p.get('raw') or {}
+
+           
+            if str(p.get('lager_id')) == lid_str:
+                inv[pid] = inv.get(pid, 0.0) + qty
+                continue
+
+            try:
+                src = raw.get('from') or raw.get('source_lager') or raw.get('source')
+                dst = raw.get('to') or raw.get('target_lager') or raw.get('target')
+                if src is not None and str(src) == lid_str:
+                    inv[pid] = inv.get(pid, 0.0) - qty
+                    continue
+                if dst is not None and str(dst) == lid_str:
+                    inv[pid] = inv.get(pid, 0.0) + qty
+                    continue
+            except Exception:
+                pass
+
+          
+            try:
+                lids = _find_all_ints_after_key(p.get('details') or '', 'lager_id=')
+                for ids in lids:
+                    if str(ids) == lid_str:
+                        inv[pid] = inv.get(pid, 0.0) + qty
+                        break
+            except Exception:
+                pass
+
+        product_names: Dict[str, str] = {}
+        try:
+            if getattr(self, 'db', None) and getattr(self.db, 'find_many_by_ids', None):
+                rows = self.db.find_many_by_ids('products', list(inv.keys()))
+                for r in rows or []:
+                    pid = r.get('id')
+                    if pid is None:
+                        continue
+                    name = r.get('name')
+                    if name:
+                        product_names[str(pid)] = name
         except Exception:
             pass
 
-        return []
-
-    def inventory_report(self, warehouse_id: str) -> List[Dict]:
-        """Return inventory entries for a warehouse.
-
-        When DB is present we enrich inventory rows with product info. When there
-        is no DB we support a pseudo-warehouse id 'default' by aggregating movements.
-        """
-        if self.db:
-            warehouse = self.db.find_by_id("warehouses", warehouse_id)
-            if not warehouse:
-                raise KeyError("Warehouse not found")
-
-            inventory_rows = self.db.find_all("inventory") or []
-            filtered = [r for r in inventory_rows if r.get("lager_id") == warehouse_id]
-            for row in filtered:
-                pid = row.get("produkt_id") or row.get("product_id")
-                if pid:
-                    product = self.db.find_by_id("products", pid)
-                    if product:
-                        row.setdefault("product", {})
-                        row["product"]["id"] = product.get("id")
-                        row["product"]["name"] = product.get("name")
-            return filtered
-
-        movements = self.get_data(None)
-        if not isinstance(movements, list):
-            raise KeyError("Warehouse not found")
-        
-        if movements and isinstance(movements[0], dict) and "quantity_change" in movements[0]:
-            stock_by_product: Dict[str, Dict] = {}
-            for row in movements:
-                pid = str(row.get("product_id") or row.get("produkt_id") or row.get("id"))
-                name = row.get("product_name") or row.get("product") or pid
-                qty = float(row.get("quantity_change") or 0)
-                if pid not in stock_by_product:
-                    stock_by_product[pid] = {"produkt_id": pid, "menge": 0.0, "product_name": name}
-                stock_by_product[pid]["menge"] += qty
-
-            if warehouse_id != "default":
-                raise KeyError("Warehouse not found")
-            return list(stock_by_product.values())
-
-        if isinstance(movements, list):
-            if warehouse_id != "default":
-                raise KeyError("Warehouse not found")
-            return [{"produkt_id": str(p.get("id")), "menge": 0, "product_name": p.get("product")} for p in movements]
-
-        raise KeyError("Warehouse not found")
+        out: List[Dict] = []
+        for pid, amt in inv.items():
+            out.append({'product_id': str(pid), 'product_name': product_names.get(str(pid)) or f'Produkt {pid}', 'menge': amt})
+        return out
 
     def statistics_report(self) -> Dict:
-        """Return simple aggregated statistics (products, warehouses, stock units)."""
-        if self.db:
-            products = self.db.find_all("products") or []
-            warehouses = self.db.find_all("warehouses") or []
-            inventory = self.db.find_all("inventory") or []
-            total_units = sum((item.get("menge") or 0) for item in inventory)
-            return {"total_products": len(products), "total_warehouses": len(warehouses), "total_stock_units": total_units}
+        """Return aggregated statistics matching `ReportPort` expectations."""
+        stats = {'total_products': 0, 'total_warehouses': 0, 'total_stock_units': 0}
+        try:
+            if getattr(self, 'db', None):
+                prods = self.db.find_all('products') or []
+                whs = self.db.find_all('warehouses') or []
+                stats['total_products'] = len(prods)
+                stats['total_warehouses'] = len(whs)
+        except Exception:
+            pass
 
-        movements = self.get_data(None)
-        if isinstance(movements, list) and movements and isinstance(movements[0], dict) and "quantity_change" in movements[0]:
-            product_ids = {str(m.get("product_id") or m.get("produkt_id") or m.get("id")) for m in movements}
-            total_units = sum(float(m.get("quantity_change") or 0) for m in movements)
-            return {"total_products": len(product_ids), "total_warehouses": 1, "total_stock_units": total_units}
-
-        if isinstance(movements, list):
-            return {"total_products": len(movements), "total_warehouses": 1, "total_stock_units": 0}
-
-        return {"total_products": 0, "total_warehouses": 0, "total_stock_units": 0}
-
-    def process_data(self, movements: List[Dict]) -> Dict:
-        """Normalize raw movement rows into structured products and sorted per-product movements."""
-        products_map: Dict[str, Dict] = {}
-        movements_by_product: Dict[str, List[Dict]] = defaultdict(list)
-
-        for row in movements:
-            product_id = row.get("product_id") or row.get("produkt_id") or str(row.get("id"))
-            product_name = row.get("product_name") or row.get("product") or row.get("name") or product_id
-            raw_qty = row.get("quantity_change") or row.get("menge") or row.get("quantity") or 0
+        try:
+            total = 0.0
+            wh_ids = []
             try:
-                quantity = float(raw_qty)
+                whs = self.db.find_all('warehouses') or []
+                for w in whs:
+                    wid = w.get('id') or w.get('lager_id')
+                    if wid is not None:
+                        wh_ids.append(str(wid))
             except Exception:
-                quantity = 0.0
+                wh_ids = []
 
-            timestamp_value = row.get("timestamp") or row.get("time") or row.get("created_at") or row.get("createdAt") or row.get("created")
-            parsed_ts = None
-            if timestamp_value:
-                if isinstance(timestamp_value, datetime):
-                    parsed_ts = timestamp_value
-                else:
+            for wid in wh_ids:
+                inv = self.inventory_report(wid)
+                for item in inv:
                     try:
-                        parsed_ts = datetime.fromisoformat(str(timestamp_value))
+                        total += float(item.get('menge') or 0)
                     except Exception:
-                        try:
-                            parsed_ts = datetime.fromtimestamp(float(timestamp_value))
-                        except Exception:
-                            parsed_ts = None
+                        pass
+            stats['total_stock_units'] = total
+        except Exception:
+            pass
 
-            entry = {
-                "product_id": product_id,
-                "product_name": product_name,
-                "quantity": quantity,
-                "timestamp": parsed_ts,
-                "raw": row,
-            }
-            movements_by_product[product_id].append(entry)
-            products_map[product_id] = {"id": product_id, "name": product_name}
-
-        for pid, entries in movements_by_product.items():
-            entries.sort(key=lambda e: e["timestamp"] or datetime.max)
-
-        if getattr(self, "db", None):
-            try:
-                for pid, pdata in products_map.items():
-                    current_name = pdata.get("name")
-                    if not current_name or str(current_name) == str(pid):
-                        prod = None
-                        try:
-                            prod = self.db.find_by_id("products", pid)
-                        except Exception:
-                            prod = None
-                        if not prod:
-                            try:
-                                prod = self.db.find_by_id("products", int(pid))
-                            except Exception:
-                                prod = None
-                        if prod:
-                            pname = prod.get("name") or prod.get("product") or prod.get("bezeichnung") or prod.get("label") or prod.get("product_name")
-                            if pname:
-                                products_map[pid]["name"] = str(pname)
-            except Exception:
-                pass
-
-        return {"products": products_map, "by_product": dict(movements_by_product)}
-
-    def generate_report(self, processed: Dict, output_path: pathlib.Path = DEFAULT_OUTPUT_FILE) -> Dict:
-        """Create a PDF report and return a summary dict."""
-        products = processed.get("products", {})
-        movements_by_product = processed.get("by_product", {})
-
-        flattened: List[Dict] = []
-        for pid, entries in movements_by_product.items():
-            for e in entries:
-                row = e.copy()
-                row["product_id"] = pid
-                row["product_name"] = products.get(pid, {}).get("name") or row.get("product_name") or pid
-                flattened.append(row)
-
-        flattened.sort(key=lambda x: x["timestamp"] or datetime.max)
-
-        table_rows: List[List[str]] = []
-        running_totals: Dict[str, float] = defaultdict(float)
-        for movement in flattened:
-            pid = movement.get("product_id")
-            name = movement.get("product_name") or pid
-            change = float(movement.get("quantity") or 0)
-            previous = running_totals[pid]
-            current = previous + change
-           
-            def _find_raw_ts(mov: Dict):
-                
-                ts = mov.get("timestamp")
-                if ts:
-                    return ts
-                raw = mov.get("raw") or {}
-                for key in ("timestamp", "time", "created_at", "createdAt", "created", "date"):
-                    if key in raw and raw.get(key) is not None:
-                        return raw.get(key)
-                return None
-
-            raw_ts = _find_raw_ts(movement)
-            time_str = ""
-            if isinstance(raw_ts, datetime):
-                try:
-                    if raw_ts.tzinfo:
-                        time_str = raw_ts.strftime("%Y-%m-%d %H:%M:%S %z")
-                    else:
-                        time_str = raw_ts.strftime("%Y-%m-%d %H:%M:%S")
-                except Exception:
-                    time_str = raw_ts.isoformat(sep=" ")
-            elif raw_ts:
-                
-                try:
-                    parsed = datetime.fromisoformat(str(raw_ts))
-                    time_str = parsed.strftime("%Y-%m-%d %H:%M:%S")
-                except Exception:
-                    try:
-                        parsed = datetime.fromtimestamp(float(raw_ts))
-                        time_str = parsed.strftime("%Y-%m-%d %H:%M:%S")
-                    except Exception:
-                        time_str = str(raw_ts)
-           
-            movement_direction = self._movement_direction(movement.get("raw", {}), change)
-            table_rows.append([time_str, name, movement_direction, f"{previous:g}", f"{change:g}", f"{current:g}"])
-            running_totals[pid] = current
-
-  
-        metadata = {
-            "Erstellt": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "Bewegungen": str(len(flattened)),
-            "Produkte": str(len(products)),
-        }
-
-
-        with PdfPages(output_path) as pdf:
-            create_cover_page(pdf, "Lagerbewegungsbericht", "Report A — Bewegungen aller Produkte", metadata)
-
-            headers = ["Datum", "Produkt", "Von -> Zu", "Menge", "Änderung", "Neue Menge"]
-            create_table_pages(pdf, headers, table_rows, title="Lagerbewegungen", fit_one_page=False)
-
-          
-            sales: Dict[str, float] = defaultdict(float)
-            for m in flattened:
-                qty = float(m.get("quantity") or 0)
-                if qty < 0:
-                    sales[m.get("product_name") or m.get("product_id")] += abs(qty)
-
-            top_sales = sorted(sales.items(), key=lambda x: x[1], reverse=True)[:10]
-            if top_sales:
-                names, values = zip(*top_sales)
-                create_bar_chart(pdf, list(names), list(values), "Top 10 Produkte nach Verkaufszahlen")
-
-            total_in = sum(float(m.get("quantity") or 0) for m in flattened if float(m.get("quantity") or 0) >= 0)
-            total_out = sum(abs(float(m.get("quantity") or 0)) for m in flattened if float(m.get("quantity") or 0) < 0)
-            summary_data = {"Total Bewegungen": len(flattened), "Total eingegangen": int(total_in), "Total verkauft/ausgang": int(total_out)}
-            create_summary_page(pdf, summary_data)
-
-        result_summary = {
-            "output": str(output_path),
-            "summary": {
-                "total_movements": len(flattened),
-                "total_in": total_in,
-                "total_out": total_out,
-                "top_sales": [{"product_name": n, "sold": v} for n, v in top_sales],
-            },
-        }
-
-        return result_summary
+        return stats
 
 
 if __name__ == "__main__":
+    import sys
     arg = sys.argv[1] if len(sys.argv) > 1 else None
-    report = ReportA()
-    raw = report.get_data(arg)
-    processed = report.process_data(raw)
-    output = report.generate_report(processed)
-    print(json.dumps(output, indent=4, default=str))
-
+    r = ReportA()
+    out = r.generate_report(pathlib.Path(arg) if arg else DEFAULT_OUTPUT_FILE)
+    import json
+    print(json.dumps(out, indent=2))
