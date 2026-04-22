@@ -97,7 +97,7 @@
                     {% for row in stats.warehouse_rows if stats %}
                     <div class="bar-row">
                         <div class="bar-label">{{ row.name }}</div>
-                        <div class="bar-track"><div class="bar-fill" style="width: {{ ((row.products / (stats.warehouse_rows[0].products if stats and stats.warehouse_rows else 1)) * 100) | round(0) }}%"></div></div>
+                        <div class="bar-track"><div class="bar-fill" style="width: {{ ((row.products / (stats.warehouse_rows[0].products if stats and stats.warehouse_rows and stats.warehouse_rows[0].products else 1)) * 100) | round(0) }}%"></div></div>
                         <div class="bar-value">{{ row.products }} Stk.</div>
                     </div>
                     {% endfor %}
@@ -169,7 +169,7 @@
                     {% for currency, value in stats.currency_rows if stats %}
                     <div class="bar-row">
                         <div class="bar-label">{{ currency }}</div>
-                        <div class="bar-track"><div class="bar-fill" style="width: {{ (value / (stats.currency_rows[0][1] if stats and stats.currency_rows else 1)) * 100 | round(0) }}%"></div></div>
+                        <div class="bar-track"><div class="bar-fill" style="width: {{ (value / (stats.currency_rows[0][1] if stats and stats.currency_rows and stats.currency_rows[0][1] else 1)) * 100 | round(0) }}%"></div></div>
                         <div class="bar-value">{{ '%.2f'|format(value) }} {{ currency }}</div>
                     </div>
                     {% endfor %}
