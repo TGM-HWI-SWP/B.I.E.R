@@ -8,6 +8,7 @@
   --surface-2: #eef2ff;
   --border: #cbd5e1;
   --focus: #2563eb;
+  --danger: #dc2626;
   --shadow: 0 8px 24px color-mix(in oklab, var(--fg) 10%, transparent);
   --radius: 12px;
 
@@ -585,6 +586,25 @@ body.page-product .field-row {
   align-items: center;
   padding: 12px 18px;
   border-top: 1px solid var(--border);
+}
+
+body.page-product .field-row.is-invalid {
+  background: color-mix(in oklab, var(--danger) 9%, var(--surface));
+}
+
+body.page-product .field-row.is-invalid input,
+body.page-product .field-row.is-invalid select {
+  border-color: color-mix(in oklab, var(--danger) 65%, var(--border));
+  background: color-mix(in oklab, var(--danger) 6%, var(--surface));
+}
+
+body.page-product .field-row.is-invalid .field-label {
+  color: color-mix(in oklab, var(--danger) 55%, var(--muted));
+}
+
+body.page-product .product-status small.status-error {
+  color: var(--danger);
+  font-weight: 700;
 }
 
 body.page-product .field-label {

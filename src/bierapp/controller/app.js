@@ -139,6 +139,65 @@ function initProductPage() {
     let warehouses = [];
     let loadedInventory = new Map();
 
+    function setStatus(message, kind = "info") {
+        status.textContent = message;
+        status.classList.remove("status-error");
+        if (kind === "error") {
+            status.classList.add("status-error");
+        }
+    }
+
+    function markInvalidField(control, message) {
+        if (!control) return;
+        control.classList.add("is-invalid");
+        control.setAttribute("aria-invalid", "true");
+        if (message) control.title = message;
+        const row = control.closest(".field-row");
+        if (row) row.classList.add("is-invalid");
+    }
+
+    function clearInvalidField(control) {
+        if (!control) return;
+        control.classList.remove("is-invalid");
+        control.removeAttribute("aria-invalid");
+        control.removeAttribute("title");
+        const row = control.closest(".field-row");
+        if (row) row.classList.remove("is-invalid");
+    }
+
+    function clearRequiredHighlights() {
+        clearInvalidField(nameInput);
+        clearInvalidField(priceInput);
+        clearInvalidField(weightInput);
+    }
+
+    function validateRequiredFields(payload) {
+        clearRequiredHighlights();
+        const invalid = [];
+
+        if (!payload.name) {
+            markInvalidField(nameInput, "Bitte einen Produktnamen eingeben.");
+            invalid.push(nameInput);
+        }
+
+        if (Number.isNaN(payload.preis) || payload.preis < 0) {
+            markInvalidField(priceInput, "Bitte einen gültigen Preis (>= 0) eingeben.");
+            invalid.push(priceInput);
+        }
+
+        if (Number.isNaN(payload.gewicht) || payload.gewicht <= 0) {
+            markInvalidField(weightInput, "Bitte ein gültiges Gewicht (> 0) eingeben.");
+            invalid.push(weightInput);
+        }
+
+        if (invalid.length) {
+            invalid[0].focus();
+            return false;
+        }
+
+        return true;
+    }
+
     function setHeader(productId) {
         if (!title || !subtitle) return;
         if (!productId) {
@@ -163,6 +222,7 @@ function initProductPage() {
         }
         loadedInventory = new Map();
         setHeader("");
+        clearRequiredHighlights();
     }
 
     function productPayload() {
@@ -191,6 +251,7 @@ function initProductPage() {
         weightInput.value = product.gewicht ?? "";
         unitInput.value = product.einheit || "Stk";
         setHeader(productId);
+        clearRequiredHighlights();
     }
 
     function renderProductOptions() {
@@ -253,7 +314,7 @@ function initProductPage() {
 
     async function createOrUpdateProduct() {
         const payload = productPayload();
-        if (!payload.name || !payload.gewicht || Number.isNaN(payload.preis) || payload.preis < 0) {
+        if (!validateRequiredFields(payload)) {
             throw new Error("Name, Gewicht und ein gültiger Preis sind Pflichtfelder.");
         }
 
@@ -266,7 +327,7 @@ function initProductPage() {
             await loadProducts();
             productSelect.value = String(created.id);
             fillProductForm(created.id);
-            status.textContent = `Produkt ${created.id} erstellt.`;
+            setStatus(`Produkt ${created.id} erstellt.`);
             return String(created.id);
         }
 
@@ -277,7 +338,7 @@ function initProductPage() {
         await loadProducts();
         productSelect.value = String(existingId);
         fillProductForm(existingId);
-        status.textContent = `Produkt ${existingId} aktualisiert.`;
+        setStatus(`Produkt ${existingId} aktualisiert.`);
         return String(existingId);
     }
 
@@ -307,7 +368,7 @@ function initProductPage() {
     async function saveAll() {
         const productId = await createOrUpdateProduct();
         await saveInventoryForProduct(productId);
-        status.textContent = `Produkt ${productId} gespeichert.`;
+        setStatus(`Produkt ${productId} gespeichert.`);
     }
 
     async function deleteProduct() {
@@ -318,14 +379,14 @@ function initProductPage() {
         await loadProducts();
         productSelect.value = "";
         clearForm();
-        status.textContent = `Produkt ${productId} gelöscht.`;
+        setStatus(`Produkt ${productId} gelöscht.`);
     }
 
     async function discardChanges() {
         const productId = productSelect.value;
         fillProductForm(productId);
         await loadInventoryForProduct(productId);
-        status.textContent = productId ? "Änderungen verworfen." : "Zurückgesetzt.";
+        setStatus(productId ? "Änderungen verworfen." : "Zurückgesetzt.");
     }
 
     function bind(button, action) {
@@ -333,7 +394,7 @@ function initProductPage() {
             try {
                 await action();
             } catch (error) {
-                status.textContent = `Fehler: ${error.message}`;
+                setStatus(`Fehler: ${error.message}`, "error");
             }
         });
     }
@@ -341,11 +402,17 @@ function initProductPage() {
     productSelect.addEventListener("change", async () => {
         const productId = productSelect.value;
         fillProductForm(productId);
+        clearRequiredHighlights();
         try {
             await loadInventoryForProduct(productId);
         } catch (error) {
-            status.textContent = `Fehler beim Laden des Bestands: ${error.message}`;
+            setStatus(`Fehler beim Laden des Bestands: ${error.message}`, "error");
         }
+    });
+
+    [nameInput, priceInput, weightInput].forEach((control) => {
+        control.addEventListener("input", () => clearInvalidField(control));
+        control.addEventListener("change", () => clearInvalidField(control));
     });
 
     bind(saveBtn, saveAll);
@@ -358,16 +425,16 @@ function initProductPage() {
 
     (async function init() {
         try {
-            status.textContent = "Lade Produkt- und Lagerdaten ...";
+            setStatus("Lade Produkt- und Lagerdaten ...");
             await Promise.all([loadProducts(), loadWarehouses()]);
             if (requestedEditId && products.some((product) => String(product.id) === String(requestedEditId))) {
                 productSelect.value = String(requestedEditId);
             }
             fillProductForm(productSelect.value);
             await loadInventoryForProduct(productSelect.value);
-            status.textContent = "Bereit.";
+            setStatus("Bereit.");
         } catch (error) {
-            status.textContent = `Initialisierung fehlgeschlagen: ${error.message}`;
+            setStatus(`Initialisierung fehlgeschlagen: ${error.message}`, "error");
         }
     })();
 }
