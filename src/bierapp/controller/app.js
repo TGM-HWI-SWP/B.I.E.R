@@ -237,6 +237,18 @@ function initProductPage() {
         currencyInput.appendChild(option);
     }
 
+    function ensureUnitOption(unit) {
+        const normalized = String(unit || "").trim();
+        if (!normalized) return;
+        const hasOption = Array.from(unitInput.options).some((opt) => String(opt.value) === normalized);
+        if (hasOption) return;
+
+        const option = document.createElement("option");
+        option.value = normalized;
+        option.textContent = `${normalized} — (unbekannt)`;
+        unitInput.appendChild(option);
+    }
+
     function productPayload() {
         return {
             name: nameInput.value.trim(),
@@ -262,6 +274,7 @@ function initProductPage() {
         supplierInput.value = product.lieferant || "";
         descriptionInput.value = product.beschreibung || "";
         weightInput.value = product.gewicht ?? "";
+        ensureUnitOption(product.einheit);
         unitInput.value = product.einheit || "Stk";
         setHeader(productId);
         clearRequiredHighlights();
