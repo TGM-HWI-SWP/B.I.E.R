@@ -221,6 +221,10 @@ body {
 
 .btn {
   height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
   border-radius: 12px;
   border: 2px solid var(--border);
   background: var(--surface);
@@ -228,6 +232,7 @@ body {
   font-size: 14px;
   font-weight: 650;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .btn-primary {
@@ -454,6 +459,12 @@ body.page-index thead th {
   z-index: 1;
 }
 
+body.page-index thead th:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+}
+
 body.page-index tbody td {
   padding: 12px;
   border-bottom: 1px solid var(--border);
@@ -461,7 +472,18 @@ body.page-index tbody td {
   vertical-align: top;
 }
 
+body.page-index tbody td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  background: var(--surface);
+}
+
 body.page-index tbody tr:hover td {
+  background: var(--surface-2);
+}
+
+body.page-index tbody tr:hover td:last-child {
   background: var(--surface-2);
 }
 
