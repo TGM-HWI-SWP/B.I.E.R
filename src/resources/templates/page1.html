@@ -221,16 +221,26 @@
                             <input id="productDescription" type="text" placeholder="Kurzbeschreibung..." />
                         </div>
                     </div>
+
+                    <div class="product-section attribute-section">
+                        <div class="section-title">Attribute</div>
+                        <div class="attribute-toolbar">
+                            <div class="attribute-note">Mehrere Attribute können über die Häkchen markiert und mit dem Löschen-Button entfernt werden.</div>
+                            <div class="attribute-summary" id="attributeSummary">0 Attribute</div>
+                        </div>
+                        <div id="attributeRows" class="attribute-rows" aria-label="Attributliste"></div>
+                    </div>
                 </div>
 
                 <div class="product-footer" aria-label="Aktionen">
                     <div class="footer-left">
                         <button class="btn btn-primary" id="saveProductBtn" type="button">Speichern</button>
                         <button class="btn" id="discardProductBtn" type="button">Verwerfen</button>
+                        <button class="btn btn-danger" id="deleteProductBtn" type="button">Produkt löschen</button>
                     </div>
                     <div class="footer-right">
                         <button class="btn" id="addAttributeBtn" type="button">+ Attribut hinzufügen</button>
-                        <button class="btn btn-danger" id="deleteAttributeBtn" type="button">Attribut löschen</button>
+                        <button class="btn btn-danger" id="deleteAttributeBtn" type="button">Markierte Attribute löschen</button>
                     </div>
                 </div>
 
@@ -248,7 +258,6 @@
                     <button class="btn" id="createProductBtn" type="button">Produkt anlegen</button>
                     <button class="btn" id="updateProductBtn" type="button">Produkt speichern</button>
                     <button class="btn" id="assignWarehouseBtn" type="button">In Lager buchen</button>
-                    <button class="btn" id="deleteProductBtn" type="button">Produkt löschen</button>
                 </div>
             </form>
         </section>

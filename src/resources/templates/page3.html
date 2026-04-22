@@ -212,6 +212,25 @@
                 </div>
             </div>
         </section>
+
+        <section class="grid stats-single split-section" aria-label="Attribute">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title">Attribute nach Nutzung</p>
+                    <p class="card-note">Wie oft Attributtypen in Produkten verwendet werden.</p>
+                </div>
+                <div class="card-body">
+                    <ol class="list" id="attributeMixList">
+                        {% for attribute, qty in stats.attribute_rows if stats %}
+                        <li class="list-item">
+                            <strong>{{ attribute }}</strong>
+                            <span class="pill">{{ qty }} Produkte</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script src="{{ url_for('app_script') }}"></script>

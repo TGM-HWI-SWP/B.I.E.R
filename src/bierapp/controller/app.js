@@ -164,8 +164,9 @@ function initProductPage() {
     const discardBtn = document.getElementById("discardProductBtn");
     const deleteBtn = document.getElementById("deleteAttributeBtn");
     const addAttrBtn = document.getElementById("addAttributeBtn");
+    const deleteProductBtn = document.getElementById("deleteProductBtn");
 
-    if (!productSelect || !warehouseStocks || !warehouseHint || !nameInput || !priceInput || !currencyInput || !supplierInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !deleteBtn || !addAttrBtn) return;
+    if (!productSelect || !warehouseStocks || !warehouseHint || !nameInput || !priceInput || !currencyInput || !supplierInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !deleteBtn || !addAttrBtn || !deleteProductBtn) return;
 
     const title = document.querySelector(".product-title");
     const subtitle = document.querySelector(".product-subtitle");
@@ -174,6 +175,22 @@ function initProductPage() {
     let products = [];
     let warehouses = [];
     let loadedInventory = new Map();
+    const attributeRowsHost = document.getElementById("attributeRows");
+    const attributeSummary = document.getElementById("attributeSummary");
+    const ATTRIBUTE_OPTIONS = [
+        "Farbe",
+        "Größe",
+        "Marke",
+        "Material",
+        "Kategorie",
+        "Typ",
+        "Zustand",
+        "Form",
+        "Verpackung",
+        "Herkunft",
+        "Saison",
+        "Besonderheit",
+    ];
 
     function setStatus(message, kind = "info") {
         status.textContent = message;
@@ -257,6 +274,7 @@ function initProductPage() {
             input.value = "0";
         }
         loadedInventory = new Map();
+        renderAttributeRows([]);
         setHeader("");
         clearRequiredHighlights();
     }
@@ -285,6 +303,114 @@ function initProductPage() {
         unitInput.appendChild(option);
     }
 
+    function normalizeAttribute(attribute) {
+        if (!attribute) return { name: "", value: "" };
+        const name = String(attribute.name || attribute.label || attribute.attribute || "").trim();
+        const value = String(attribute.value || attribute.wert || attribute.text || "").trim();
+        return { name, value };
+    }
+
+    function syncAttributeSummary() {
+        if (!attributeSummary) return;
+        const count = attributeRowsHost ? attributeRowsHost.querySelectorAll(".attribute-row").length : 0;
+        attributeSummary.textContent = `${count} Attribut${count === 1 ? "" : "e"}`;
+    }
+
+    function createAttributeRow(attribute = {}, selected = false) {
+        const normalized = normalizeAttribute(attribute);
+        const row = document.createElement("div");
+        row.className = "attribute-row";
+
+        const toggle = document.createElement("input");
+        toggle.type = "checkbox";
+        toggle.className = "attribute-select-toggle";
+        toggle.checked = selected;
+
+        const nameSelect = document.createElement("select");
+        nameSelect.className = "attribute-name";
+
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "Attribut wählen";
+        nameSelect.appendChild(placeholder);
+
+        ATTRIBUTE_OPTIONS.forEach((label) => {
+            const option = document.createElement("option");
+            option.value = label;
+            option.textContent = label;
+            nameSelect.appendChild(option);
+        });
+
+        if (normalized.name && !ATTRIBUTE_OPTIONS.includes(normalized.name)) {
+            const customOption = document.createElement("option");
+            customOption.value = normalized.name;
+            customOption.textContent = `${normalized.name} — benutzerdefiniert`;
+            nameSelect.appendChild(customOption);
+        }
+
+        nameSelect.value = normalized.name;
+
+        const valueInput = document.createElement("input");
+        valueInput.type = "text";
+        valueInput.className = "attribute-value";
+        valueInput.placeholder = "Wert eingeben...";
+        valueInput.value = normalized.value;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "btn btn-small btn-danger attribute-remove";
+        removeBtn.textContent = "×";
+        removeBtn.title = "Attribut entfernen";
+
+        const setSelectedClass = () => row.classList.toggle("is-selected", toggle.checked);
+        toggle.addEventListener("change", setSelectedClass);
+        setSelectedClass();
+
+        removeBtn.addEventListener("click", () => {
+            row.remove();
+            if (attributeRowsHost && !attributeRowsHost.querySelector(".attribute-row")) {
+                attributeRowsHost.appendChild(createAttributeRow());
+            }
+            syncAttributeSummary();
+        });
+
+        row.appendChild(toggle);
+        row.appendChild(nameSelect);
+        row.appendChild(valueInput);
+        row.appendChild(removeBtn);
+        return row;
+    }
+
+    function renderAttributeRows(attributes = []) {
+        if (!attributeRowsHost) return;
+        attributeRowsHost.innerHTML = "";
+        const rows = Array.isArray(attributes) && attributes.length ? attributes : [{}];
+        rows.forEach((attribute) => {
+            attributeRowsHost.appendChild(createAttributeRow(attribute));
+        });
+        syncAttributeSummary();
+    }
+
+    function collectAttributes() {
+        if (!attributeRowsHost) return [];
+        const attributes = [];
+        for (const row of attributeRowsHost.querySelectorAll(".attribute-row")) {
+            const nameSelect = row.querySelector(".attribute-name");
+            const valueInput = row.querySelector(".attribute-value");
+            if (!(nameSelect instanceof HTMLSelectElement) || !(valueInput instanceof HTMLInputElement)) continue;
+
+            const name = String(nameSelect.value || "").trim();
+            const value = String(valueInput.value || "").trim();
+            if (!name && !value) continue;
+            if (!name && value) {
+                throw new Error("Bitte wähle für jedes Attribut einen Namen aus.");
+            }
+
+            attributes.push({ name, value });
+        }
+        return attributes;
+    }
+
     function productPayload() {
         return {
             name: nameInput.value.trim(),
@@ -294,6 +420,7 @@ function initProductPage() {
             beschreibung: descriptionInput.value.trim(),
             gewicht: Number(weightInput.value),
             einheit: unitInput.value || "Stk",
+            attributes: collectAttributes(),
         };
     }
 
@@ -312,6 +439,7 @@ function initProductPage() {
         weightInput.value = product.gewicht ?? "";
         ensureUnitOption(product.einheit);
         unitInput.value = product.einheit || "Stk";
+        renderAttributeRows(Array.isArray(product.attributes) ? product.attributes : []);
         setHeader(productId);
         clearRequiredHighlights();
     }
@@ -488,9 +616,21 @@ function initProductPage() {
 
     bind(saveBtn, saveAll);
     bind(discardBtn, discardChanges);
-    bind(deleteBtn, deleteProduct);
+    bind(deleteProductBtn, deleteProduct);
     addAttrBtn.addEventListener("click", () => {
-        status.textContent = "Attribut-Management ist noch nicht implementiert.";
+        if (!attributeRowsHost) return;
+        attributeRowsHost.appendChild(createAttributeRow());
+        syncAttributeSummary();
+    });
+    deleteBtn.addEventListener("click", () => {
+        if (!attributeRowsHost) return;
+        const selectedRows = Array.from(attributeRowsHost.querySelectorAll(".attribute-row.is-selected"));
+        const rowsToRemove = selectedRows.length ? selectedRows : Array.from(attributeRowsHost.querySelectorAll(".attribute-row")).slice(-1);
+        rowsToRemove.forEach((row) => row.remove());
+        if (!attributeRowsHost.querySelector(".attribute-row")) {
+            attributeRowsHost.appendChild(createAttributeRow());
+        }
+        syncAttributeSummary();
     });
 
     (async function init() {
@@ -913,8 +1053,9 @@ function initStatsPage() {
     const topHost = document.getElementById("topProducts");
     const unitMixHost = document.getElementById("unitMixList");
     const supplierMixHost = document.getElementById("supplierMixList");
+    const attributeMixHost = document.getElementById("attributeMixList");
 
-    if (!warehousesValue || !productsValue || !capacityValue || !freeCapacityValue || !topProductValue || !topProductSub || !maxUtilValue || !maxUtilSub || !avgUtilValue || !activeWarehousesValue || !inventoryValueKpi || !mainCurrencyKpi || !topSupplierKpi || !topSupplierSub || !chartHost || !utilHost || !distributionHost || !currencyHost || !topHost || !unitMixHost || !supplierMixHost) return;
+    if (!warehousesValue || !productsValue || !capacityValue || !freeCapacityValue || !topProductValue || !topProductSub || !maxUtilValue || !maxUtilSub || !avgUtilValue || !activeWarehousesValue || !inventoryValueKpi || !mainCurrencyKpi || !topSupplierKpi || !topSupplierSub || !chartHost || !utilHost || !distributionHost || !currencyHost || !topHost || !unitMixHost || !supplierMixHost || !attributeMixHost) return;
 
     (async function run() {
         try {
@@ -936,6 +1077,16 @@ function initStatsPage() {
             const currencyTotals = new Map();
             const unitTotals = new Map();
             const supplierTotals = new Map();
+            const attributeTotals = new Map();
+
+            products.forEach((product) => {
+                const attributes = Array.isArray(product.attributes) ? product.attributes : [];
+                attributes.forEach((attribute) => {
+                    const name = String(attribute?.name || attribute?.label || "").trim();
+                    if (!name) return;
+                    attributeTotals.set(name, (attributeTotals.get(name) || 0) + 1);
+                });
+            });
 
             for (const warehouse of warehouses) {
                 const items = await api(`/inventory/${warehouse.id}/products`);
@@ -984,6 +1135,7 @@ function initStatsPage() {
             const mainCurrency = currencyEntries[0]?.[0] || "-";
             const supplierEntries = Array.from(supplierTotals.entries()).sort((a, b) => b[1] - a[1]);
             const topSupplier = supplierEntries[0] || null;
+            const attributeEntries = Array.from(attributeTotals.entries()).sort((a, b) => b[1] - a[1]);
 
             warehousesValue.textContent = String(totalWarehouses);
             productsValue.textContent = String(totalProducts);
@@ -1167,6 +1319,30 @@ function initStatsPage() {
                 li.appendChild(pill);
                 supplierMixHost.appendChild(li);
             });
+
+            attributeMixHost.innerHTML = "";
+            if (!attributeEntries.length) {
+                const li = document.createElement("li");
+                li.className = "list-item";
+                li.textContent = "Noch keine Attribute erfasst.";
+                attributeMixHost.appendChild(li);
+            } else {
+                attributeEntries.slice(0, 10).forEach(([attribute, qty]) => {
+                    const li = document.createElement("li");
+                    li.className = "list-item";
+
+                    const title = document.createElement("strong");
+                    title.textContent = attribute;
+
+                    const pill = document.createElement("span");
+                    pill.className = "pill";
+                    pill.textContent = `${qty} Produkte`;
+
+                    li.appendChild(title);
+                    li.appendChild(pill);
+                    attributeMixHost.appendChild(li);
+                });
+            }
         } catch (error) {
             warehousesValue.textContent = "!";
             productsValue.textContent = "!";

@@ -83,6 +83,19 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
     def _format_value(value) -> str:
         if value is None:
             return "-"
+        if isinstance(value, dict):
+            name = str(value.get("name") or value.get("label") or "").strip()
+            item_value = str(value.get("value") or value.get("wert") or value.get("text") or "").strip()
+            if name and item_value:
+                return f"{name}={item_value}"
+            if name:
+                return name
+            if item_value:
+                return item_value
+            return "-"
+        if isinstance(value, list):
+            items = [str(_format_value(item)) for item in value if _format_value(item) != "-"]
+            return "; ".join(items) if items else "-"
         if isinstance(value, float):
             return f"{value:.2f}"
         return str(value)
@@ -155,6 +168,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         currency_totals: dict[str, float] = {}
         unit_totals: dict[str, int] = {}
         supplier_totals: dict[str, int] = {}
+        attribute_totals: dict[str, int] = {}
 
         for warehouse in warehouses:
             wid = str(warehouse.get("id"))
@@ -189,6 +203,15 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
                 unit_totals[meta["einheit"]] = unit_totals.get(meta["einheit"], 0) + qty
                 supplier_totals[meta["lieferant"]] = supplier_totals.get(meta["lieferant"], 0) + qty
 
+        for product in products:
+            for attribute in product.get("attributes") or []:
+                if not isinstance(attribute, dict):
+                    continue
+                attribute_name = str(attribute.get("name") or attribute.get("label") or "").strip()
+                if not attribute_name:
+                    continue
+                attribute_totals[attribute_name] = attribute_totals.get(attribute_name, 0) + 1
+
         warehouse_rows.sort(key=lambda item: item["products"], reverse=True)
         utilization_rows = sorted(warehouse_rows, key=lambda item: item["util"], reverse=True)
         top_products = sorted(
@@ -205,6 +228,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         currency_rows = sorted(currency_totals.items(), key=lambda item: item[1], reverse=True)
         unit_rows = sorted(unit_totals.items(), key=lambda item: item[1], reverse=True)
         supplier_rows = sorted(supplier_totals.items(), key=lambda item: item[1], reverse=True)
+        attribute_rows = sorted(attribute_totals.items(), key=lambda item: item[1], reverse=True)
 
         total_warehouses = len(warehouses)
         total_products = sum(item["products"] for item in warehouse_rows)
@@ -217,6 +241,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         total_inventory_value = sum(value for _, value in currency_rows)
         main_currency = currency_rows[0][0] if currency_rows else "-"
         top_supplier = supplier_rows[0] if supplier_rows else None
+        total_attributes = sum(attribute_totals.values())
 
         return {
             "warehouses": total_warehouses,
@@ -230,12 +255,14 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             "top_product": top_product,
             "max_util": max_util,
             "top_supplier": top_supplier,
+            "total_attributes": total_attributes,
             "warehouse_rows": warehouse_rows,
             "utilization_rows": utilization_rows,
             "top_products": top_products,
             "currency_rows": currency_rows,
             "unit_rows": unit_rows,
             "supplier_rows": supplier_rows,
+            "attribute_rows": attribute_rows,
         }
 
     @app.route("/stylesheets/<path:filename>", endpoint="stylesheet", methods=["GET"])
@@ -451,6 +478,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
                 waehrung=data.get("waehrung", "EUR"),
                 lieferant=data.get("lieferant", ""),
                 einheit=data.get("einheit", "Stk"),
+                attributes=data.get("attributes", []),
             )
             _log_history("product", "create", f"Produkt {product.get('id')}: {product.get('name', '')}")
             return jsonify(product), 201
@@ -509,6 +537,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
                     "waehrung": "Währung",
                     "lieferant": "Lieferant",
                     "einheit": "Einheit",
+                    "attributes": "Attribute",
                 },
             )
             _log_history("product", "update", f"Produkt {produkt_id}: {changes}")

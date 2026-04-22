@@ -609,6 +609,91 @@ body.page-product .field-row {
   border-top: 1px solid var(--border);
 }
 
+body.page-product .attribute-section {
+  border-top: 1px solid var(--border);
+}
+
+body.page-product .attribute-toolbar {
+  padding: 0 18px 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+body.page-product .attribute-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+body.page-product .attribute-summary {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fg);
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+body.page-product .attribute-rows {
+  padding: 0 18px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+body.page-product .attribute-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 10px 0 2px;
+}
+
+body.page-product .attribute-row {
+  display: grid;
+  grid-template-columns: 28px minmax(160px, 220px) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--surface) 97%, var(--bg));
+}
+
+body.page-product .attribute-row.is-selected {
+  border-color: color-mix(in oklab, var(--focus) 32%, var(--border));
+  background: color-mix(in oklab, var(--focus) 8%, var(--surface));
+}
+
+body.page-product .attribute-select-toggle {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--focus);
+  justify-self: center;
+}
+
+body.page-product .attribute-name,
+body.page-product .attribute-value {
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--fg);
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+body.page-product .attribute-value::placeholder {
+  color: color-mix(in oklab, var(--muted) 78%, white);
+}
+
+body.page-product .attribute-remove {
+  height: 38px;
+  min-width: 38px;
+  padding: 0 12px;
+  border-radius: 10px;
+}
+
 body.page-product .field-row.is-invalid {
   background: color-mix(in oklab, var(--danger) 9%, var(--surface));
 }
@@ -1286,6 +1371,19 @@ body.page-stats .dot.free {
     grid-template-columns: 1fr;
     gap: 8px;
     align-items: start;
+  }
+
+  body.page-product .attribute-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  body.page-product .attribute-select-toggle {
+    justify-self: start;
+  }
+
+  body.page-product .attribute-remove {
+    width: 100%;
   }
 
   body.page-product .warehouse-row {
