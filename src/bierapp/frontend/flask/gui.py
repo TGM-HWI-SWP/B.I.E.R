@@ -4,7 +4,9 @@ import os
 import io
 import tempfile
 import pathlib
+
 from flask import Flask, render_template, jsonify, request, send_from_directory, send_file
+
 from bierapp.backend.service.product_service import ProductService, InventoryService
 from bierapp.backend.service.warehouse_service import WarehouseService
 
