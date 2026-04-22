@@ -135,9 +135,7 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             output_path = pathlib.Path(tmp.name)
 
         try:
-            raw_data = report_runner.get_data(None)
-            processed = report_runner.process_data(raw_data)
-            report_runner.generate_report(processed, output_path=output_path)
+            report_runner.generate_report(output_path=output_path)
 
             pdf_bytes = output_path.read_bytes()
             buffer = io.BytesIO(pdf_bytes)
