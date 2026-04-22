@@ -394,9 +394,10 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
         """
         try:
             data = request.get_json()
-            if not data or not all(k in data for k in ["lagername", "adresse", "max_plaetze", "firma_id"]):
-                return jsonify({"error": "Missing required fields: lagername, adresse, max_plaetze, firma_id"}), 400
-            warehouse = warehouse_service.create_warehouse(lagername=data["lagername"], adresse=data["adresse"], max_plaetze=int(data["max_plaetze"]), firma_id=int(data["firma_id"]))
+            if not data or not all(k in data for k in ["lagername", "adresse", "max_plaetze"]):
+                return jsonify({"error": "Missing required fields: lagername, adresse, max_plaetze"}), 400
+            firma_id = int(data.get("firma_id", 1))
+            warehouse = warehouse_service.create_warehouse(lagername=data["lagername"], adresse=data["adresse"], max_plaetze=int(data["max_plaetze"]), firma_id=firma_id)
             _log_history("warehouse", "create", f"Lager {warehouse.get('id')}: {warehouse.get('lagername', '')} ({warehouse.get('adresse', '')})")
             return jsonify(warehouse), 201
         except ValueError as exc:

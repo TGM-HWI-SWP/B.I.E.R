@@ -481,9 +481,8 @@ function initWarehousePage() {
     const nameInput = document.getElementById("warehouseName");
     const addressInput = document.getElementById("warehouseAddress");
     const capacityInput = document.getElementById("warehouseCapacity");
-    const companyInput = document.getElementById("warehouseCompany");
 
-    if (!body || !status || !createBtn || !searchInput || !nameInput || !addressInput || !capacityInput || !companyInput) return;
+    if (!body || !status || !createBtn || !searchInput || !nameInput || !addressInput || !capacityInput) return;
 
     let warehouses = [];
 
@@ -509,7 +508,7 @@ function initWarehousePage() {
         body.innerHTML = "";
         if (!visibleWarehouses.length) {
             const row = document.createElement("tr");
-            row.innerHTML = '<td colspan="6">Keine Lager zur Suche gefunden.</td>';
+            row.innerHTML = '<td colspan="7">Keine Lager zur Suche gefunden.</td>';
             body.appendChild(row);
             return;
         }
@@ -525,6 +524,7 @@ function initWarehousePage() {
             row.setAttribute("aria-label", `Lager ${warehouse.lagername ?? warehouse.id} öffnen`);
             row.innerHTML = `
                 <td>${warehouse.lagername ?? ""}</td>
+                <td><span class="pill">${warehouse.id ?? ""}</span></td>
                 <td>${warehouse.adresse ?? ""}</td>
                 <td><span class="pill">${products} Produkte</span></td>
                 <td><span class="pill">${capacity} max.</span></td>
@@ -561,9 +561,8 @@ function initWarehousePage() {
             lagername: nameInput.value.trim(),
             adresse: addressInput.value.trim(),
             max_plaetze: Number(capacityInput.value),
-            firma_id: Number(companyInput.value),
         };
-        if (!payload.lagername || !payload.adresse || !payload.max_plaetze || !payload.firma_id) {
+        if (!payload.lagername || !payload.adresse || !payload.max_plaetze) {
             throw new Error("Bitte alle Felder für das Lager ausfüllen.");
         }
 
