@@ -102,6 +102,111 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
                 output_path.unlink(missing_ok=True)
             except Exception:
                 pass
+
+    def _build_stats() -> dict:
+        warehouses = warehouse_service.list_warehouses()
+        products = product_service.list_products()
+        inventory_rows = inventory_service.db.find_all("inventory")
+
+        product_meta = {
+            str(product.get("id")): {
+                "name": product.get("name") or f"Produkt {product.get('id')}",
+                "preis": float(product.get("preis") or 0),
+                "waehrung": product.get("waehrung") or "EUR",
+                "lieferant": product.get("lieferant") or "Unbekannt",
+                "einheit": product.get("einheit") or "Stk",
+            }
+            for product in products
+        }
+
+        warehouse_rows = []
+        product_totals: dict[str, int] = {}
+        currency_totals: dict[str, float] = {}
+        unit_totals: dict[str, int] = {}
+        supplier_totals: dict[str, int] = {}
+
+        for warehouse in warehouses:
+            wid = str(warehouse.get("id"))
+            items = [row for row in inventory_rows if str(row.get("lager_id")) == wid]
+            total_products = sum(int(row.get("menge") or 0) for row in items)
+            capacity = int(warehouse.get("max_plaetze") or 0)
+            util = (total_products / capacity) if capacity > 0 else 0
+
+            warehouse_rows.append(
+                {
+                    "id": warehouse.get("id"),
+                    "name": warehouse.get("lagername") or f"Lager {warehouse.get('id')}",
+                    "products": total_products,
+                    "capacity": capacity,
+                    "util": util,
+                }
+            )
+
+            for row in items:
+                product_id = str(row.get("produkt_id"))
+                qty = int(row.get("menge") or 0)
+                product_totals[product_id] = product_totals.get(product_id, 0) + qty
+
+                meta = product_meta.get(product_id, {
+                    "name": f"Produkt {product_id}",
+                    "preis": 0.0,
+                    "waehrung": "EUR",
+                    "lieferant": "Unbekannt",
+                    "einheit": "Stk",
+                })
+                currency_totals[meta["waehrung"]] = currency_totals.get(meta["waehrung"], 0.0) + meta["preis"] * qty
+                unit_totals[meta["einheit"]] = unit_totals.get(meta["einheit"], 0) + qty
+                supplier_totals[meta["lieferant"]] = supplier_totals.get(meta["lieferant"], 0) + qty
+
+        warehouse_rows.sort(key=lambda item: item["products"], reverse=True)
+        utilization_rows = sorted(warehouse_rows, key=lambda item: item["util"], reverse=True)
+        top_products = sorted(
+            (
+                {
+                    "name": product_meta.get(product_id, {}).get("name", f"Produkt {product_id}"),
+                    "qty": qty,
+                }
+                for product_id, qty in product_totals.items()
+            ),
+            key=lambda item: item["qty"],
+            reverse=True,
+        )
+        currency_rows = sorted(currency_totals.items(), key=lambda item: item[1], reverse=True)
+        unit_rows = sorted(unit_totals.items(), key=lambda item: item[1], reverse=True)
+        supplier_rows = sorted(supplier_totals.items(), key=lambda item: item[1], reverse=True)
+
+        total_warehouses = len(warehouses)
+        total_products = sum(item["products"] for item in warehouse_rows)
+        total_capacity = sum(item["capacity"] for item in warehouse_rows)
+        free_capacity = max(0, total_capacity - total_products)
+        avg_util = sum(item["util"] for item in warehouse_rows) / total_warehouses if total_warehouses else 0
+        active_warehouses = sum(1 for item in warehouse_rows if item["products"] > 0)
+        top_product = top_products[0] if top_products else None
+        max_util = utilization_rows[0] if utilization_rows else None
+        total_inventory_value = sum(value for _, value in currency_rows)
+        main_currency = currency_rows[0][0] if currency_rows else "-"
+        top_supplier = supplier_rows[0] if supplier_rows else None
+
+        return {
+            "warehouses": total_warehouses,
+            "products": total_products,
+            "capacity": total_capacity,
+            "free_capacity": free_capacity,
+            "avg_util": avg_util,
+            "active_warehouses": active_warehouses,
+            "total_inventory_value": total_inventory_value,
+            "main_currency": main_currency,
+            "top_product": top_product,
+            "max_util": max_util,
+            "top_supplier": top_supplier,
+            "warehouse_rows": warehouse_rows,
+            "utilization_rows": utilization_rows,
+            "top_products": top_products,
+            "currency_rows": currency_rows,
+            "unit_rows": unit_rows,
+            "supplier_rows": supplier_rows,
+        }
+
     @app.route("/stylesheets/<path:filename>", endpoint="stylesheet", methods=["GET"])
     def stylesheet(filename: str):
         """Serve a stylesheet file from the resources directory.
@@ -169,7 +274,8 @@ def register_routes(app: Flask, product_service: ProductService, warehouse_servi
             str: Rendered HTML template for statistics dashboard.
         """
         selected_theme = _selected_theme()
-        return render_template("page3.html", selected_theme=selected_theme, theme_options=_theme_options())
+        stats = _build_stats()
+        return render_template("page3.html", selected_theme=selected_theme, theme_options=_theme_options(), stats=stats)
 
     @app.route("/page4", methods=["GET"])
     def page4():

@@ -42,109 +42,122 @@
     <main class="container">
         <h1 class="page-title">Statistik</h1>
 
-        <section class="grid kpis" aria-label="Kennzahlen">
-            <div class="card kpi">
-                <p class="kpi-label">Anzahl Lager</p>
-                <p class="kpi-value" id="kpiWarehouses">–</p>
-                <p class="kpi-sub">Alle angelegten Lager</p>
+        <section class="card stats-intro" aria-label="Übersicht">
+            <div class="card-header">
+                <p class="card-title">Dashboard-Übersicht</p>
+                <p class="card-note">Die wichtigsten Kennzahlen zuerst, darunter die Detailanalysen nach Lager, Bestand, Währung und Lieferant.</p>
             </div>
-            <div class="card kpi">
-                <p class="kpi-label">Anzahl Produkte</p>
-                <p class="kpi-value" id="kpiProducts">–</p>
-                <p class="kpi-sub">Gesamt über alle Lager</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Gesamtkapazität</p>
-                <p class="kpi-value" id="kpiCapacity">–</p>
-                <p class="kpi-sub">Maximal verfügbare Plätze</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Freie Kapazität</p>
-                <p class="kpi-value" id="kpiFreeCapacity">–</p>
-                <p class="kpi-sub">Noch nicht belegte Plätze</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Meisten Stück</p>
-                <p class="kpi-value" id="kpiTopProduct">–</p>
-                <p class="kpi-sub" id="kpiTopProductSub">–</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Größte Auslastung</p>
-                <p class="kpi-value" id="kpiMaxUtil">–</p>
-                <p class="kpi-sub" id="kpiMaxUtilSub">–</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Durchschnitt Auslastung</p>
-                <p class="kpi-value" id="kpiAvgUtil">–</p>
-                <p class="kpi-sub">Über alle Lager gemittelt</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Lager mit Bestand</p>
-                <p class="kpi-value" id="kpiActiveWarehouses">–</p>
-                <p class="kpi-sub">Lager mit mind. 1 Produkt</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Bestandswert</p>
-                <p class="kpi-value" id="kpiInventoryValue">–</p>
-                <p class="kpi-sub">Preis x Bestand über alle Lager</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Hauptwährung</p>
-                <p class="kpi-value" id="kpiMainCurrency">–</p>
-                <p class="kpi-sub">Währung mit höchstem Bestandswert</p>
-            </div>
-            <div class="card kpi">
-                <p class="kpi-label">Top Lieferant</p>
-                <p class="kpi-value" id="kpiTopSupplier">–</p>
-                <p class="kpi-sub" id="kpiTopSupplierSub">–</p>
+            <div class="card-body stats-summary">
+                <div class="card kpi kpi-highlight">
+                    <p class="kpi-label">Anzahl Lager</p>
+                    <p class="kpi-value" id="kpiWarehouses">{{ stats.warehouses if stats else '–' }}</p>
+                    <p class="kpi-sub">Alle angelegten Lager</p>
+                </div>
+                <div class="card kpi kpi-highlight">
+                    <p class="kpi-label">Anzahl Produkte</p>
+                    <p class="kpi-value" id="kpiProducts">{{ stats.products if stats else '–' }}</p>
+                    <p class="kpi-sub">Gesamt über alle Lager</p>
+                </div>
+                <div class="card kpi kpi-highlight">
+                    <p class="kpi-label">Gesamtkapazität</p>
+                    <p class="kpi-value" id="kpiCapacity">{{ stats.capacity if stats else '–' }}</p>
+                    <p class="kpi-sub">Maximal verfügbare Plätze</p>
+                </div>
+                <div class="card kpi kpi-highlight">
+                    <p class="kpi-label">Freie Kapazität</p>
+                    <p class="kpi-value" id="kpiFreeCapacity">{{ stats.free_capacity if stats else '–' }}</p>
+                    <p class="kpi-sub">Noch nicht belegte Plätze</p>
+                </div>
             </div>
         </section>
 
-        <section class="grid split split-section" aria-label="Diagramme">
-            <div class="card">
+        <section class="grid stats-grid split-section" aria-label="Lager und Auslastung">
+            <div class="card stats-panel">
                 <div class="card-header">
                     <p class="card-title">Produkte pro Lager</p>
                     <p class="card-note">Nach Bestand sortiert.</p>
                 </div>
-                <div class="card-body" id="chartWarehouses"></div>
+                <div class="card-body" id="chartWarehouses">
+                    {% for row in stats.warehouse_rows if stats %}
+                    <div class="bar-row">
+                        <div class="bar-label">{{ row.name }}</div>
+                        <div class="bar-track"><div class="bar-fill" style="width: {{ ((row.products / (stats.warehouse_rows[0].products if stats and stats.warehouse_rows else 1)) * 100) | round(0) }}%"></div></div>
+                        <div class="bar-value">{{ row.products }} Stk.</div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
 
+            <div class="card stats-panel">
+                <div class="card-header">
+                    <p class="card-title">Auslastung pro Lager</p>
+                    <p class="card-note">Prozentuale Belegung je Lager.</p>
+                </div>
+                <div class="card-body" id="chartUtilization">
+                    {% for row in stats.utilization_rows if stats %}
+                    <div class="bar-row">
+                        <div class="bar-label">{{ row.name }}</div>
+                        <div class="bar-track"><div class="bar-fill" style="width: {{ (row.util * 100) | round(0) }}%"></div></div>
+                        <div class="bar-value">{{ (row.util * 100) | round(0) }}%</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="grid stats-grid split-section" aria-label="Top Produkte und Verteilung">
             <div class="card">
                 <div class="card-header">
                     <p class="card-title">Top Produkte</p>
                     <p class="card-note">Sortiert nach Menge.</p>
                 </div>
                 <div class="card-body">
-                    <ol class="list" id="topProducts"></ol>
+                    <ol class="list" id="topProducts">
+                        {% for item in stats.top_products[:5] if stats %}
+                        <li class="list-item">
+                            <strong>{{ item.name }}</strong>
+                            <span class="pill">{{ item.qty }} Stk.</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
                 </div>
             </div>
-        </section>
 
-        <section class="grid split split-section" aria-label="Weitere Diagramme">
-            <div class="card">
-                <div class="card-header">
-                    <p class="card-title">Auslastung pro Lager</p>
-                    <p class="card-note">Prozentuale Belegung je Lager.</p>
-                </div>
-                <div class="card-body" id="chartUtilization"></div>
-            </div>
-
-            <div class="card">
+            <div class="card stats-panel">
                 <div class="card-header">
                     <p class="card-title">Bestandsverteilung</p>
                     <p class="card-note">Anteil belegte vs. freie Kapazität.</p>
                 </div>
-                <div class="card-body" id="chartDistribution"></div>
+                <div class="card-body" id="chartDistribution">
+                    {% set used_percent = ((stats.products / stats.capacity) * 100) | round(0) if stats and stats.capacity else 0 %}
+                    <div class="donut-wrap">
+                        <div class="donut-chart" style="background: conic-gradient(var(--fg) 0% {{ used_percent }}%, var(--surface-2) {{ used_percent }}% 100%);">
+                            <span>{{ used_percent }}%</span>
+                        </div>
+                        <ul class="legend-list">
+                            <li><span class="dot used"></span>Belegt: {{ stats.products if stats else 0 }} ({{ used_percent }}%)</li>
+                            <li><span class="dot free"></span>Frei: {{ stats.free_capacity if stats else 0 }} ({{ 100 - used_percent if used_percent < 100 else 0 }}%)</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </section>
 
-        <section class="grid split split-section" aria-label="Preis, Währung und Einheit">
+        <section class="grid stats-grid split-section" aria-label="Wert, Einheit und Lieferant">
             <div class="card">
                 <div class="card-header">
                     <p class="card-title">Bestandswert nach Währung</p>
                     <p class="card-note">Summe aus Preis x Bestand je Währung.</p>
                 </div>
-                <div class="card-body" id="chartCurrencyValue"></div>
+                <div class="card-body" id="chartCurrencyValue">
+                    {% for currency, value in stats.currency_rows if stats %}
+                    <div class="bar-row">
+                        <div class="bar-label">{{ currency }}</div>
+                        <div class="bar-track"><div class="bar-fill" style="width: {{ (value / (stats.currency_rows[0][1] if stats and stats.currency_rows else 1)) * 100 | round(0) }}%"></div></div>
+                        <div class="bar-value">{{ '%.2f'|format(value) }} {{ currency }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
 
             <div class="card">
@@ -153,19 +166,33 @@
                     <p class="card-note">Bestandsmengen je Einheit (Stk, kg, ...).</p>
                 </div>
                 <div class="card-body">
-                    <ol class="list" id="unitMixList"></ol>
+                    <ol class="list" id="unitMixList">
+                        {% for unit, qty in stats.unit_rows if stats %}
+                        <li class="list-item">
+                            <strong>{{ unit }}</strong>
+                            <span class="pill">{{ qty }} {{ unit }}</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
                 </div>
             </div>
         </section>
 
-        <section class="grid split split-section" aria-label="Lieferanten-Verteilung">
+        <section class="grid stats-single split-section" aria-label="Lieferanten">
             <div class="card">
                 <div class="card-header">
                     <p class="card-title">Lieferanten nach Bestand</p>
                     <p class="card-note">Aggregierte Bestandsmenge je Lieferant.</p>
                 </div>
                 <div class="card-body">
-                    <ol class="list" id="supplierMixList"></ol>
+                    <ol class="list" id="supplierMixList">
+                        {% for supplier, qty in stats.supplier_rows if stats %}
+                        <li class="list-item">
+                            <strong>{{ supplier }}</strong>
+                            <span class="pill">{{ qty }} Stück</span>
+                        </li>
+                        {% endfor %}
+                    </ol>
                 </div>
             </div>
         </section>
