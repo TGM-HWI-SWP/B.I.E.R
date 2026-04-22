@@ -649,6 +649,11 @@ body.page-product .warehouse-hint {
   color: var(--muted);
 }
 
+body.page-product .warehouse-hint.is-error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
 body.page-product .product-footer {
   position: sticky;
   bottom: 0;

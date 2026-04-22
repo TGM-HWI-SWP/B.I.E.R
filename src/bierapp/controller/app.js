@@ -122,13 +122,14 @@ function initProductPage() {
     const weightInput = document.getElementById("productWeight");
     const unitInput = document.getElementById("productUnit");
     const status = document.getElementById("page1Status");
+    const warehouseHint = document.getElementById("warehouseStocksHint");
 
     const saveBtn = document.getElementById("saveProductBtn");
     const discardBtn = document.getElementById("discardProductBtn");
     const deleteBtn = document.getElementById("deleteAttributeBtn");
     const addAttrBtn = document.getElementById("addAttributeBtn");
 
-    if (!productSelect || !warehouseStocks || !nameInput || !priceInput || !currencyInput || !supplierInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !deleteBtn || !addAttrBtn) return;
+    if (!productSelect || !warehouseStocks || !warehouseHint || !nameInput || !priceInput || !currencyInput || !supplierInput || !descriptionInput || !weightInput || !unitInput || !status || !saveBtn || !discardBtn || !deleteBtn || !addAttrBtn) return;
 
     const title = document.querySelector(".product-title");
     const subtitle = document.querySelector(".product-subtitle");
@@ -298,6 +299,15 @@ function initProductPage() {
 
     function renderWarehouseStocks() {
         warehouseStocks.innerHTML = "";
+        if (!warehouses.length) {
+            warehouseStocks.innerHTML = '<div class="warehouse-name">Keine Lager vorhanden.</div>';
+            warehouseHint.textContent = "Kein Lager vorhanden – bitte zuerst ein Lager in 'Lagerliste' anlegen.";
+            warehouseHint.classList.add("is-error");
+            return;
+        }
+
+        warehouseHint.textContent = "Mengen-Eintrag 0 bedeutet: kein Bestand in diesem Lager.";
+        warehouseHint.classList.remove("is-error");
         warehouses.forEach((warehouse) => {
             const row = document.createElement("div");
             row.className = "warehouse-row";
