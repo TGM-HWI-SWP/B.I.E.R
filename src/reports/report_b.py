@@ -8,6 +8,7 @@ from datetime import datetime
 from matplotlib import pyplot as plt
 
 from bierapp.db.postgress import PostgresRepository
+from bierapp.contracts import ReportPort
 from reports.report_format import create_cover_page, create_table_pages, create_bar_chart, create_summary_page
 from reports.report_a import ReportA
 
@@ -23,12 +24,8 @@ def _find_int_after_key(details: str, key: str, allow_negative: bool = False) ->
     pos = low.find(k)
     if pos == -1:
         return None
-    
     start = pos + len(k)
     s = details[start:]
-   
-   
-   
     i = 0
     while i < len(s) and not (s[i].isdigit() or (allow_negative and s[i] == '-')):
         i += 1
@@ -173,7 +170,6 @@ def _extract_name(details: str) -> Optional[str]:
     except ValueError:
         pass
 
-    
     pos = low.find('name=')
     if pos != -1:
         start = pos + len('name=')
@@ -197,7 +193,6 @@ def _extract_name(details: str) -> Optional[str]:
                     return tail[:si].strip()
             return tail.split()[0].strip()
 
- 
     kpos = low.find('produktname')
     if kpos != -1:
         for sep_char in (':', '='):
@@ -229,10 +224,8 @@ def _parse_history_row(row: Dict) -> Dict:
     if menge is not None:
         qty = abs(menge) if action == "assign" else abs(menge)
 
-    
     raw = dict(row) if isinstance(row, dict) else {"raw": row}
     try:
-       
         lids = _find_all_ints_after_key(details, "lager_id=")
         if len(lids) >= 2:
             raw.setdefault("source_lager", int(lids[0]))
@@ -240,7 +233,6 @@ def _parse_history_row(row: Dict) -> Dict:
             raw.setdefault("from", int(lids[0]))
             raw.setdefault("to", int(lids[1]))
         else:
-            
             s = _find_int_after_key(details, "source_lager=")
             t = _find_int_after_key(details, "target_lager=")
             if s is not None:
@@ -250,7 +242,6 @@ def _parse_history_row(row: Dict) -> Dict:
                 raw.setdefault("target_lager", int(t))
                 raw.setdefault("to", int(t))
 
-           
             if not raw.get("from") and not raw.get("to"):
                 nums = _find_von_nach_numbers(details)
                 if nums:
@@ -270,7 +261,6 @@ def _parse_history_row(row: Dict) -> Dict:
                     raw.setdefault("source_lager", int(lids2[0]))
                     raw.setdefault("target_lager", int(lids2[1]))
 
-        
             if not raw.get("from") and not raw.get("to"):
                 names = _find_text_von_nach(details)
                 if names:
@@ -304,7 +294,6 @@ def _is_relevant(parsed: Dict) -> bool:
     details = (parsed.get("details") or "").lower()
     if any(k in entry_type for k in ("warehouse", "lager", "storage")):
         return False
-   
     if action == "create" and ("lager" in details or "warehouse" in details):
         return False
     if action in ("create", "assign", "book", "booking", "gebucht"):
@@ -324,8 +313,13 @@ def _create_pie_chart(pdf: PdfPages, labels: List[str], values: List[float], tit
     plt.close(fig)
 
 
-class ReportBNeu:
-    """Report B neu: Top/Bottom-10 Bars and pie distribution across warehouses, based solely on filtered history rows."""
+class ReportB(ReportPort):
+    """Report B neu: Top/Bottom-10 Bars and pie distribution across warehouses.
+
+    Conforms to `ReportPort` by implementing `inventory_report` and
+    `statistics_report`. Delegates those to an internal `ReportA` instance
+    when available to avoid duplicating inventory logic.
+    """
 
     def __init__(self, db_repo: Optional[object] = None):
         self.db = db_repo or PostgresRepository()
@@ -335,15 +329,21 @@ class ReportBNeu:
         except Exception:
             self.db = None
 
+        try:
+            self.report_a = ReportA(self.db)
+            self.warehouses = getattr(self.report_a, "warehouses", {}) or {}
+        except Exception:
+            self.report_a = None
+            self.warehouses = {}
+
     def generate_report(self, output_path: pathlib.Path = DEFAULT_OUTPUT_FILE) -> Dict:
-        report_a = ReportA(self.db)
+        report_a = self.report_a or (ReportA(self.db) if ReportA else None)
 
         try:
             history_rows = self.db.find_all("history") if getattr(self, "db", None) else []
         except Exception:
             history_rows = []
 
-       
         parsed = [_parse_history_row(r) for r in history_rows]
 
         def _to_dt(v):
@@ -362,7 +362,7 @@ class ReportBNeu:
         parsed.sort(key=lambda x: _to_dt(x.get("timestamp")))
         filtered = [p for p in parsed if _is_relevant(p)]
 
-       
+    
         product_names: Dict[str, str] = {}
         pids_to_fetch = set()
         for p in filtered:
@@ -380,6 +380,7 @@ class ReportBNeu:
             if pid and pname:
                 product_names[str(pid)] = pname
 
+        
         if pids_to_fetch and self.db:
             try:
                 rows = self.db.find_many_by_ids("products", list(pids_to_fetch))
@@ -393,27 +394,27 @@ class ReportBNeu:
             except Exception:
                 pass
 
-        sales = defaultdict(float)
+        
+        movements = defaultdict(float)
         warehouse_net = defaultdict(float)
         for p in filtered:
             pid = p.get("product_id") or None
             lid = p.get("lager_id") or None
             qty = float(p.get("quantity") or 0)
-            if pid and qty < 0:
-                sales[pid] += abs(qty)
+            if pid:
+                movements[pid] += abs(qty)
             if lid:
                 warehouse_net[str(lid)] += qty
 
-        top_sales = sorted(sales.items(), key=lambda x: x[1], reverse=True)[:10]
-        bottom_sales = sorted(sales.items(), key=lambda x: x[1])[:10]
+        top_movements = sorted(movements.items(), key=lambda x: x[1], reverse=True)[:10]
+        bottom_movements = sorted(movements.items(), key=lambda x: x[1])[:10]
 
-        
+
         table_rows: List[List[str]] = []
         running: Dict[Tuple[str, str], float] = defaultdict(float)
 
         def _resolve_loc(p: Dict) -> str:
             raw = p.get("raw") or {}
-            
             for k in ("from", "quelle", "von", "source", "origin", "from_location"):
                 v = p.get(k) or raw.get(k)
                 if v:
@@ -422,7 +423,7 @@ class ReportBNeu:
                 v = p.get(k) or raw.get(k)
                 if v:
                     return str(v)
-            
+        
             for k in ("lager_id", "source_lager", "from_warehouse", "ziel_lager", "target_lager", "to_warehouse"):
                 v = p.get(k) or raw.get(k)
                 if v is not None:
@@ -436,7 +437,8 @@ class ReportBNeu:
             time_str = _format_ts(p.get("timestamp"))
             pid = p.get("product_id") or ""
 
-          
+            
+            
             pname = None
             if pid:
                 pname = product_names.get(str(pid))
@@ -463,7 +465,7 @@ class ReportBNeu:
 
             try:
                 direction = report_a._movement_direction(p.get("raw", {}), qty)
-               
+              
                 try:
                     if isinstance(direction, str):
                         if "->" in direction:
@@ -484,47 +486,198 @@ class ReportBNeu:
 
         headers = ["Datum", "Von->Zu", "Produkt", "Vorher", "Änderung", "Nachher"]
 
-
-        top_names = [product_names.get(pid) or pid for pid, _ in top_sales]
-        top_values = [v for _, v in top_sales]
-        bottom_names = [product_names.get(pid) or pid for pid, _ in bottom_sales]
-        bottom_values = [v for _, v in bottom_sales]
-
-  
-        wh_labels: List[str] = []
-        wh_values: List[float] = []
-        for wid, net in warehouse_net.items():
-            val = max(0.0, float(net))
-            if val > 0:
-                label = None
-                try:
-                    label = report_a.warehouses.get(str(wid)) if getattr(report_a, "warehouses", None) else None
-                except Exception:
-                    label = None
-                wh_labels.append(label or f"Lager {wid}")
-                wh_values.append(val)
+    
+        top_names = [product_names.get(str(pid)) or str(pid) for pid, _ in top_movements]
+        top_values = [v for _, v in top_movements]
+        bottom_names = [product_names.get(str(pid)) or str(pid) for pid, _ in bottom_movements]
+        bottom_values = [v for _, v in bottom_movements]
 
         with PdfPages(output_path) as pdf:
             meta = {"Erstellt": datetime.now().strftime("%Y-%m-%d %H:%M")}
-            create_cover_page(pdf, "Produkt Ranking :)", "Top/Bottom Produkte + Lagerverteilung", meta)
+            create_cover_page(pdf, "Top/Bottom 10 Report", "Top/Bottom Produkte + Lagerverteilung", meta)
 
-            if top_sales:
-                create_bar_chart(pdf, top_names, top_values, "Top 10 Produkte nach Verkaufszahlen")
-            if bottom_sales:
-                create_bar_chart(pdf, bottom_names, bottom_values, "Bottom 10 Produkte nach Verkaufszahlen")
+            if top_movements:
+                create_bar_chart(pdf, top_names, top_values, "Top 10 Produkte nach Bewegungsmenge")
+            if bottom_movements:
+                create_bar_chart(pdf, bottom_names, bottom_values, "Bottom 10 Produkte nach Bewegungsmenge")
 
-            if wh_values:
-                _create_pie_chart(pdf, wh_labels, wh_values, "Anteil Produkte pro Lager (Netto)")
+            try:
+                wh_rows = self.db.find_all('warehouses') if getattr(self, 'db', None) else []
+            except Exception:
+                wh_rows = []
 
-            create_table_pages(pdf, headers, table_rows, title="Gefilterte History-Einträge (Detail)", fit_one_page=False)
-            create_summary_page(pdf, {"Gefilterte Einträge": len(table_rows), "Top-Produkte": len(top_sales)})
+            wh_with_stock = 0
+            if wh_rows:
+                for w in wh_rows:
+                    wid = w.get('id') or w.get('lager_id')
+                    wid_str = str(wid)
+                    name = w.get('name') or w.get('lagername') or w.get('lager') or f"Lager {wid_str}"
+                    inv = self.inventory_report(wid_str)
+                    labels = [it.get('product_name') for it in inv if float(it.get('menge') or 0) > 0]
+                    values = [float(it.get('menge') or 0) for it in inv if float(it.get('menge') or 0) > 0]
+                    if values:
+                        wh_with_stock += 1
+                    from reports.report_format import create_pie_chart
+                    create_pie_chart(pdf, labels, values, f"Produktverteilung {name}")
+            else:
+                wh_labels: List[str] = []
+                wh_values: List[float] = []
+                for wid, net in warehouse_net.items():
+                    val = max(0.0, float(net))
+                    if val > 0:
+                        label = None
+                        try:
+                            label = (report_a.warehouses.get(str(wid)) if getattr(report_a, "warehouses", None) else None) or self.warehouses.get(str(wid))
+                        except Exception:
+                            label = None
+                        wh_labels.append(label or f"Lager {wid}")
+                        wh_values.append(val)
+                if wh_values:
+                    _create_pie_chart(pdf, wh_labels, wh_values, "Anteil Produkte pro Lager (Netto)")
+                    wh_with_stock = len(wh_values)
 
-        return {"output": str(output_path), "summary": {"total_filtered": len(table_rows), "top_count": len(top_sales), "bottom_count": len(bottom_sales)}, "generated": datetime.now().isoformat()}
+            create_summary_page(pdf, {"Gefilterte Einträge": len(table_rows), "Top-Produkte": len(top_movements), "Bottom-Produkte": len(bottom_movements), "Lager mit Bestand": wh_with_stock})
+
+        return {"output": str(output_path), "summary": {"total_filtered": len(table_rows), "top_count": len(top_movements), "bottom_count": len(bottom_movements)}, "generated": datetime.now().isoformat()}
+
+    def inventory_report(self, lager_id: str) -> List[Dict]:
+        """Return inventory for a given warehouse id.
+
+        Prefer delegating to `ReportA.inventory_report` if possible to reuse
+        the same parsing/aggregation logic.
+        """
+        try:
+            if getattr(self, 'report_a', None) and getattr(self.report_a, 'inventory_report', None):
+                return self.report_a.inventory_report(lager_id)
+        except Exception:
+            pass
+
+        try:
+            rows = self.db.find_all('history') if getattr(self, 'db', None) else []
+        except Exception:
+            rows = []
+
+        parsed = [_parse_history_row(r) for r in rows]
+
+        def _to_dt(v):
+            if v is None:
+                return datetime.max
+            if isinstance(v, datetime):
+                return v
+            try:
+                return datetime.fromisoformat(str(v))
+            except Exception:
+                try:
+                    return datetime.fromtimestamp(float(v))
+                except Exception:
+                    return datetime.max
+
+        parsed.sort(key=lambda x: _to_dt(x.get('timestamp')))
+        filtered = [p for p in parsed if _is_relevant(p)]
+
+        inv: Dict[str, float] = {}
+        lid_str = str(lager_id)
+        for p in filtered:
+            pid = p.get('product_id')
+            if not pid:
+                continue
+            qty = float(p.get('quantity') or 0)
+            raw = p.get('raw') or {}
+
+            if str(p.get('lager_id')) == lid_str:
+                inv[pid] = inv.get(pid, 0.0) + qty
+                continue
+
+            try:
+                src = raw.get('from') or raw.get('source_lager') or raw.get('source')
+                dst = raw.get('to') or raw.get('target_lager') or raw.get('target')
+                if src is not None and str(src) == lid_str:
+                    inv[pid] = inv.get(pid, 0.0) - qty
+                    continue
+                if dst is not None and str(dst) == lid_str:
+                    inv[pid] = inv.get(pid, 0.0) + qty
+                    continue
+            except Exception:
+                pass
+
+            try:
+                lids = _find_all_ints_after_key(p.get('details') or '', 'lager_id=')
+                for ids in lids:
+                    if str(ids) == lid_str:
+                        inv[pid] = inv.get(pid, 0.0) + qty
+                        break
+            except Exception:
+                pass
+
+        product_names: Dict[str, str] = {}
+        try:
+            if getattr(self, 'db', None) and getattr(self.db, 'find_many_by_ids', None):
+                rows = self.db.find_many_by_ids('products', list(inv.keys()))
+                for r in rows or []:
+                    pid = r.get('id')
+                    if pid is None:
+                        continue
+                    name = r.get('name')
+                    if name:
+                        product_names[str(pid)] = name
+        except Exception:
+            pass
+
+        out: List[Dict] = []
+        for pid, amt in inv.items():
+            out.append({'product_id': str(pid), 'product_name': product_names.get(str(pid)) or f'Produkt {pid}', 'menge': amt})
+        return out
+
+    def statistics_report(self) -> Dict:
+        """Return aggregated statistics matching `ReportPort` expectations.
+
+        Delegate to `ReportA.statistics_report` when available.
+        """
+        try:
+            if getattr(self, 'report_a', None) and getattr(self.report_a, 'statistics_report', None):
+                return self.report_a.statistics_report()
+        except Exception:
+            pass
+
+        stats = {'total_products': 0, 'total_warehouses': 0, 'total_stock_units': 0}
+        try:
+            if getattr(self, 'db', None):
+                prods = self.db.find_all('products') or []
+                whs = self.db.find_all('warehouses') or []
+                stats['total_products'] = len(prods)
+                stats['total_warehouses'] = len(whs)
+        except Exception:
+            pass
+
+        try:
+            total = 0.0
+            wh_ids = []
+            try:
+                whs = self.db.find_all('warehouses') or []
+                for w in whs:
+                    wid = w.get('id') or w.get('lager_id')
+                    if wid is not None:
+                        wh_ids.append(str(wid))
+            except Exception:
+                wh_ids = []
+
+            for wid in wh_ids:
+                inv = self.inventory_report(wid)
+                for item in inv:
+                    try:
+                        total += float(item.get('menge') or 0)
+                    except Exception:
+                        pass
+            stats['total_stock_units'] = total
+        except Exception:
+            pass
+
+        return stats
 
 
 if __name__ == "__main__":
     import sys
     arg = sys.argv[1] if len(sys.argv) > 1 else None
-    r = ReportBNeu()
+    r = ReportB()
     out = r.generate_report(pathlib.Path(arg) if arg else DEFAULT_OUTPUT_FILE)
     print(json.dumps(out, indent=2))
