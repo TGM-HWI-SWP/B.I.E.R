@@ -69,3 +69,43 @@ Implemented warehouse movements for products and added a movement column in the 
 Commits:
 - 5b1f21a - Added warehouse movements for products.
 - 1937f0a - Added movement column in report format.
+
+
+## 16.04.2026 - Reports on main 
+Added report a on main with dummy data as well as started working on database con for data
+
+
+Commits:
+- 02deb00: Report a now on main
+- 37a58a7: Deleted comments in report_format
+- 92f469e: Report works mainly with database now
+
+
+
+## 18.04.2026 - Starting versio 0.1 of Report B
+Started working and mostly finished report B and report A
+
+Commits:
+- 987a156: Removed comments
+- 9b8e7e8: mostly finished all reports
+- 77ad7f1: first version of report b
+
+## 22.04.2026 - Finishing Reports
+
+Finished every Report (A+B)
+
+Commits:
+- fe53d93: Report A finally done 
+- 3a11634: updated report b
+- 6055705: Report b is 95% done
+- 829e792: software logo added to the report
+- b489b52: added frame to the reports as well as made everything fit on a4 upright
+- b4943d3: refactoring of report b
+- 59bdccb: New name for report
+
+## 23.04.2026 - Added tests
+
+Added test and ran them
+
+Commits:
+- f95f0b3: Added project tests
